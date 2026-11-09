@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверить место</title>
+<!-- PFL KO‘CHIRISH (руководитель 08.11.2026, вариант Б): сканер QR таблички места. Страница ничего не хранит и никуда не
+     отправляет, кроме Telegram: прочитанный код уходит боту (Telegram.WebApp.sendData), окно закрывается. -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root { --bg: #ffffff; --fg: #1e1e1e; --muted: #777; --green: #1e8240; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #17212b; --fg: #f0f0f0; --muted: #9aa; } }
+  body { margin: 0; padding: 24px 16px; font-family: Arial, sans-serif; background: var(--tg-theme-bg-color, var(--bg)); color: var(--tg-theme-text-color, var(--fg)); text-align: center; }
+  h1 { font-size: 22px; margin: 8px 0 6px; }
+  p { color: var(--tg-theme-hint-color, var(--muted)); font-size: 16px; margin: 6px 0 22px; }
+  button { width: 100%; max-width: 420px; padding: 20px; font-size: 22px; font-weight: bold; border: 0; border-radius: 14px;
+           background: var(--green); color: #fff; }
+  #msg { margin-top: 18px; font-size: 16px; color: var(--tg-theme-hint-color, var(--muted)); }
+</style>
+</head>
+<body>
+  <h1>ПРОВЕРИТЬ МЕСТО</h1>
+  <p>Наведите камеру на QR таблички места · Joy QR kodini skanerlang</p>
+  <button id="go">Открыть сканер · Skaner</button>
+  <div id="msg"></div>
+<script>
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const msg = document.getElementById('msg');
+  function scan() {
+    if (!tg || !tg.showScanQrPopup) { msg.textContent = 'Откройте эту кнопку в Telegram (личка бота).'; return; }
+    tg.showScanQrPopup({ text: 'QR таблички места · joy QR kodi' }, function (text) {
+      if (!text) return false;
+      tg.closeScanQrPopup();
+      tg.sendData(JSON.stringify({ qr: String(text).slice(0, 200) }));   // бот получит код и ответит в личке
+      return true;
+    });
+  }
+  document.getElementById('go').addEventListener('click', scan);
+  if (tg) { tg.ready(); tg.expand(); setTimeout(scan, 300); }
+</script>
+</body>
+</html>
