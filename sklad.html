@@ -25,10 +25,59 @@
   .tag { font-size: 12px; font-weight: 700; color: #fff; background: var(--orange); border-radius: 6px; padding: 2px 7px; }
   .sub { color: var(--hint); font-size: 14px; margin: 0 0 12px; }
   .row { display: flex; gap: 8px; margin: 0 0 12px; }
+  .row button { white-space: nowrap; font-size: 14px; padding: 12px 3px; flex: 1; width: auto; min-width: 0; overflow: hidden; }
   button { font: inherit; border: 0; border-radius: 12px; padding: 13px 10px; font-weight: 700; cursor: pointer;
            background: var(--bg2); color: var(--fg); width: 100%; }
   button.main { background: var(--btn); color: var(--btn-fg); font-size: 19px; padding: 17px; }
   button:disabled { opacity: .5; }
+  .sec { margin: 22px 0 10px; padding: 2px 0 2px 12px; border-left: 6px solid; }
+  .sec .sh { font-size: 24px; font-weight: 900; letter-spacing: .5px; }
+  .sec .ss { font-size: 17px; font-weight: 700; color: var(--hint); }
+  .part { margin: 14px 0 8px; font-size: 18px; font-weight: 800; }
+  .seg { display: flex; gap: 6px; margin: 0 0 8px; }
+  .seg button { padding: 10px 6px; font-size: 15px; }
+  .seg button.on { background: var(--btn); color: var(--btn-fg); }
+  .schw { min-height: 120px; }
+  .schw { margin: 0 -10px; }
+  .schw img.scheme { width: 100%; height: auto; transition: opacity .2s; image-rendering: -webkit-optimize-contrast; }
+  .occ { color: var(--hint); font-size: 13px; text-align: center; margin: 4px 0 8px; }
+  .panel { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 10px; border: 2px solid var(--btn); }
+  .panel.hint { border: 0; color: var(--hint); font-size: 14px; text-align: center; }
+  .panel .rt { font-size: 22px; font-weight: 800; margin: 2px 0 6px; }
+  .panel .st { font-size: 14px; }
+  .row3 { display: flex; gap: 6px; margin: 6px 0; }
+  .row3 button { padding: 11px 4px; font-size: 14px; }
+  .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 2px solid var(--hint); border-radius: 12px;
+          overflow: hidden; }
+  .col { padding: 6px 5px; min-width: 0; }
+  .col + .col { border-left: 2px solid var(--hint); }
+  .col h4 { margin: 0 -5px 6px; padding: 0 2px 6px; font-size: 12px; text-align: center; line-height: 1.5; height: 44px;
+            border-bottom: 2px solid var(--hint); white-space: nowrap; overflow: hidden; box-sizing: border-box; }
+  .col h4 span { display: inline-block; min-width: 20px; border-radius: 10px; background: var(--orange); color: #fff; font-size: 12px; padding: 1px 5px; }
+  .col .none { text-align: center; color: var(--hint); }
+  .tb { background: var(--bg2); border-radius: 10px; padding: 6px 6px; margin: 0 0 6px; font-size: 12px; cursor: pointer;
+        border: 2px solid transparent; word-break: break-word; line-height: 1.25; }
+  .tb u { display: block; text-decoration: none; font-size: 11px; color: var(--hint); }
+  .tb b { display: block; font-size: 14px; }
+  .tb i { display: block; font-style: normal; font-weight: 700; color: var(--blue); margin-top: 2px; }
+  .tb.one1 { padding: 7px 4px; font-size: 13px; white-space: nowrap; overflow: hidden; }
+  .tabc { cursor: pointer; padding: 6px 4px; }
+  .tabc h4 { border-bottom: 0; margin: 0; padding: 0; }
+  .tabc.on { background: var(--btn); color: var(--btn-fg); }
+  .tabc h4 span.z { background: var(--hint); }
+  .list { margin-top: 8px; }
+  #pl { flex: 1.5; }
+  .tb.one1 b { display: inline; font-size: 1em; }
+  .todo { background: var(--bg); border-radius: 10px; padding: 8px 10px; margin: 6px 0; font-size: 15px; }
+  .todo ol { margin: 4px 0 0; padding-left: 22px; }
+  .todo li { margin: 2px 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; max-height: 230px; overflow-y: auto; }
+  .chip { background: var(--bg); border: 2px solid var(--hint); border-radius: 10px; padding: 6px 8px; font-size: 13px; cursor: pointer; }
+  .chip b { color: var(--orange); }
+  .chip.free b { color: var(--blue); }
+  .tb.new { animation: flash 2.5s ease-out; }
+  @keyframes flash { 0% { background: #ffe08a; } 100% { background: var(--bg2); } }
+  .tb.sel { border-color: var(--btn); }
   .grp { margin: 16px 0 6px; font-weight: 800; font-size: 15px; }
   .grp span { color: var(--hint); font-weight: 400; font-size: 13px; display: block; }
   .wh { display: flex; align-items: center; gap: 12px; background: var(--bg2); border-radius: 14px; padding: 12px 14px;
@@ -74,7 +123,7 @@
 </style>
 </head>
 <body>
-<div class="top"><h1 id="title">📦 Склады KO‘CHIRISH</h1><span class="tag">ТЕСТ</span></div>
+<div class="top"><h1 id="title">📦 Склады</h1><span class="tag">ТЕСТ</span></div>
 <p class="sub" id="sub">&nbsp;</p>
 <div id="view"><div class="spin">Загрузка…</div></div>
 
@@ -185,19 +234,48 @@
   }
 
   // ---------- 1. Склады ----------
+  // 22.11.2026 (руководитель): полные названия, без кодов и сокращений; готовая продукция завода (GP1 + GP2) — одной кнопкой.
+  var SECTIONS = [
+    { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Готовая продукция PERFECTFOODLAB', color: '#2e9e4f', items: [
+      { key: 'zav', parts: ['gp1', 'gp2'], name: 'Готовая продукция завода', note: 'склад 1 и склад 2 (экспорт) — на одном экране', emoji: '🟩' },
+      { key: 'per_tas', name: 'Готовая продукция Ташкент', emoji: '🟦' } ] },
+    { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Готовая продукция GYNOMEDIX', color: '#8e44ad', items: [
+      { key: 'per_gx', name: 'Gynomedix Ташкент — готовая продукция', emoji: '🟪' } ] },
+    { head: 'ТЕРМИНАЛ', sub: 'Готовая продукция', color: '#1f6fd1', items: [
+      { key: 'ter_gp', name: 'Готовая продукция завода', emoji: '🟩' },
+      { key: 'ter_tas', name: 'Готовая продукция Ташкент', note: 'BP Pharma и Gynomedix', emoji: '🟦' } ] },
+    { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
+      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🟨' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🟨' },
+      { key: 'up', name: 'Упаковка', emoji: '🩷' }, { key: 'ta', name: 'Флаконы', emoji: '⬜' } ] },
+    { head: 'ТЕРМИНАЛ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
+      { key: 'ter_xa', name: 'Сырьё', emoji: '🟨' }, { key: 'ter_up', name: 'Упаковка', emoji: '🩷' }, { key: 'ter_ta', name: 'Флаконы', emoji: '⬜' } ] }
+  ];
+  var ITEM = {}, PARTNAME = { gp1: 'Склад 1', gp2: 'Склад 2' };
+  SECTIONS.forEach(function (s) { s.items.forEach(function (it) { it.sec = s; ITEM[it.key] = it; }); });
+  function partsOf(k) { return (ITEM[k] && ITEM[k].parts) || [k]; }
+  function fullName(k) { var it = ITEM[k]; return it ? it.name + ' · ' + it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() : k; }
+
+  var menuTimer = null;
   function showMenu() {
-    title.textContent = '📦 Склады KO‘CHIRISH';
+    title.textContent = '📦 Склады';
     view.innerHTML = '<div class="spin">Загрузка складов…</div>';
     load('/api/menu', {}, function (r, old) {
       sub.textContent = 'Выберите склад · ' + r.at + (old ? ' · обновляю…' : '');
+      var W = {};
+      r.groups.forEach(function (g) { g.whs.forEach(function (w) { W[w.key] = w; }); });
       var h = '<div class="row"><button id="ref">🔄 Обновить</button><button id="qr">📷 Сканер QR</button></div>';
-      r.groups.forEach(function (g) {
-        h += '<div class="grp">' + esc(g.group) + '<span>' + esc(g.sub) + '</span></div>';
-        g.whs.forEach(function (w) {
-          var t = w.tasks == null ? '?' : w.tasks;
-          h += '<div class="wh" data-k="' + esc(w.key) + '"><div class="em">' + w.emoji + '</div><div class="t"><div class="n">' +
-            esc(w.title) + '</div><div class="c">' + esc(w.code) + ' · занято ' + w.busy + (w.total ? ' из ' + w.total : '') +
-            '</div></div><div class="badge' + (t ? '' : ' zero') + '">' + (t ? t : '0') + '</div></div>';
+      SECTIONS.forEach(function (s) {
+        h += '<div class="sec" style="border-color:' + s.color + '"><div class="sh">' + esc(s.head) + '</div><div class="ss">' + esc(s.sub) + '</div></div>';
+        s.items.forEach(function (it) {
+          var t = 0, busy = 0, total = 0, unk = false;
+          partsOf(it.key).forEach(function (p) {
+            var w = W[p] || {};
+            if (w.tasks == null) unk = true; else t += w.tasks;
+            busy += w.busy || 0; total += w.total || 0;
+          });
+          h += '<div class="wh" data-k="' + esc(it.key) + '"><div class="em">' + it.emoji + '</div><div class="t"><div class="n">' +
+            esc(it.name) + '</div><div class="c">' + (it.note ? esc(it.note) + '<br>' : '') + 'занято мест ' + busy + (total ? ' из ' + total : '') +
+            '</div></div><div class="badge' + (t ? '' : ' zero') + '">' + (unk && !t ? '?' : t) + '</div></div>';
         });
       });
       view.innerHTML = h;
@@ -206,6 +284,7 @@
       Array.prototype.forEach.call(view.querySelectorAll('.wh'), function (el) {
         el.onclick = function () { var k = el.getAttribute('data-k'); go(function () { showWh(k, 'tasks'); }); };
       });
+      if (!old && !menuTimer) menuTimer = setInterval(function () { if (!document.hidden && cur === showMenu) { var y = window.scrollY; showMenu(); window.scrollTo(0, y); } }, 30000);
       if (!old) {
         var pf = [];
         r.groups.forEach(function (g) { g.whs.forEach(function (w) { if (w.tasks) pf.push(['/api/wh', { wh: w.key }]); }); });
@@ -214,77 +293,357 @@
     });
   }
 
-  // ---------- 2. Склад: задачи / места / схема ----------
-  function tabs(k, on) {
-    return '<div class="tabs"><button data-t="tasks"' + (on === 'tasks' ? ' class="on"' : '') + '>📋 Задачи</button>' +
-      '<button data-t="places"' + (on === 'places' ? ' class="on"' : '') + '>📍 Места</button>' +
-      '<button data-t="scheme"' + (on === 'scheme' ? ' class="on"' : '') + '>🗺 Схема</button></div>';
+  // несколько складов одним экраном: сначала сохранённое, потом свежее
+  function loadMany(path, keys, extra, render) {
+    var my = ++scr, bodies = keys.map(function (k) { var b = { wh: k }; for (var x in extra) b[x] = extra[x]; return b; });
+    var cs = bodies.map(function (b) { return cget(path + JSON.stringify(b)); });
+    if (cs.every(Boolean)) render(cs, true);
+    Promise.all(bodies.map(function (b) { return call(path, JSON.parse(JSON.stringify(b)), path === '/api/scheme' ? 60000 : 15000); }))
+      .then(function (rs) {
+        rs.forEach(function (r, i) { if (path !== '/api/scheme') cset(path + JSON.stringify(bodies[i]), r); });
+        if (my === scr) render(rs, false);
+      }).catch(function (e) {
+        if (my !== scr) return;
+        if (cs.every(Boolean) && e && e.down) {
+          var d = document.createElement('div');
+          d.className = 'msg bad';
+          d.textContent = '🔌 Нет связи с компьютером PFL — показано сохранённое.';
+          view.insertBefore(d, view.firstChild);
+        } else fail(e);
+      });
   }
-  function bindTabs(k) {
-    Array.prototype.forEach.call(view.querySelectorAll('.tabs button'), function (b) {
-      b.onclick = function () { var t = b.getAttribute('data-t'); cur = function () { showWh(k, t); }; cur(); };
+
+  // ---------- 2. Склад — одно окно, как в Telegram ----------
+  // 22.11.2026 (руководитель): сверху схема, под ней задачи в 3 колонки (поступление · расход · перемещение);
+  // нажал задачу — схема показывает откуда/куда, ниже сканы и кнопка; всё в одном окне, без перехода.
+  var COLS = [['in', '📥 Поступление'], ['out', '📤 Расход'], ['mv', '🔀 Перемещение']];
+  function colOf(t) { return t.kind === 'put' ? 'in' : t.kind === 'move' ? 'mv' : 'out'; }
+  // 22.11.2026 (руководитель): готовая продукция завода — свои 3 колонки, кнопка в одну строку «товар п.партия»
+  var COLS_ZAV = [['prod', '🏭 Из произв.'], ['move', '🚚 Перемещение'], ['in', '📥 Приход']];
+  function colZav(t) {
+    var x = t.lines[0], s = ((x.src || '') + ' ' + (t.label || '')).toLowerCase();
+    if (t.kind === 'put') return s.indexOf('выпуск') >= 0 || s.indexOf('производ') >= 0 ? 'prod' : 'in';
+    return 'move';   // взять по перемещению ERP (в Ташкент и др.) и перестановки внутри склада
+  }
+  function colsFor(k) { return k === 'zav' ? [COLS_ZAV, colZav] : [COLS, colOf]; }
+  function verbOf(t) { return t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '📤 Взять (тест)'; }
+
+  // откуда пришла задача — метка на кнопке (руководитель 22.11: всё входящее — одна колонка «Поступление», различаем меткой)
+  function tagOf(t) {
+    var l = (t.label || '').toLowerCase();
+    if (t.kind === 'move') return '🔀 внутри склада';
+    if (t.kind === 'put') {
+      if (l.indexOf('возврат') >= 0) return '↩️ возврат';
+      if (l.indexOf('приход') >= 0) return '📦 от поставщика';
+      if (l.indexOf('принять') >= 0 || l.indexOf('перемещ') >= 0) return '🚚 перемещение';
+      return '🏭 из производства';
+    }
+    if (l.indexOf('продажа') >= 0 || l.indexOf('собрать') >= 0) return '🛒 клиенту';
+    if (l.indexOf('выдать') >= 0) return '🏭 в производство';
+    if (l.indexOf('возврат') >= 0) return '↩️ возврат';
+    return '🚚 перемещение';
+  }
+  var AUTO_SEC = 15;   // экран склада обновляется сам каждые 15 с (пока открыт), как окно в Telegram
+  var whTimer = null;
+
+  function showWh(k, part) {
+    var it = ITEM[k] || { name: k, emoji: '📦', sec: { head: '', sub: '' } }, ps = partsOf(k);
+    part = part && ps.indexOf(part) >= 0 ? part : ps[0];
+    var st = { sel: null, box: '', place: '' }, tasks = [], seen = null, me = {};
+    title.textContent = it.emoji + ' ' + it.name;
+    sub.textContent = it.sec.head ? it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() + ' · ' + it.sec.sub : '';
+    var h = '';
+    if (ps.length > 1) {
+      h += '<div class="seg">' + ps.map(function (p) {
+        return '<button data-p="' + p + '"' + (p === part ? ' class="on"' : '') + '>' + esc(PARTNAME[p] || p) + '</button>';
+      }).join('') + '</div>';
+    }
+    h += '<div class="schw"><div id="sch" class="spin" style="padding:30px 0">Рисую схему…</div></div>' +
+      '<div class="occ" id="occ">&nbsp;</div>' +
+      '<div id="panel" class="panel hint">' + HINT + '</div>' +
+      '<div id="cols"><div class="spin">Загрузка задач…</div></div>' +
+      '<div class="row" style="margin-top:12px"><button id="ref">🔄 Обновить</button><button id="pl">🔀 Переставить</button></div>';
+    view.innerHTML = h;
+    Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
+      b.onclick = function () { var p = b.getAttribute('data-p'); cur = function () { showWh(k, p); }; cur(); };
+    });
+    $('ref').onclick = function () { refresh(true); };
+    $('pl').onclick = function () {   // 22.11.2026 (руководитель): «Переставить» внутри склада — вместо «Места»
+      Array.prototype.forEach.call(view.querySelectorAll('.tb'), function (e) { e.classList.remove('sel'); });
+      st = { sel: 'mv', box: '', place: '' };
+      swapPanel(part, st);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    drawScheme(part, null);
+
+    function cols(r) {
+      tasks = r.tasks || [];
+      var ids = tasks.map(function (t) { return t.id; });
+      $('occ').textContent = 'занято мест ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · 🔄 ' + r.at.split(' ').pop();
+      var c = '<div class="cols">', CF = colsFor(k), one = k === 'zav';
+      CF[0].forEach(function (col) {
+        var mine = tasks.filter(function (t) { return CF[1](t) === col[0]; });
+        c += '<div class="col"><h4><span>' + mine.length + '</span><br>' + col[1] + '</h4>';
+        if (!mine.length) c += '<div class="none">—</div>';
+        mine.forEach(function (t) {
+          var x = t.lines[0], i = tasks.indexOf(t), fresh = seen && seen.indexOf(t.id) < 0;
+          var cls = 'tb' + (one ? ' one1' : '') + (t.id === st.sel ? ' sel' : '') + (fresh ? ' new' : '');
+          if (one) {   // одна строка: товар и партия; всё остальное — по нажатию, под схемой
+            c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc((x.batch ? x.batch + '·' : '') + n(x.qty) + esc(x.unit)) + '"><b>' + esc(x.short) +
+              '</b> <span>' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) + '</span></div>';
+            return;
+          }
+          c += '<div class="' + cls + '" data-i="' + i + '"><u>' + tagOf(t) + '</u><b>' +
+            esc(x.short) + (t.lines.length > 1 ? ' +' + (t.lines.length - 1) : '') + '</b>' +
+            (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) +
+            '<i>' + esc(x.src || '—') + ' → ' + esc(x.dst || '—') + '</i></div>';
+        });
+        c += '</div>';
+      });
+      c += '</div>' + (r.tasks_ok ? '' : '<div class="msg bad">Задачи не прочитались — обновлю сам через ' + AUTO_SEC + ' с.</div>');
+      $('cols').innerHTML = c;
+      Array.prototype.forEach.call($('cols').querySelectorAll('.tabc'), function (el) {
+        el.onclick = function () { me.col = el.getAttribute('data-c'); cols(r); };
+      });
+      // руководитель 22.11: товар · партия · штуки — строго в одну строку; не влезает — шрифт этой строки меньше
+      Array.prototype.forEach.call($('cols').querySelectorAll('.col h4'), function (el) {   // заголовки — одна строка, линия под ними на одном уровне
+        var f = 12;
+        while (el.scrollWidth > el.clientWidth && f > 9) { f -= 0.5; el.style.fontSize = f + 'px'; }
+      });
+      Array.prototype.forEach.call($('cols').querySelectorAll('.tb.one1'), function (el) {
+        // 1) уменьшаем шрифт до 12; 2) не влезает — коротко «593·801шт»; 3) ещё мельче, но не меньше 9
+        var f = 15, sp = el.querySelector('span');
+        el.style.fontSize = f + 'px';
+        while (el.scrollWidth > el.clientWidth && f > 12) { f -= 0.5; el.style.fontSize = f + 'px'; }
+        if (el.scrollWidth > el.clientWidth && sp) sp.textContent = el.getAttribute('data-c');
+        while (el.scrollWidth > el.clientWidth && f > 9) { f -= 0.5; el.style.fontSize = f + 'px'; }
+      });
+      if (st.sel && ids.indexOf(st.sel) < 0) {   // задачу закрыли (здесь или в группе) — убрать карточку
+        st = { sel: null, box: '', place: '' };
+        $('panel').className = 'panel hint';
+        $('panel').innerHTML = '✅ Задача выполнена или снята. ' + HINT;
+        drawScheme(part, null);
+      }
+      seen = ids;
+      Array.prototype.forEach.call($('cols').querySelectorAll('.tb'), function (el) {
+        el.onclick = function () {
+          var t = tasks[+el.getAttribute('data-i')];
+          Array.prototype.forEach.call($('cols').querySelectorAll('.tb'), function (e) { e.classList.remove('sel'); });
+          if (st.sel === t.id) { st = { sel: null, box: '', place: '' }; $('panel').className = 'panel hint'; $('panel').innerHTML = HINT; drawScheme(part, null); return; }
+          el.classList.add('sel');
+          st = { sel: t.id, box: '', place: '' };
+          drawScheme(part, t.id);
+          taskPanel(t, st);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+      });
+    }
+    function refresh(user) {
+      if (!$('cols')) return stop();
+      if (!user && document.hidden) return;
+      var key = '/api/wh' + JSON.stringify({ wh: part });
+      if (user) $('occ').textContent = 'обновляю…';
+      call('/api/wh', { wh: part }).then(function (r) {
+        cset(key, r);
+        if (!$('cols')) return;
+        var sig = r.busy + '|' + (r.tasks || []).map(function (t) { return t.id; }).join(',');
+        var changed = me.sig != null && me.sig !== sig;
+        me.sig = sig;
+        cols(r);
+        if (changed && !st.sel) { delete mem['sch' + part]; drawScheme(part, null); }   // схема — только если что-то изменилось
+      }).catch(function (e) {
+        if ($('occ')) $('occ').innerHTML = '<span class="bad">🔌 нет связи с компьютером PFL — повторю через ' + AUTO_SEC + ' с</span>';
+      });
+    }
+    function stop() { if (whTimer) { clearInterval(whTimer); whTimer = null; } }
+    var c0 = cget('/api/wh' + JSON.stringify({ wh: part }));
+    if (c0) cols(c0);
+    stop();
+    refresh(false);
+    me.k = k;
+    whTimer = setInterval(function () { refresh(false); }, AUTO_SEC * 1000);
+  }
+  var HINT = '👇 Нажмите задачу — на схеме покажу 🟧 откуда брать и 🟦 куда ставить';
+
+  // «🔀 Переставить»: 1) что (занятое место) → 2) куда (свободное) → схема 🟧/🟦 → сканы → «Переставить (тест)»
+  function swapPanel(part, st) {
+    var P = $('panel');
+    P.className = 'panel';
+    P.innerHTML = '<div class="spin" style="padding:10px 0">Загрузка мест…</div>';
+    load2('/api/places', { wh: part }, function (r) {
+      if (st.sel !== 'mv' || !$('panel')) return;
+      var rows = r.rows || [], free = r.free || [];
+      function step1() {
+        var h = '<div class="lbl">🔀 Переставить внутри склада</div><div class="name">1. Что переставить?</div><div class="chips">';
+        rows.forEach(function (p, i) {
+          h += '<div class="chip" data-i="' + i + '"><b>' + esc(p.addr) + '</b> ' + esc(p.short) + (p.batch ? ' п.' + esc(p.batch) : '') +
+            ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div>';
+        });
+        h += (rows.length ? '' : '<div class="empty">Склад пустой</div>') + '</div><button id="mvx">✖️ Отмена</button>';
+        P.innerHTML = h;
+        $('mvx').onclick = cancel;
+        Array.prototype.forEach.call(P.querySelectorAll('.chip'), function (el) {
+          el.onclick = function () { step2(rows[+el.getAttribute('data-i')]); };
+        });
+      }
+      function step2(p) {
+        drawScheme(part, null, (function () { var o = {}; o[p.addr] = 'from'; return o; })());
+        var h = '<div class="lbl">🔀 Переставить · 🟧 ' + esc(p.addr) + '</div><div class="name">' + esc(p.short) +
+          (p.batch ? ' п.' + esc(p.batch) : '') + ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div><div class="name" style="font-size:16px">2. Куда? (свободные места)</div><div class="chips">';
+        free.forEach(function (a) { h += '<div class="chip free" data-a="' + esc(a) + '"><b>' + esc(a) + '</b></div>'; });
+        h += (free.length ? '' : '<div class="empty">Свободных мест нет</div>') + '</div><div class="row3"><button id="mvb">⬅️ Другое</button><button id="mvx">✖️ Отмена</button></div>';
+        P.innerHTML = h;
+        $('mvb').onclick = function () { drawScheme(part, null); step1(); };
+        $('mvx').onclick = cancel;
+        Array.prototype.forEach.call(P.querySelectorAll('.chip.free'), function (el) {
+          el.onclick = function () { step3(p, el.getAttribute('data-a')); };
+        });
+      }
+      function step3(p, to) {
+        var hot = {}; hot[p.addr] = 'from'; hot[to] = 'to';
+        drawScheme(part, null, hot);
+        P.innerHTML = '<div class="lbl">🔀 Переставить внутри склада</div><div class="name">' + esc(p.short) + (p.batch ? ' п.' + esc(p.batch) : '') +
+          ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div><div class="rt"><span class="from">' + esc(p.addr) + '</span> → <span class="to">' + esc(to) + '</span></div>' +
+          '<div class="row3"><button id="bbox">📷 Коробка</button><button id="bplace">📷 Место</button><button id="mvb">⬅️ Другое</button></div>' +
+          '<div class="st" id="sbox"></div><div class="st" id="splace"></div>' +
+          '<button class="main" id="go">🔀 Переставить (тест)</button><div id="res"></div><button id="mvx" style="margin-top:6px">✖️ Отмена</button>';
+        $('mvb').onclick = function () { step2(p); };
+        $('mvx').onclick = cancel;
+        $('bbox').onclick = function () { scanQr('QR наклейки коробки', function (c) { st.box = c; $('sbox').textContent = 'Коробка: ' + c; }); };
+        $('bplace').onclick = function () { scanQr('QR таблички места ' + to, function (c) { st.place = c; $('splace').textContent = 'Место: ' + c; }); };
+        $('go').onclick = function () {
+          var b = this; b.disabled = true;
+          call('/api/swap', { wh: part, from: p.addr, to: to, box: st.box, place: st.place }).then(function (r) {
+            $('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>'; b.disabled = false; haptic(r.ok ? 'success' : 'warning');
+          }).catch(function (e) { b.disabled = false; fail(e); });
+        };
+      }
+      function cancel() { st.sel = null; P.className = 'panel hint'; P.innerHTML = HINT; drawScheme(part, null); }
+      step1();
     });
   }
-  function routeOf(t) {
-    var x = t.lines[0];
-    return '<span class="from">' + esc(x.src_code || x.src || '—') + '</span> → <span class="to">' + esc(x.dst_code || x.dst || '—') + '</span>';
+
+  function drawScheme(part, id, hot) {
+    if (hot) {   // произвольная подсветка (переставить): сервер рисует схему с 🟧/🟦
+      var hk = 'hsch' + part + JSON.stringify(hot), e0 = $('sch');
+      if (mem[hk] != null) return putSch(mem[hk]);
+      if (e0 && e0.tagName === 'IMG') e0.style.opacity = '.45';
+      call('/api/scheme', { wh: part, hot: hot }, 60000).then(function (r) { mem[hk] = r.scheme || ''; putSch(mem[hk]); })
+        .catch(function () { var e2 = $('sch'); if (e2) e2.style.opacity = '1'; });
+      return;
+    }
+    function putSch(b) {
+      var el = $('sch'); if (!el) return;
+      el.outerHTML = b ? '<img id="sch" class="scheme" alt="схема" src="data:image/jpeg;base64,' + b + '">'
+        : '<div id="sch" class="empty">Схема этого склада ещё не утверждена</div>';
+    }
+    return drawScheme2(part, id, putSch);
   }
-  function showWh(k, tab) {
-    view.innerHTML = '<div class="spin">Загрузка…</div>';
-    if (tab === 'places') return showPlaces(k);
-    if (tab === 'scheme') return showScheme(k);
-    load('/api/wh', { wh: k }, function (r, old) {
-      title.textContent = r.emoji + ' ' + r.title;
-      sub.textContent = r.code + ' · занято ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · ' + r.at + (old ? ' · обновляю…' : '');
-      var h = tabs(k, 'tasks');
-      if (!r.tasks_ok) h += '<div class="msg bad">Задачи этого склада сейчас не прочитались — нажмите «Задачи» ещё раз.</div>';
-      else if (!r.tasks.length) h += '<div class="empty">✅ Задач на сейчас нет</div>';
-      r.tasks.forEach(function (t, i) {
-        var x = t.lines[0], more = t.lines.length > 1 ? ' · <b>' + t.lines.length + ' строк</b>' : '';
-        h += '<div class="task" data-i="' + i + '"><div class="lbl">' + esc(t.label) + '</div>' +
-          '<div class="name">' + esc(x.short) + (t.lines.length > 1 ? ' и др.' : '') + '</div>' +
-          '<div class="meta">' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) +
-          (x.boxes ? ' · ' + esc(x.boxes) : '') + more + '</div>' +
-          '<div class="route">' + routeOf(t) + '</div></div>';
+  function putSch(b) {
+    var el = $('sch'); if (!el) return;
+    el.outerHTML = b ? '<img id="sch" class="scheme" alt="схема" src="data:image/jpeg;base64,' + b + '">'
+      : '<div id="sch" class="empty">Схема этого склада ещё не утверждена</div>';
+  }
+  function drawScheme2(part, id) {
+    var key = id ? 'tsch' + id : 'sch' + part;
+    function put(b) {
+      var el = $('sch'); if (!el) return;
+      el.outerHTML = b ? '<img id="sch" class="scheme" alt="схема" src="data:image/jpeg;base64,' + b + '">'
+        : '<div id="sch" class="empty">Схема этого склада ещё не утверждена</div>';
+    }
+    if (mem[key] != null) return put(mem[key]);
+    var el = $('sch');
+    if (el && el.tagName === 'IMG') el.style.opacity = '.45';   // старая схема видна, пока рисуется новая
+    var p = id ? call('/api/task_scheme', { id: id }, 60000) : call('/api/scheme', { wh: part }, 60000);
+    p.then(function (r) { mem[key] = r.scheme || ''; put(mem[key]); })
+      .catch(function () { var e2 = $('sch'); if (e2) e2.style.opacity = '1'; });
+  }
+
+  function taskPanel(t, st) {
+    var x = t.lines[0], where = t.scan === 'src' ? 'откуда' : 'куда', verb = verbOf(t), P = $('panel');
+    P.className = 'panel';
+    var h = '<div class="lbl">' + esc(t.label) + '</div>';
+    if (t.lines.length === 1) {
+      h += '<div class="name">' + esc(x.short) + '</div><div class="meta">' + (x.batch ? '<b>п.' + esc(x.batch) + '</b> · ' : '') +
+        n(x.qty) + ' ' + esc(x.unit) + (x.boxes ? ' · ' + esc(x.boxes) : '') + '</div>' +
+        '<div class="rt"><span class="from">' + esc(x.src || '—') + '</span> → <span class="to">' + esc(x.dst || '—') + '</span></div>' +
+        '<div class="meta" style="color:var(--hint)">' + esc(x.item) + '</div>';
+      // 22.11.2026 (руководитель): в окне — что сделать, по шагам, и какую табличку сканировать
+      var place = t.scan === 'src' ? (x.src_code || x.src) : (x.dst_code || x.dst), what = x.boxes || (n(x.qty) + ' ' + x.unit);
+      var steps = t.kind === 'put'
+        ? ['Взять ' + what + ' (' + (x.src || 'приход') + ')', 'Поставить на место ' + (x.dst || '—'), '📷 Сканировать табличку ' + place, 'Нажать «Поставить»']
+        : t.kind === 'move'
+          ? ['Взять с места ' + (x.src || '—') + ': ' + what, 'Поставить на ' + (x.dst || '—'), '📷 Сканировать табличку ' + (x.dst_code || x.dst), 'Нажать «Переставить»']
+          : ['Взять с места ' + (x.src || '—') + ': ' + what, '📷 Сканировать табличку ' + place + ' и коробку', 'Отвезти: ' + (x.dst || '—'), 'Нажать «Взять»'];
+      h += '<div class="todo"><b>Что сделать:</b><ol>' + steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></div>';
+    } else {
+      t.lines.forEach(function (y) {
+        h += '<div class="ln"><b>' + esc(y.short) + '</b> ' + (y.batch ? 'п.' + esc(y.batch) + ' · ' : '') + n(y.qty) + ' ' + esc(y.unit) +
+          ' · <span class="from">' + esc(y.src || '—') + '</span> → <span class="to">' + esc(y.dst || '—') + '</span></div>';
+      });
+    }
+    h += '<div id="ext" class="meta" style="color:var(--hint)"></div>' +
+      '<div class="row3"><button id="bbox">📷 Коробка</button><button id="bplace">📷 Место</button><button id="lbl" style="display:none">🖨 Наклейки</button></div>' +
+      '<div class="st" id="sbox"></div><div class="st" id="splace"></div>' +
+      '<button class="main" id="go">' + verb + '</button><div id="res"></div>';
+    P.innerHTML = h;
+    var id = t.id;
+    load2('/api/task', { id: id }, function (c) {   // наклейки, остаток ERP — догружаются
+      if (st.sel !== id || !$('ext')) return;
+      var e = [];
+      if (c.erp_stock != null) e.push('ERP: всего на складах ' + n(c.erp_stock) + ' шт');
+      if (c.doc) e.push('документ №' + c.doc + (c.when ? ' · ' + c.when : '') + (c.by ? ' · ' + c.by : ''));
+      $('ext').textContent = e.join(' · ');
+      if (c.can_label) { $('lbl').style.display = ''; $('lbl').onclick = function () { askLabels(function (w) { return call('/api/label', { id: id, which: w }, 60000); }); }; }
+    });
+    function mark(kind, el, label) {
+      scanQr(kind === 'box' ? 'QR наклейки коробки · quti QR' : 'QR таблички места (' + where + ') · joy QR', function (code) {
+        call('/api/scan', { id: id, kind: kind, code: code }).then(function (r) {
+          st[kind] = code;
+          el.innerHTML = label + ': <span class="' + (r.ok ? 'good' : 'bad') + '">' + esc(r.text) + '</span>';
+          haptic(r.ok ? 'success' : 'error');
+        }).catch(fail);
+      });
+    }
+    $('bbox').onclick = function () { mark('box', $('sbox'), 'Коробка'); };
+    $('bplace').onclick = function () { mark('place', $('splace'), 'Место (' + where + ')'); };
+    $('go').onclick = function () {
+      var b = this; b.disabled = true; b.textContent = '⏳ Отправляю…';
+      call('/api/move', { id: id, box: st.box, place: st.place }).then(function (r) {
+        $('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>';
+        b.disabled = false; b.textContent = verb;
+        haptic(r.ok ? 'success' : 'warning');
+      }).catch(function (e) { b.disabled = false; b.textContent = verb; fail(e); });
+    };
+  }
+
+  // без перерисовки экрана: сохранённое → свежее, только в колбэк
+  function load2(path, body, cb) {
+    var key = path + JSON.stringify(body), c = cget(key);
+    if (c) cb(c);
+    call(path, JSON.parse(JSON.stringify(body))).then(function (r) { cset(key, r); cb(r); }).catch(function () {});
+  }
+
+  function showPlaces(k, ps) {
+    loadMany('/api/places', ps, {}, function (rs) {
+      var h = '<div class="part">📍 Места · ' + esc(PARTNAME[ps[0]] && partsOf(k).length > 1 ? PARTNAME[ps[0]] : (ITEM[k] || {}).name || '') + '</div>', rows = [];
+      rs.forEach(function (r, j) {
+        if (!r.rows.length) h += '<div class="empty">Места пустые или схема склада ещё не заполнена</div>';
+        r.rows.forEach(function (p) {
+          var i = rows.length; rows.push([ps[j], p]);
+          h += '<div class="place"><div class="a">' + esc(p.addr) + '</div><div class="d"><b>' + esc(p.short) + '</b><br>' +
+            (p.batch ? 'п.' + esc(p.batch) + ' · ' : '') + n(p.qty) + ' ' + esc(p.unit) + '</div>' +
+            (p.label ? '<div class="p" data-i="' + i + '" title="Наклейки">🖨</div>' : '') + '</div>';
+        });
       });
       view.innerHTML = h;
-      bindTabs(k);
-      Array.prototype.forEach.call(view.querySelectorAll('.task'), function (el) {
+      Array.prototype.forEach.call(view.querySelectorAll('.place .p'), function (el) {
         el.onclick = function () {
-          var t = r.tasks[+el.getAttribute('data-i')], key = '/api/task' + JSON.stringify({ id: t.id });
-          if (!cget(key)) cset(key, t);   // карточка откроется сразу из списка, свежее догрузится
-          go(function () { showTask(t.id); });
+          var x = rows[+el.getAttribute('data-i')];
+          askLabels(function (which) { return call('/api/label_place', { wh: x[0], addr: x[1].addr, which: which }, 60000); });
         };
       });
     });
-  }
-  function showPlaces(k) {
-    load('/api/places', { wh: k }, function (r) {
-      var h = tabs(k, 'places');
-      if (!r.rows.length) h += '<div class="empty">Места пустые или схема склада ещё не заполнена</div>';
-      r.rows.forEach(function (p, i) {
-        h += '<div class="place"><div class="a">' + esc(p.addr) + '</div><div class="d"><b>' + esc(p.short) + '</b><br>' +
-          (p.batch ? 'п.' + esc(p.batch) + ' · ' : '') + n(p.qty) + ' ' + esc(p.unit) + '</div>' +
-          (p.label ? '<div class="p" data-i="' + i + '" title="Наклейки">🖨</div>' : '') + '</div>';
-      });
-      view.innerHTML = h;
-      bindTabs(k);
-      Array.prototype.forEach.call(view.querySelectorAll('.place .p'), function (el) {
-        el.onclick = function () { askLabels(function (which) { return call('/api/label_place', { wh: k, addr: r.rows[+el.getAttribute('data-i')].addr, which: which }, 60000); }); };
-      });
-    });
-  }
-  function showScheme(k) {
-    var my = ++scr;
-    view.innerHTML = tabs(k, 'scheme') + (mem['sch' + k] ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + mem['sch' + k] + '">' : '<div class="spin">Рисую схему…</div>');
-    bindTabs(k);
-    call('/api/scheme', { wh: k }, 60000).then(function (r) {
-      if (my !== scr) return;
-      mem['sch' + k] = r.scheme;
-      view.innerHTML = tabs(k, 'scheme') + (r.scheme ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + r.scheme + '">'
-        : '<div class="empty">Схема этого склада ещё не утверждена</div>');
-      bindTabs(k);
-    }).catch(fail);
   }
 
   // ---------- наклейки ----------
@@ -317,15 +676,16 @@
       } else {
         t.lines.forEach(function (x) {
           h += '<div class="ln"><b>' + esc(x.short) + '</b> ' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) +
-            '<br><span class="from">' + esc(x.src_code || x.src || '—') + '</span> → <span class="to">' + esc(x.dst_code || x.dst || '—') + '</span></div>';
+            '<br><span class="from">' + esc(x.src || '—') + '</span> → <span class="to">' + esc(x.dst || '—') + '</span></div>';
         });
       }
       if (t.erp_stock != null) h += '<div class="meta" style="color:var(--hint)">ERP: всего на складах ' + n(t.erp_stock) + ' шт</div>';
       if (t.doc) h += '<div class="meta" style="color:var(--hint)">документ №' + esc(t.doc) + (t.when ? ' · ' + esc(t.when) : '') + (t.by ? ' · ' + esc(t.by) : '') + '</div>';
       h += '</div>';
       if (t.lines.length === 1) {
-        h += '<div class="box"><h3>Откуда · qayerdan</h3><div class="big from">' + esc(x0.src_code || x0.src || '—') + '</div></div>' +
-             '<div class="box"><h3>Куда · qayerga</h3><div class="big to">' + esc(x0.dst_code || x0.dst || '—') + '</div></div>';
+        var code = function (c, a) { return c && c !== a ? '<div class="meta" style="color:var(--hint)">табличка: ' + esc(c) + '</div>' : ''; };
+        h += '<div class="box"><h3>Откуда · qayerdan</h3><div class="big from">' + esc(x0.src || '—') + '</div>' + code(x0.src_code, x0.src) + '</div>' +
+             '<div class="box"><h3>Куда · qayerga</h3><div class="big to">' + esc(x0.dst || '—') + '</div>' + code(x0.dst_code, x0.dst) + '</div>';
       }
       h += '<div class="box"><h3>Схема · 🟧 брать · 🟦 сюда</h3><div id="sch" class="spin" style="padding:20px 0">Рисую схему…</div></div>' +
         '<div class="step"><div class="st" id="sbox">1. Коробка — не сканировали</div><button id="bbox">📷 Коробка</button></div>' +
