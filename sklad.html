@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Склад (тест)</title>
+<!-- PFL · тестовый Mini App склада (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера компьютера
+     PFL через туннель и только после проверки подписи Telegram (initData) — и только руководителю. -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --bg2: var(--tg-theme-secondary-bg-color, #f1f2f5);
+    --fg: var(--tg-theme-text-color, #1e1e1e);
+    --hint: var(--tg-theme-hint-color, #7a7f87);
+    --link: var(--tg-theme-link-color, #2a7ae2);
+    --btn: var(--tg-theme-button-color, #2a7ae2);
+    --btn-fg: var(--tg-theme-button-text-color, #ffffff);
+    --green: #1e8240; --red: #c0392b; --orange: #e67e22; --blue: #1f6fd1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 12px 16px 28px; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+         background: var(--bg); color: var(--fg); font-size: 17px; line-height: 1.35; -webkit-text-size-adjust: 100%; }
+  .top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .top h1 { font-size: 20px; margin: 0; flex: 1; }
+  .tag { font-size: 12px; font-weight: 700; color: #fff; background: var(--orange); border-radius: 6px; padding: 2px 7px; }
+  .sub { color: var(--hint); font-size: 14px; margin: 0 0 12px; }
+  .row { display: flex; gap: 8px; margin: 0 0 12px; }
+  button { font: inherit; border: 0; border-radius: 12px; padding: 14px 12px; font-weight: 700; cursor: pointer;
+           background: var(--bg2); color: var(--fg); width: 100%; }
+  button.main { background: var(--btn); color: var(--btn-fg); font-size: 19px; padding: 17px; }
+  button.ok { background: var(--green); color: #fff; }
+  button:disabled { opacity: .5; }
+  .task { background: var(--bg2); border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; cursor: pointer; }
+  .task .lbl { font-size: 13px; color: var(--hint); }
+  .task .name { font-size: 19px; font-weight: 700; margin: 2px 0; }
+  .task .meta { font-size: 15px; }
+  .route { font-size: 18px; font-weight: 700; margin-top: 4px; word-break: break-word; }
+  .from { color: var(--orange); } .to { color: var(--blue); }
+  .big { font-size: 24px; font-weight: 800; word-break: break-word; }
+  .box { background: var(--bg2); border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; }
+  .box h3 { margin: 0 0 4px; font-size: 13px; color: var(--hint); font-weight: 600; text-transform: uppercase; }
+  .scheme { width: 100%; border-radius: 12px; display: block; background: #fff; }
+  .step { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+  .step .st { flex: 1; font-size: 15px; white-space: pre-line; }
+  .step button { width: auto; flex: 0 0 46%; }
+  .good { color: var(--green); font-weight: 700; } .bad { color: var(--red); font-weight: 700; }
+  .msg { white-space: pre-line; background: var(--bg2); border-radius: 14px; padding: 14px; margin: 10px 0; font-size: 16px; }
+  .down { text-align: center; padding: 30px 8px; }
+  .down .ico { font-size: 54px; }
+  .down h2 { margin: 8px 0; font-size: 22px; }
+  .down p { color: var(--hint); margin: 0 0 18px; }
+  .empty { text-align: center; color: var(--hint); padding: 26px 0; }
+  .spin { text-align: center; color: var(--hint); padding: 40px 0; }
+  .hide { display: none; }
+</style>
+</head>
+<body>
+<div class="top"><h1 id="title">📦 PER-TAS-GP</h1><span class="tag">ТЕСТ</span></div>
+<p class="sub" id="sub">Склад ГП Ташкент · Перечисление</p>
+<div id="view"><div class="spin">Загрузка…</div></div>
+
+<script>
+(function () {
+  'use strict';
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var view = document.getElementById('view');
+  var sub = document.getElementById('sub');
+  var TIMEOUT = 15000;
+
+  // адрес сервера приходит в ссылке кнопки меню (?api=…); принимаем только туннель Cloudflare
+  var api = (new URLSearchParams(location.search).get('api') || '').replace(/\/+$/, '');
+  if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(api)) api = '';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function rich(s) { return esc(s).replace(/&lt;(\/?)b&gt;/g, '<$1b>'); }   // только <b> из ответа сервера
+  function num(x) { var n = Number(x) || 0; return n.toLocaleString('ru-RU'); }
+  function haptic(t) { try { tg.HapticFeedback.notificationOccurred(t); } catch (e) {} }
+
+  function down(text) {
+    view.innerHTML = '<div class="down"><div class="ico">🔌</div><h2>Сервер недоступен</h2><p>' + esc(text) +
+      '</p><button class="main" id="retry">🔄 Повторить</button></div>';
+    document.getElementById('retry').onclick = showList;
+  }
+
+  function call(path, body) {
+    if (!api) return Promise.reject({ down: true, text: 'Нет адреса сервера. Откройте мини-апп кнопкой «📱 Склад (тест)» в личке бота склада.' });
+    var ctl = new AbortController();
+    var timer = setTimeout(function () { ctl.abort(); }, TIMEOUT);
+    body = body || {};
+    body.initData = tg ? tg.initData : '';
+    return fetch(api + path, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), signal: ctl.signal })
+      .then(function (r) {
+        clearTimeout(timer);
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (r.status >= 500 && !j.error) throw { down: true, text: 'Компьютер PFL выключен или туннель не работает. Попробуйте позже.' };
+          if (!r.ok) throw { text: j.error || ('Ошибка ' + r.status) };
+          return j;
+        });
+      }, function () {
+        clearTimeout(timer);
+        throw { down: true, text: 'Компьютер PFL выключен или нет связи с ним. Попробуйте позже — данные не потеряны.' };
+      });
+  }
+
+  function fail(e) {
+    if (e && e.down) return down(e.text);
+    view.innerHTML = '<div class="msg bad">' + esc((e && e.text) || 'Ошибка') + '</div><button id="back2">⬅️ К задачам</button>';
+    document.getElementById('back2').onclick = showList;
+  }
+
+  function back(on) {
+    if (!tg || !tg.BackButton) return;
+    tg.BackButton.offClick(showList);
+    if (on) { tg.BackButton.onClick(showList); tg.BackButton.show(); } else tg.BackButton.hide();
+  }
+
+  function scanQr(hint, cb) {
+    if (!tg || !tg.showScanQrPopup || !tg.isVersionAtLeast('6.4')) { alert('Сканер работает только в Telegram на телефоне.'); return; }
+    tg.showScanQrPopup({ text: hint }, function (text) {
+      if (!text) return false;
+      tg.closeScanQrPopup();
+      cb(String(text).slice(0, 200));
+      return true;
+    });
+  }
+
+  // ---------- Мои задачи ----------
+  function showList() {
+    back(false);
+    view.innerHTML = '<div class="spin">Загрузка задач…</div>';
+    call('/api/tasks').then(function (r) {
+      sub.textContent = 'Мои задачи · ' + r.at + ' · мест занято ' + r.busy + ' из ' + r.places +
+        (r.erp_ok ? ' · ERP ' + r.erp_at : ' · ⚠️ ERP нет связи');
+      var h = '<div class="row"><button id="ref">🔄 Обновить</button><button id="qr">📷 Сканер QR</button></div>';
+      if (!r.tasks.length) h += '<div class="empty">✅ Задач на сейчас нет</div>';
+      r.tasks.forEach(function (t, i) {
+        h += '<div class="task" data-i="' + i + '"><div class="lbl">' + esc(t.label) + '</div>' +
+          '<div class="name">' + esc(t.short) + '</div>' +
+          '<div class="meta">' + (t.batch ? 'п.' + esc(t.batch) + ' · ' : '') + num(t.qty) + ' шт' + (t.boxes ? ' · ' + esc(t.boxes) : '') + '</div>' +
+          '<div class="route"><span class="from">' + esc(t.src || '—') + '</span> → <span class="to">' + esc(t.dst || '—') + '</span></div></div>';
+      });
+      view.innerHTML = h;
+      document.getElementById('ref').onclick = showList;
+      document.getElementById('qr').onclick = freeScan;
+      Array.prototype.forEach.call(view.querySelectorAll('.task'), function (el) {
+        el.onclick = function () { showTask(r.tasks[+el.getAttribute('data-i')].id); };
+      });
+    }).catch(fail);
+  }
+
+  // ---------- Сканер: что за QR ----------
+  function freeScan() {
+    scanQr('QR коробки или места · quti yoki joy QR', function (code) {
+      call('/api/qr', { code: code }).then(function (r) {
+        if (tg && tg.showAlert) tg.showAlert(r.text); else alert(r.text);
+      }).catch(fail);
+    });
+  }
+
+  // ---------- Карточка задачи ----------
+  function showTask(id) {
+    back(true);
+    view.innerHTML = '<div class="spin">Загрузка карточки…</div>';
+    call('/api/task', { id: id }).then(function (t) {
+      var s = { box: '', place: '' };
+      var h = '<div class="box"><h3>' + esc(t.label) + '</h3><div class="big">' + esc(t.short) + '</div>' +
+        '<div>' + esc(t.item) + '</div>' +
+        '<div class="meta">' + (t.batch ? '<b>п.' + esc(t.batch) + '</b> · ' : '') + num(t.qty) + ' шт' + (t.boxes ? ' · ' + esc(t.boxes) : '') + '</div>' +
+        (t.erp_stock != null ? '<div class="meta" style="color:var(--hint)">ERP: всего этого товара в PER-TAS-GP ' + num(t.erp_stock) + ' шт</div>' : '') +
+        (t.doc ? '<div class="meta" style="color:var(--hint)">документ №' + esc(t.doc) + (t.when ? ' · ' + esc(t.when) : '') + '</div>' : '') +
+        '</div>' +
+        '<div class="box"><h3>Откуда · qayerdan</h3><div class="big from">' + esc(t.src_code || '—') + '</div></div>' +
+        '<div class="box"><h3>Куда · qayerga</h3><div class="big to">' + esc(t.dst_code || '—') + '</div></div>' +
+        (t.scheme ? '<div class="box"><h3>Схема · 🟧 брать · 🟦 сюда</h3><img class="scheme" alt="схема" src="data:image/jpeg;base64,' + t.scheme + '"></div>' : '') +
+        '<div class="step"><div class="st" id="sbox">1. Коробка — не сканировали</div><button id="bbox">📷 Коробка</button></div>' +
+        '<div class="step"><div class="st" id="splace">2. Место ' + esc(t.dst || '') + ' — не сканировали</div><button id="bplace">📷 Место</button></div>' +
+        '<button class="main" id="go">🚚 Переместить (тест)</button><div id="res"></div>';
+      view.innerHTML = h;
+      window.scrollTo(0, 0);
+      function mark(kind, el, label) {
+        scanQr(kind === 'box' ? 'QR наклейки коробки · quti QR' : 'QR таблички места ' + (t.dst || '') + ' · joy QR', function (code) {
+          call('/api/scan', { id: id, kind: kind, code: code }).then(function (r) {
+            s[kind] = code;
+            el.innerHTML = label + ' — <span class="' + (r.ok ? 'good' : 'bad') + '">' + esc(r.text) + '</span>';
+            haptic(r.ok ? 'success' : 'error');
+          }).catch(fail);
+        });
+      }
+      document.getElementById('bbox').onclick = function () { mark('box', document.getElementById('sbox'), '1. Коробка'); };
+      document.getElementById('bplace').onclick = function () { mark('place', document.getElementById('splace'), '2. Место'); };
+      document.getElementById('go').onclick = function () {
+        var b = this; b.disabled = true; b.textContent = '⏳ Отправляю…';
+        call('/api/move', { id: id, box: s.box, place: s.place }).then(function (r) {
+          document.getElementById('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>';
+          b.disabled = false; b.textContent = '🚚 Переместить (тест)';
+          haptic(r.ok ? 'success' : 'warning');
+          document.getElementById('res').scrollIntoView({ behavior: 'smooth' });
+        }).catch(function (e) { b.disabled = false; b.textContent = '🚚 Переместить (тест)'; fail(e); });
+      };
+    }).catch(fail);
+  }
+
+  if (tg) { tg.ready(); tg.expand(); }
+  if (!tg || !tg.initData) {
+    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «📱 Склад (тест)» в личке бота склада.</p></div>';
+  } else showList();
+})();
+</script>
+</body>
+</html>
