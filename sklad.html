@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Склад (тест)</title>
-<!-- PFL · тестовый Mini App склада (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера компьютера
-     PFL через туннель и только после проверки подписи Telegram (initData) — и только руководителю. -->
+<!-- PFL · тестовый Mini App складов KO‘CHIRISH (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера
+     компьютера PFL через туннель и только после проверки подписи Telegram (initData) — и только руководителю. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
@@ -13,7 +13,6 @@
     --bg2: var(--tg-theme-secondary-bg-color, #f1f2f5);
     --fg: var(--tg-theme-text-color, #1e1e1e);
     --hint: var(--tg-theme-hint-color, #7a7f87);
-    --link: var(--tg-theme-link-color, #2a7ae2);
     --btn: var(--tg-theme-button-color, #2a7ae2);
     --btn-fg: var(--tg-theme-button-text-color, #ffffff);
     --green: #1e8240; --red: #c0392b; --orange: #e67e22; --blue: #1f6fd1;
@@ -21,52 +20,71 @@
   * { box-sizing: border-box; }
   body { margin: 0; padding: 12px 16px 28px; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
          background: var(--bg); color: var(--fg); font-size: 17px; line-height: 1.35; -webkit-text-size-adjust: 100%; }
-  .top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .top h1 { font-size: 20px; margin: 0; flex: 1; }
+  .top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .top h1 { font-size: 20px; margin: 0; flex: 1; word-break: break-word; }
   .tag { font-size: 12px; font-weight: 700; color: #fff; background: var(--orange); border-radius: 6px; padding: 2px 7px; }
   .sub { color: var(--hint); font-size: 14px; margin: 0 0 12px; }
   .row { display: flex; gap: 8px; margin: 0 0 12px; }
-  button { font: inherit; border: 0; border-radius: 12px; padding: 14px 12px; font-weight: 700; cursor: pointer;
+  button { font: inherit; border: 0; border-radius: 12px; padding: 13px 10px; font-weight: 700; cursor: pointer;
            background: var(--bg2); color: var(--fg); width: 100%; }
   button.main { background: var(--btn); color: var(--btn-fg); font-size: 19px; padding: 17px; }
-  button.ok { background: var(--green); color: #fff; }
   button:disabled { opacity: .5; }
+  .grp { margin: 16px 0 6px; font-weight: 800; font-size: 15px; }
+  .grp span { color: var(--hint); font-weight: 400; font-size: 13px; display: block; }
+  .wh { display: flex; align-items: center; gap: 12px; background: var(--bg2); border-radius: 14px; padding: 12px 14px;
+        margin: 0 0 8px; cursor: pointer; }
+  .wh .em { font-size: 26px; }
+  .wh .t { flex: 1; min-width: 0; }
+  .wh .n { font-weight: 700; font-size: 17px; }
+  .wh .c { color: var(--hint); font-size: 13px; }
+  .badge { min-width: 34px; text-align: center; border-radius: 17px; padding: 5px 9px; font-weight: 800; font-size: 15px;
+           background: var(--orange); color: #fff; }
+  .badge.zero { background: transparent; color: var(--hint); font-weight: 600; }
+  .tabs { display: flex; gap: 6px; margin: 0 0 12px; }
+  .tabs button { padding: 11px 6px; font-size: 15px; }
+  .tabs button.on { background: var(--btn); color: var(--btn-fg); }
   .task { background: var(--bg2); border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; cursor: pointer; }
-  .task .lbl { font-size: 13px; color: var(--hint); }
-  .task .name { font-size: 19px; font-weight: 700; margin: 2px 0; }
-  .task .meta { font-size: 15px; }
-  .route { font-size: 18px; font-weight: 700; margin-top: 4px; word-break: break-word; }
+  .lbl { font-size: 13px; color: var(--hint); }
+  .name { font-size: 19px; font-weight: 700; margin: 2px 0; word-break: break-word; }
+  .meta { font-size: 15px; }
+  .route { font-size: 17px; font-weight: 700; margin-top: 3px; word-break: break-word; }
   .from { color: var(--orange); } .to { color: var(--blue); }
-  .big { font-size: 24px; font-weight: 800; word-break: break-word; }
+  .big { font-size: 22px; font-weight: 800; word-break: break-word; }
   .box { background: var(--bg2); border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; }
   .box h3 { margin: 0 0 4px; font-size: 13px; color: var(--hint); font-weight: 600; text-transform: uppercase; }
+  .ln { padding: 8px 0; border-top: 1px solid rgba(127,127,127,.2); }
+  .ln:first-of-type { border-top: 0; }
   .scheme { width: 100%; border-radius: 12px; display: block; background: #fff; }
   .step { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
   .step .st { flex: 1; font-size: 15px; white-space: pre-line; }
-  .step button { width: auto; flex: 0 0 46%; }
+  .step button { width: auto; flex: 0 0 44%; }
   .good { color: var(--green); font-weight: 700; } .bad { color: var(--red); font-weight: 700; }
   .msg { white-space: pre-line; background: var(--bg2); border-radius: 14px; padding: 14px; margin: 10px 0; font-size: 16px; }
+  .place { display: flex; gap: 10px; align-items: baseline; background: var(--bg2); border-radius: 12px; padding: 10px 12px;
+           margin: 0 0 6px; }
+  .place .a { font-weight: 800; min-width: 74px; color: var(--blue); }
+  .place .d { flex: 1; font-size: 15px; word-break: break-word; }
+  .place .p { font-size: 22px; cursor: pointer; }
   .down { text-align: center; padding: 30px 8px; }
   .down .ico { font-size: 54px; }
   .down h2 { margin: 8px 0; font-size: 22px; }
   .down p { color: var(--hint); margin: 0 0 18px; }
   .empty { text-align: center; color: var(--hint); padding: 26px 0; }
   .spin { text-align: center; color: var(--hint); padding: 40px 0; }
-  .hide { display: none; }
 </style>
 </head>
 <body>
-<div class="top"><h1 id="title">📦 PER-TAS-GP</h1><span class="tag">ТЕСТ</span></div>
-<p class="sub" id="sub">Склад ГП Ташкент · Перечисление</p>
+<div class="top"><h1 id="title">📦 Склады KO‘CHIRISH</h1><span class="tag">ТЕСТ</span></div>
+<p class="sub" id="sub">&nbsp;</p>
 <div id="view"><div class="spin">Загрузка…</div></div>
 
 <script>
 (function () {
   'use strict';
   var tg = window.Telegram && window.Telegram.WebApp;
-  var view = document.getElementById('view');
-  var sub = document.getElementById('sub');
-  var TIMEOUT = 15000;
+  var view = document.getElementById('view'), sub = document.getElementById('sub'), title = document.getElementById('title');
+  var stack = [];          // экраны для «Назад»
+  var cur = null;          // текущий экран: функция перерисовки
 
   // адрес сервера приходит в ссылке кнопки меню (?api=…); принимаем только туннель Cloudflare
   var api = (new URLSearchParams(location.search).get('api') || '').replace(/\/+$/, '');
@@ -77,20 +95,32 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function rich(s) { return esc(s).replace(/&lt;(\/?)b&gt;/g, '<$1b>'); }   // только <b> из ответа сервера
-  function num(x) { var n = Number(x) || 0; return n.toLocaleString('ru-RU'); }
+  function rich(s) { return esc(s).replace(/&lt;(\/?)b&gt;/g, '<$1b>'); }
+  function n(x) { return (Number(x) || 0).toLocaleString('ru-RU'); }
   function haptic(t) { try { tg.HapticFeedback.notificationOccurred(t); } catch (e) {} }
+  function say(t) { if (tg && tg.showAlert) tg.showAlert(t); else alert(t); }
+  function $(id) { return document.getElementById(id); }
 
+  // ---------- навигация ----------
+  function go(fn) { if (cur) stack.push(cur); cur = fn; fn(); syncBack(); }
+  function goBack() { if (!stack.length) return; cur = stack.pop(); cur(); syncBack(); }
+  function home() { stack = []; cur = showMenu; showMenu(); syncBack(); }
+  function syncBack() {
+    if (!tg || !tg.BackButton) return;
+    if (stack.length) tg.BackButton.show(); else tg.BackButton.hide();
+  }
+  if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
+
+  // ---------- связь с сервером ----------
   function down(text) {
     view.innerHTML = '<div class="down"><div class="ico">🔌</div><h2>Сервер недоступен</h2><p>' + esc(text) +
       '</p><button class="main" id="retry">🔄 Повторить</button></div>';
-    document.getElementById('retry').onclick = showList;
+    $('retry').onclick = function () { cur ? cur() : showMenu(); };
   }
-
-  function call(path, body) {
+  function call(path, body, timeout) {
     if (!api) return Promise.reject({ down: true, text: 'Нет адреса сервера. Откройте мини-апп кнопкой «📱 Склад (тест)» в личке бота склада.' });
     var ctl = new AbortController();
-    var timer = setTimeout(function () { ctl.abort(); }, TIMEOUT);
+    var timer = setTimeout(function () { ctl.abort(); }, timeout || 15000);
     body = body || {};
     body.initData = tg ? tg.initData : '';
     return fetch(api + path, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), signal: ctl.signal })
@@ -106,21 +136,13 @@
         throw { down: true, text: 'Компьютер PFL выключен или нет связи с ним. Попробуйте позже — данные не потеряны.' };
       });
   }
-
   function fail(e) {
     if (e && e.down) return down(e.text);
-    view.innerHTML = '<div class="msg bad">' + esc((e && e.text) || 'Ошибка') + '</div><button id="back2">⬅️ К задачам</button>';
-    document.getElementById('back2').onclick = showList;
+    view.innerHTML = '<div class="msg bad">' + esc((e && e.text) || 'Ошибка') + '</div><button id="back2">⬅️ Назад</button>';
+    $('back2').onclick = function () { stack.length ? goBack() : home(); };
   }
-
-  function back(on) {
-    if (!tg || !tg.BackButton) return;
-    tg.BackButton.offClick(showList);
-    if (on) { tg.BackButton.onClick(showList); tg.BackButton.show(); } else tg.BackButton.hide();
-  }
-
   function scanQr(hint, cb) {
-    if (!tg || !tg.showScanQrPopup || !tg.isVersionAtLeast('6.4')) { alert('Сканер работает только в Telegram на телефоне.'); return; }
+    if (!tg || !tg.showScanQrPopup || !tg.isVersionAtLeast('6.4')) { say('Сканер работает только в Telegram на телефоне.'); return; }
     tg.showScanQrPopup({ text: hint }, function (text) {
       if (!text) return false;
       tg.closeScanQrPopup();
@@ -128,62 +150,156 @@
       return true;
     });
   }
+  function freeScan() {
+    scanQr('QR коробки или места · quti yoki joy QR', function (code) {
+      call('/api/qr', { code: code }).then(function (r) { say(r.text); }).catch(fail);
+    });
+  }
 
-  // ---------- Мои задачи ----------
-  function showList() {
-    back(false);
-    view.innerHTML = '<div class="spin">Загрузка задач…</div>';
-    call('/api/tasks').then(function (r) {
-      sub.textContent = 'Мои задачи · ' + r.at + ' · мест занято ' + r.busy + ' из ' + r.places +
-        (r.erp_ok ? ' · ERP ' + r.erp_at : ' · ⚠️ ERP нет связи');
+  // ---------- 1. Склады ----------
+  function showMenu() {
+    title.textContent = '📦 Склады KO‘CHIRISH';
+    view.innerHTML = '<div class="spin">Загрузка складов…</div>';
+    call('/api/menu').then(function (r) {
+      sub.textContent = 'Выберите склад · ' + r.at;
       var h = '<div class="row"><button id="ref">🔄 Обновить</button><button id="qr">📷 Сканер QR</button></div>';
-      if (!r.tasks.length) h += '<div class="empty">✅ Задач на сейчас нет</div>';
-      r.tasks.forEach(function (t, i) {
-        h += '<div class="task" data-i="' + i + '"><div class="lbl">' + esc(t.label) + '</div>' +
-          '<div class="name">' + esc(t.short) + '</div>' +
-          '<div class="meta">' + (t.batch ? 'п.' + esc(t.batch) + ' · ' : '') + num(t.qty) + ' шт' + (t.boxes ? ' · ' + esc(t.boxes) : '') + '</div>' +
-          '<div class="route"><span class="from">' + esc(t.src || '—') + '</span> → <span class="to">' + esc(t.dst || '—') + '</span></div></div>';
+      r.groups.forEach(function (g) {
+        h += '<div class="grp">' + esc(g.group) + '<span>' + esc(g.sub) + '</span></div>';
+        g.whs.forEach(function (w) {
+          var t = w.tasks == null ? '?' : w.tasks;
+          h += '<div class="wh" data-k="' + esc(w.key) + '"><div class="em">' + w.emoji + '</div><div class="t"><div class="n">' +
+            esc(w.title) + '</div><div class="c">' + esc(w.code) + ' · занято ' + w.busy + (w.total ? ' из ' + w.total : '') +
+            '</div></div><div class="badge' + (t ? '' : ' zero') + '">' + (t ? t : '0') + '</div></div>';
+        });
       });
       view.innerHTML = h;
-      document.getElementById('ref').onclick = showList;
-      document.getElementById('qr').onclick = freeScan;
-      Array.prototype.forEach.call(view.querySelectorAll('.task'), function (el) {
-        el.onclick = function () { showTask(r.tasks[+el.getAttribute('data-i')].id); };
+      $('ref').onclick = showMenu;
+      $('qr').onclick = freeScan;
+      Array.prototype.forEach.call(view.querySelectorAll('.wh'), function (el) {
+        el.onclick = function () { var k = el.getAttribute('data-k'); go(function () { showWh(k, 'tasks'); }); };
       });
     }).catch(fail);
   }
 
-  // ---------- Сканер: что за QR ----------
-  function freeScan() {
-    scanQr('QR коробки или места · quti yoki joy QR', function (code) {
-      call('/api/qr', { code: code }).then(function (r) {
-        if (tg && tg.showAlert) tg.showAlert(r.text); else alert(r.text);
-      }).catch(fail);
+  // ---------- 2. Склад: задачи / места / схема ----------
+  function tabs(k, on) {
+    return '<div class="tabs"><button data-t="tasks"' + (on === 'tasks' ? ' class="on"' : '') + '>📋 Задачи</button>' +
+      '<button data-t="places"' + (on === 'places' ? ' class="on"' : '') + '>📍 Места</button>' +
+      '<button data-t="scheme"' + (on === 'scheme' ? ' class="on"' : '') + '>🗺 Схема</button></div>';
+  }
+  function bindTabs(k) {
+    Array.prototype.forEach.call(view.querySelectorAll('.tabs button'), function (b) {
+      b.onclick = function () { var t = b.getAttribute('data-t'); cur = function () { showWh(k, t); }; cur(); };
     });
   }
+  function routeOf(t) {
+    var x = t.lines[0];
+    return '<span class="from">' + esc(x.src_code || x.src || '—') + '</span> → <span class="to">' + esc(x.dst_code || x.dst || '—') + '</span>';
+  }
+  function showWh(k, tab) {
+    view.innerHTML = '<div class="spin">Загрузка…</div>';
+    if (tab === 'places') return showPlaces(k);
+    if (tab === 'scheme') return showScheme(k);
+    call('/api/wh', { wh: k }).then(function (r) {
+      title.textContent = r.emoji + ' ' + r.title;
+      sub.textContent = r.code + ' · занято ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · ' + r.at;
+      var h = tabs(k, 'tasks');
+      if (!r.tasks_ok) h += '<div class="msg bad">Задачи этого склада сейчас не прочитались — нажмите «Задачи» ещё раз.</div>';
+      else if (!r.tasks.length) h += '<div class="empty">✅ Задач на сейчас нет</div>';
+      r.tasks.forEach(function (t, i) {
+        var x = t.lines[0], more = t.lines.length > 1 ? ' · <b>' + t.lines.length + ' строк</b>' : '';
+        h += '<div class="task" data-i="' + i + '"><div class="lbl">' + esc(t.label) + '</div>' +
+          '<div class="name">' + esc(x.short) + (t.lines.length > 1 ? ' и др.' : '') + '</div>' +
+          '<div class="meta">' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) +
+          (x.boxes ? ' · ' + esc(x.boxes) : '') + more + '</div>' +
+          '<div class="route">' + routeOf(t) + '</div></div>';
+      });
+      view.innerHTML = h;
+      bindTabs(k);
+      Array.prototype.forEach.call(view.querySelectorAll('.task'), function (el) {
+        el.onclick = function () { var id = r.tasks[+el.getAttribute('data-i')].id; go(function () { showTask(id); }); };
+      });
+    }).catch(fail);
+  }
+  function showPlaces(k) {
+    call('/api/places', { wh: k }).then(function (r) {
+      var h = tabs(k, 'places');
+      if (!r.rows.length) h += '<div class="empty">Места пустые или схема склада ещё не заполнена</div>';
+      r.rows.forEach(function (p, i) {
+        h += '<div class="place"><div class="a">' + esc(p.addr) + '</div><div class="d"><b>' + esc(p.short) + '</b><br>' +
+          (p.batch ? 'п.' + esc(p.batch) + ' · ' : '') + n(p.qty) + ' ' + esc(p.unit) + '</div>' +
+          (p.label ? '<div class="p" data-i="' + i + '" title="Наклейки">🖨</div>' : '') + '</div>';
+      });
+      view.innerHTML = h;
+      bindTabs(k);
+      Array.prototype.forEach.call(view.querySelectorAll('.place .p'), function (el) {
+        el.onclick = function () { askLabels(function (which) { return call('/api/label_place', { wh: k, addr: r.rows[+el.getAttribute('data-i')].addr, which: which }, 60000); }); };
+      });
+    }).catch(fail);
+  }
+  function showScheme(k) {
+    view.innerHTML = tabs(k, 'scheme') + '<div class="spin">Рисую схему…</div>';
+    bindTabs(k);
+    call('/api/scheme', { wh: k }, 60000).then(function (r) {
+      view.innerHTML = tabs(k, 'scheme') + (r.scheme ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + r.scheme + '">'
+        : '<div class="empty">Схема этого склада ещё не утверждена</div>');
+      bindTabs(k);
+    }).catch(fail);
+  }
 
-  // ---------- Карточка задачи ----------
+  // ---------- наклейки ----------
+  function askLabels(send) {
+    function run(which) {
+      sub.textContent = '🖨 Готовлю PDF наклеек…';
+      send(which).then(function (r) { haptic(r.ok ? 'success' : 'error'); say(r.text); }).catch(fail);
+    }
+    if (tg && tg.showPopup) {
+      tg.showPopup({ title: '🖨 Наклейки QR', message: 'PDF придёт вам в личку бота склада (тест — в группу не уходит).',
+        buttons: [{ id: 'all', type: 'default', text: 'Все коробки' }, { id: 'part', type: 'default', text: 'Только неполная' },
+                  { id: '', type: 'cancel' }] }, function (id) { if (id) run(id); });
+    } else run('all');
+  }
+
+  // ---------- 3. Карточка задачи ----------
   function showTask(id) {
-    back(true);
     view.innerHTML = '<div class="spin">Загрузка карточки…</div>';
     call('/api/task', { id: id }).then(function (t) {
       var s = { box: '', place: '' };
-      var h = '<div class="box"><h3>' + esc(t.label) + '</h3><div class="big">' + esc(t.short) + '</div>' +
-        '<div>' + esc(t.item) + '</div>' +
-        '<div class="meta">' + (t.batch ? '<b>п.' + esc(t.batch) + '</b> · ' : '') + num(t.qty) + ' шт' + (t.boxes ? ' · ' + esc(t.boxes) : '') + '</div>' +
-        (t.erp_stock != null ? '<div class="meta" style="color:var(--hint)">ERP: всего этого товара в PER-TAS-GP ' + num(t.erp_stock) + ' шт</div>' : '') +
-        (t.doc ? '<div class="meta" style="color:var(--hint)">документ №' + esc(t.doc) + (t.when ? ' · ' + esc(t.when) : '') + '</div>' : '') +
-        '</div>' +
-        '<div class="box"><h3>Откуда · qayerdan</h3><div class="big from">' + esc(t.src_code || '—') + '</div></div>' +
-        '<div class="box"><h3>Куда · qayerga</h3><div class="big to">' + esc(t.dst_code || '—') + '</div></div>' +
-        (t.scheme ? '<div class="box"><h3>Схема · 🟧 брать · 🟦 сюда</h3><img class="scheme" alt="схема" src="data:image/jpeg;base64,' + t.scheme + '"></div>' : '') +
+      var x0 = t.lines[0];
+      var where = t.scan === 'src' ? 'откуда' : 'куда';
+      var verb = t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '🚚 Взять (тест)';
+      var h = '<div class="box"><h3>' + esc(t.label) + '</h3>';
+      if (t.lines.length === 1) {
+        h += '<div class="big">' + esc(x0.short) + '</div><div>' + esc(x0.item) + '</div>' +
+          '<div class="meta">' + (x0.batch ? '<b>п.' + esc(x0.batch) + '</b> · ' : '') + n(x0.qty) + ' ' + esc(x0.unit) +
+          (x0.boxes ? ' · ' + esc(x0.boxes) : '') + '</div>';
+      } else {
+        t.lines.forEach(function (x) {
+          h += '<div class="ln"><b>' + esc(x.short) + '</b> ' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) +
+            '<br><span class="from">' + esc(x.src_code || x.src || '—') + '</span> → <span class="to">' + esc(x.dst_code || x.dst || '—') + '</span></div>';
+        });
+      }
+      if (t.erp_stock != null) h += '<div class="meta" style="color:var(--hint)">ERP: всего на складах ' + n(t.erp_stock) + ' шт</div>';
+      if (t.doc) h += '<div class="meta" style="color:var(--hint)">документ №' + esc(t.doc) + (t.when ? ' · ' + esc(t.when) : '') + (t.by ? ' · ' + esc(t.by) : '') + '</div>';
+      h += '</div>';
+      if (t.lines.length === 1) {
+        h += '<div class="box"><h3>Откуда · qayerdan</h3><div class="big from">' + esc(x0.src_code || x0.src || '—') + '</div></div>' +
+             '<div class="box"><h3>Куда · qayerga</h3><div class="big to">' + esc(x0.dst_code || x0.dst || '—') + '</div></div>';
+      }
+      h += '<div class="box"><h3>Схема · 🟧 брать · 🟦 сюда</h3><div id="sch" class="spin" style="padding:20px 0">Рисую схему…</div></div>' +
         '<div class="step"><div class="st" id="sbox">1. Коробка — не сканировали</div><button id="bbox">📷 Коробка</button></div>' +
-        '<div class="step"><div class="st" id="splace">2. Место ' + esc(t.dst || '') + ' — не сканировали</div><button id="bplace">📷 Место</button></div>' +
-        '<button class="main" id="go">🚚 Переместить (тест)</button><div id="res"></div>';
+        '<div class="step"><div class="st" id="splace">2. Место (' + where + ') — не сканировали</div><button id="bplace">📷 Место</button></div>' +
+        (t.can_label ? '<div class="row"><button id="lbl">🖨 Наклейки QR коробок</button></div>' : '') +
+        '<button class="main" id="go">' + verb + '</button><div id="res"></div>';
       view.innerHTML = h;
       window.scrollTo(0, 0);
+      call('/api/task_scheme', { id: id }, 60000).then(function (r) {
+        var el = $('sch'); if (!el) return;
+        el.outerHTML = r.scheme ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + r.scheme + '">'
+          : '<div class="empty">Схема этого склада ещё не утверждена</div>';
+      }).catch(function () { var el = $('sch'); if (el) el.textContent = 'Схема не загрузилась'; });
       function mark(kind, el, label) {
-        scanQr(kind === 'box' ? 'QR наклейки коробки · quti QR' : 'QR таблички места ' + (t.dst || '') + ' · joy QR', function (code) {
+        scanQr(kind === 'box' ? 'QR наклейки коробки · quti QR' : 'QR таблички места (' + where + ') · joy QR', function (code) {
           call('/api/scan', { id: id, kind: kind, code: code }).then(function (r) {
             s[kind] = code;
             el.innerHTML = label + ' — <span class="' + (r.ok ? 'good' : 'bad') + '">' + esc(r.text) + '</span>';
@@ -191,16 +307,17 @@
           }).catch(fail);
         });
       }
-      document.getElementById('bbox').onclick = function () { mark('box', document.getElementById('sbox'), '1. Коробка'); };
-      document.getElementById('bplace').onclick = function () { mark('place', document.getElementById('splace'), '2. Место'); };
-      document.getElementById('go').onclick = function () {
+      $('bbox').onclick = function () { mark('box', $('sbox'), '1. Коробка'); };
+      $('bplace').onclick = function () { mark('place', $('splace'), '2. Место'); };
+      if ($('lbl')) $('lbl').onclick = function () { askLabels(function (which) { return call('/api/label', { id: id, which: which }, 60000); }); };
+      $('go').onclick = function () {
         var b = this; b.disabled = true; b.textContent = '⏳ Отправляю…';
         call('/api/move', { id: id, box: s.box, place: s.place }).then(function (r) {
-          document.getElementById('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>';
-          b.disabled = false; b.textContent = '🚚 Переместить (тест)';
+          $('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>';
+          b.disabled = false; b.textContent = verb;
           haptic(r.ok ? 'success' : 'warning');
-          document.getElementById('res').scrollIntoView({ behavior: 'smooth' });
-        }).catch(function (e) { b.disabled = false; b.textContent = '🚚 Переместить (тест)'; fail(e); });
+          $('res').scrollIntoView({ behavior: 'smooth' });
+        }).catch(function (e) { b.disabled = false; b.textContent = verb; fail(e); });
       };
     }).catch(fail);
   }
@@ -208,7 +325,7 @@
   if (tg) { tg.ready(); tg.expand(); }
   if (!tg || !tg.initData) {
     view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «📱 Склад (тест)» в личке бота склада.</p></div>';
-  } else showList();
+  } else home();
 })();
 </script>
 </body>
