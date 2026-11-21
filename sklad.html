@@ -141,6 +141,34 @@
     view.innerHTML = '<div class="msg bad">' + esc((e && e.text) || 'Ошибка') + '</div><button id="back2">⬅️ Назад</button>';
     $('back2').onclick = function () { stack.length ? goBack() : home(); };
   }
+  // ---------- быстро: сначала сохранённое на телефоне, потом свежее с сервера ----------
+  var scr = 0, mem = {};
+  function cget(k) { try { return JSON.parse(localStorage.getItem('pfl:' + k)); } catch (e) { return mem[k] || null; } }
+  function cset(k, v) { mem[k] = v; try { localStorage.setItem('pfl:' + k, JSON.stringify(v)); } catch (e) {} }
+  function load(path, body, render) {
+    var my = ++scr, key = path + JSON.stringify(body || {}), c = cget(key);
+    if (c) render(c, true);
+    return call(path, JSON.parse(JSON.stringify(body || {}))).then(function (r) {
+      cset(key, r);
+      if (my === scr) render(r, false);
+    }).catch(function (e) {
+      if (my !== scr) return;
+      if (c && e && e.down) {
+        var d = document.createElement('div');
+        d.className = 'msg bad';
+        d.textContent = '🔌 Нет связи с компьютером PFL — показано сохранённое. Нажмите «Обновить» позже.';
+        view.insertBefore(d, view.firstChild);
+      } else fail(e);
+    });
+  }
+  function prefetch(list) {   // фоном, по одному — чтобы следующий экран открылся сразу
+    var i = 0;
+    (function next() {
+      if (i >= list.length) return;
+      var p = list[i++], key = p[0] + JSON.stringify(p[1]);
+      call(p[0], JSON.parse(JSON.stringify(p[1]))).then(function (r) { cset(key, r); next(); }).catch(function () {});
+    })();
+  }
   function scanQr(hint, cb) {
     if (!tg || !tg.showScanQrPopup || !tg.isVersionAtLeast('6.4')) { say('Сканер работает только в Telegram на телефоне.'); return; }
     tg.showScanQrPopup({ text: hint }, function (text) {
@@ -160,8 +188,8 @@
   function showMenu() {
     title.textContent = '📦 Склады KO‘CHIRISH';
     view.innerHTML = '<div class="spin">Загрузка складов…</div>';
-    call('/api/menu').then(function (r) {
-      sub.textContent = 'Выберите склад · ' + r.at;
+    load('/api/menu', {}, function (r, old) {
+      sub.textContent = 'Выберите склад · ' + r.at + (old ? ' · обновляю…' : '');
       var h = '<div class="row"><button id="ref">🔄 Обновить</button><button id="qr">📷 Сканер QR</button></div>';
       r.groups.forEach(function (g) {
         h += '<div class="grp">' + esc(g.group) + '<span>' + esc(g.sub) + '</span></div>';
@@ -178,7 +206,12 @@
       Array.prototype.forEach.call(view.querySelectorAll('.wh'), function (el) {
         el.onclick = function () { var k = el.getAttribute('data-k'); go(function () { showWh(k, 'tasks'); }); };
       });
-    }).catch(fail);
+      if (!old) {
+        var pf = [];
+        r.groups.forEach(function (g) { g.whs.forEach(function (w) { if (w.tasks) pf.push(['/api/wh', { wh: w.key }]); }); });
+        prefetch(pf);
+      }
+    });
   }
 
   // ---------- 2. Склад: задачи / места / схема ----------
@@ -200,9 +233,9 @@
     view.innerHTML = '<div class="spin">Загрузка…</div>';
     if (tab === 'places') return showPlaces(k);
     if (tab === 'scheme') return showScheme(k);
-    call('/api/wh', { wh: k }).then(function (r) {
+    load('/api/wh', { wh: k }, function (r, old) {
       title.textContent = r.emoji + ' ' + r.title;
-      sub.textContent = r.code + ' · занято ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · ' + r.at;
+      sub.textContent = r.code + ' · занято ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · ' + r.at + (old ? ' · обновляю…' : '');
       var h = tabs(k, 'tasks');
       if (!r.tasks_ok) h += '<div class="msg bad">Задачи этого склада сейчас не прочитались — нажмите «Задачи» ещё раз.</div>';
       else if (!r.tasks.length) h += '<div class="empty">✅ Задач на сейчас нет</div>';
@@ -217,12 +250,16 @@
       view.innerHTML = h;
       bindTabs(k);
       Array.prototype.forEach.call(view.querySelectorAll('.task'), function (el) {
-        el.onclick = function () { var id = r.tasks[+el.getAttribute('data-i')].id; go(function () { showTask(id); }); };
+        el.onclick = function () {
+          var t = r.tasks[+el.getAttribute('data-i')], key = '/api/task' + JSON.stringify({ id: t.id });
+          if (!cget(key)) cset(key, t);   // карточка откроется сразу из списка, свежее догрузится
+          go(function () { showTask(t.id); });
+        };
       });
-    }).catch(fail);
+    });
   }
   function showPlaces(k) {
-    call('/api/places', { wh: k }).then(function (r) {
+    load('/api/places', { wh: k }, function (r) {
       var h = tabs(k, 'places');
       if (!r.rows.length) h += '<div class="empty">Места пустые или схема склада ещё не заполнена</div>';
       r.rows.forEach(function (p, i) {
@@ -235,12 +272,15 @@
       Array.prototype.forEach.call(view.querySelectorAll('.place .p'), function (el) {
         el.onclick = function () { askLabels(function (which) { return call('/api/label_place', { wh: k, addr: r.rows[+el.getAttribute('data-i')].addr, which: which }, 60000); }); };
       });
-    }).catch(fail);
+    });
   }
   function showScheme(k) {
-    view.innerHTML = tabs(k, 'scheme') + '<div class="spin">Рисую схему…</div>';
+    var my = ++scr;
+    view.innerHTML = tabs(k, 'scheme') + (mem['sch' + k] ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + mem['sch' + k] + '">' : '<div class="spin">Рисую схему…</div>');
     bindTabs(k);
     call('/api/scheme', { wh: k }, 60000).then(function (r) {
+      if (my !== scr) return;
+      mem['sch' + k] = r.scheme;
       view.innerHTML = tabs(k, 'scheme') + (r.scheme ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + r.scheme + '">'
         : '<div class="empty">Схема этого склада ещё не утверждена</div>');
       bindTabs(k);
@@ -263,8 +303,9 @@
   // ---------- 3. Карточка задачи ----------
   function showTask(id) {
     view.innerHTML = '<div class="spin">Загрузка карточки…</div>';
-    call('/api/task', { id: id }).then(function (t) {
-      var s = { box: '', place: '' };
+    var s = { box: '', place: '' };
+    load('/api/task', { id: id }, function (t, old) {
+      if (s.box || s.place || (s.drawn && $('res') && $('res').innerHTML)) return;   // уже сканировали — не перерисовывать
       var x0 = t.lines[0];
       var where = t.scan === 'src' ? 'откуда' : 'куда';
       var verb = t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '🚚 Взять (тест)';
@@ -292,12 +333,18 @@
         (t.can_label ? '<div class="row"><button id="lbl">🖨 Наклейки QR коробок</button></div>' : '') +
         '<button class="main" id="go">' + verb + '</button><div id="res"></div>';
       view.innerHTML = h;
-      window.scrollTo(0, 0);
-      call('/api/task_scheme', { id: id }, 60000).then(function (r) {
+      if (!s.drawn) { s.drawn = true; window.scrollTo(0, 0); }
+      function putSch(b) {
         var el = $('sch'); if (!el) return;
-        el.outerHTML = r.scheme ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + r.scheme + '">'
+        el.outerHTML = b ? '<img class="scheme" alt="схема" src="data:image/jpeg;base64,' + b + '">'
           : '<div class="empty">Схема этого склада ещё не утверждена</div>';
-      }).catch(function () { var el = $('sch'); if (el) el.textContent = 'Схема не загрузилась'; });
+      }
+      if (mem['tsch' + id] != null) putSch(mem['tsch' + id]);
+      else if (!mem['treq' + id]) {
+        mem['treq' + id] = 1;
+        call('/api/task_scheme', { id: id }, 60000).then(function (r) { mem['tsch' + id] = r.scheme; putSch(r.scheme); })
+          .catch(function () { mem['treq' + id] = 0; var el = $('sch'); if (el) el.textContent = 'Схема не загрузилась'; });
+      }
       function mark(kind, el, label) {
         scanQr(kind === 'box' ? 'QR наклейки коробки · quti QR' : 'QR таблички места (' + where + ') · joy QR', function (code) {
           call('/api/scan', { id: id, kind: kind, code: code }).then(function (r) {
@@ -319,7 +366,7 @@
           $('res').scrollIntoView({ behavior: 'smooth' });
         }).catch(function (e) { b.disabled = false; b.textContent = verb; fail(e); });
       };
-    }).catch(fail);
+    });
   }
 
   if (tg) { tg.ready(); tg.expand(); }
