@@ -178,6 +178,9 @@
               font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 rgba(0,0,0,.2); }
   .tile .bd.z { background: rgba(255,255,255,.35); color: #fff; box-shadow: none; }
   .tile.wide { grid-column: span 2; min-height: 104px; }
+  .tile.cat { min-height: 168px; padding-top: 18px; }
+  .tile.cat .e { font-size: 46px; }
+  .tile.cat .n { font-size: 18px; margin-top: 10px; }
   .tile.g { --d: #13843c; --s: rgba(19,132,60,.35); background: linear-gradient(150deg, #3fcf75, #17964a); }
   .tile.b { --d: #1650a8; --s: rgba(31,111,209,.35); background: linear-gradient(150deg, #4b9bff, #1f62c9); }
   .tile.p { --d: #6a2b91; --s: rgba(142,68,173,.35); background: linear-gradient(150deg, #b46ee0, #7f39ad); }
@@ -334,19 +337,19 @@
   var SECTIONS = [
     // 22.11.2026 (руководитель): цветные 3D-карточки; cl — цвет плитки, f — фильтр; Gynomedix — значок готовой продукции (не сердце)
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Готовая продукция PERFECTFOODLAB', color: '#2e9e4f', items: [
-      { key: 'zav', parts: ['gp1', 'gp2'], name: 'Готовая продукция завода', note: 'склад 1 и склад 2', emoji: '🏭', cl: 'g', f: 'zav' },
+      { key: 'zav', parts: ['gp1', 'gp2'], name: 'Готовая продукция завода', note: 'склад 1 и склад 2', emoji: '🏭', cl: 'g', f: 'zav', g: 'gp' },
       { key: 'per_tas', name: 'Готовая продукция Ташкент', emoji: '🏙', cl: 'b', f: 'tas' } ] },
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Готовая продукция GYNOMEDIX', color: '#8e44ad', items: [
       { key: 'per_gx', name: 'Gynomedix Ташкент — готовая продукция', emoji: '🏭', cl: 'p', f: 'tas' } ] },   // руководитель: значок как у ГП завода
     { head: 'ТЕРМИНАЛ', sub: 'Готовая продукция', color: '#1f6fd1', items: [
-      { key: 'ter_gp', name: 'Готовая продукция завода', emoji: '🏭', cl: 'g', f: 'zav' },
+      { key: 'ter_gp', name: 'Готовая продукция завода', emoji: '🏭', cl: 'g', f: 'zav', g: 'gp' },
       { key: 'ter_tas', name: 'Готовая продукция Ташкент', note: 'BP Pharma и Gynomedix', emoji: '🏙', cl: 'b', f: 'tas' } ] },
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
-      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🧪', cl: 'y', f: 'zav' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🧪', cl: 'y', f: 'zav' },
-      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav' } ] },
+      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🧪', cl: 'y', f: 'zav', g: 'raw' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🧪', cl: 'y', f: 'zav', g: 'raw' },
+      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav', g: 'raw' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav', g: 'raw' } ] },
     { head: 'ТЕРМИНАЛ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
-      { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'zav' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav' },
-      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav' } ] }
+      { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'zav', g: 'raw' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav', g: 'raw' },
+      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav', g: 'raw' } ] }
   ];
   // руководитель 22.11: «Все» убрать — склады по вкладкам Завод · Ташкент · Сырьё (выбранная запоминается)
   var FILTERS = [['zav', '🏭 Завод'], ['tas', '🏙 Ташкент']];   // руководитель 22.11: сырьё — внутри «Завод», после готовой продукции
@@ -358,6 +361,67 @@
   function partsOf(k) { return (ITEM[k] && ITEM[k].parts) || [k]; }
   function fullName(k) { var it = ITEM[k]; return it ? it.name + ' · ' + it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() : k; }
 
+  // руководитель 22.11: внутри «Завод» — две кнопки; склады открываются уже внутри них
+  var CATS = [{ g: 'gp', name: 'Готовая продукция', emoji: '🏭', cl: 'g', title: '🏭 Готовая продукция завода', sub: 'Перечисление и Терминал' },
+              { g: 'raw', name: 'Сырьё и упаковка', emoji: '🧪', cl: 'y', title: '🧪 Сырьё и упаковка завода', sub: 'Сырьё, упаковка, флаконы · Перечисление и Терминал' }];
+  function tilesOf(W) {
+    var total0 = 0, tiles = {};
+    SECTIONS.forEach(function (s) {
+      s.items.forEach(function (it) {
+        if (!partsOf(it.key).some(function (p) { return W[p]; })) return;   // ⛔ не видит — склада нет
+        var pm = (W[partsOf(it.key)[0]] || {}).perm || {}, t = 0, busy = 0, total = 0, unk = false;
+        partsOf(it.key).forEach(function (p) {
+          var w = W[p] || {};
+          if (w.tasks == null) unk = true; else t += w.tasks;
+          busy += w.busy || 0; total += w.total || 0;
+        });
+        total0 += t;
+        tiles[it.key] = { t: t, unk: unk, busy: busy, total: total, ro: pm.lv === 1 };
+      });
+    });
+    return { tiles: tiles, total: total0 };
+  }
+  function tilesHtml(tiles, pick) {
+    var h = '';
+    SECTIONS.forEach(function (s) {
+      var vis = s.items.filter(function (it) { return tiles[it.key] && pick(it); });
+      if (!vis.length) return;
+      h += '<div class="msec">' + esc((s.head + ' · ' + s.sub).toUpperCase()) + '</div><div class="mgrid">';
+      vis.forEach(function (it, i) {
+        var x = tiles[it.key], wide = vis.length % 2 === 1 && i === vis.length - 1;
+        var grew = lastBadge[it.key] != null && x.t > lastBadge[it.key];
+        lastBadge[it.key] = x.t;
+        h += '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
+          (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div><div class="n">' + esc(it.name) + '</div><div class="c">' +
+          (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
+      });
+      h += '</div>';
+    });
+    return h;
+  }
+  function bindTiles() {
+    Array.prototype.forEach.call(view.querySelectorAll('.tile[data-k]'), function (el) {
+      el.onclick = function () {
+        var k = el.getAttribute('data-k');
+        try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        setTimeout(function () { go(function () { showWh(k, 'tasks'); }); }, 120);   // «пружинка» успевает сыграть
+      };
+    });
+  }
+  function showCat(g) {
+    var c = CATS.filter(function (x) { return x.g === g; })[0] || CATS[0], me = cur;
+    title.textContent = c.title;
+    sub.textContent = c.sub;
+    view.innerHTML = '<div class="spin">Загрузка складов…</div>';
+    load('/api/menu', {}, function (r) {
+      if (cur !== me) return;
+      var W = {};
+      r.groups.forEach(function (q) { q.whs.forEach(function (w) { W[w.key] = w; }); });
+      view.innerHTML = tilesHtml(tilesOf(W).tiles, function (it) { return it.g === g; }) || '<div class="empty">Нет складов</div>';
+      bindTiles();
+    });
+  }
+
   var menuTimer = null;
   function showMenu() {
     title.textContent = '📦 Склады';
@@ -368,20 +432,7 @@
       r.groups.forEach(function (g) { g.whs.forEach(function (w) { W[w.key] = w; }); });
       // 22.11.2026 (руководитель): вариант 2 — цветные 3D-карточки по 2 в ряд, фильтр Все · Завод · Ташкент · Сырьё
       if (cur !== showMenu) return;
-      var total0 = 0, tiles = {};
-      SECTIONS.forEach(function (s) {
-        s.items.forEach(function (it) {
-          if (!partsOf(it.key).some(function (p) { return W[p]; })) return;   // ⛔ не видит — склада нет
-          var pm = (W[partsOf(it.key)[0]] || {}).perm || {}, t = 0, busy = 0, total = 0, unk = false;
-          partsOf(it.key).forEach(function (p) {
-            var w = W[p] || {};
-            if (w.tasks == null) unk = true; else t += w.tasks;
-            busy += w.busy || 0; total += w.total || 0;
-          });
-          total0 += t;
-          tiles[it.key] = { t: t, unk: unk, busy: busy, total: total, ro: pm.lv === 1 };
-        });
-      });
+      var TT = tilesOf(W), tiles = TT.tiles, total0 = TT.total;
       var h = asName ? '<div class="asbar">👁 Так видит ' + esc(asName) + '<span style="flex:1"></span><button id="asx">✖️ Выйти</button></div>' : '';
       h += '<div class="mtop"><div class="logo">📦</div><div class="t"><div class="tt">KO‘CHIRISH 🔄</div><div class="ts">' + total0 + ' задач · ' +
         esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
@@ -394,22 +445,33 @@
       if (fl.length > 1) h += '<div class="fchips">' + fl.map(function (f) {
         return '<div class="fchip' + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
       }).join('') + '</div>';
-      SECTIONS.forEach(function (s) {
-        var vis = s.items.filter(function (it) { return tiles[it.key] && (mf === 'all' || it.f === mf); });
-        if (!vis.length) return;
-        h += '<div class="msec">' + esc((s.head + ' · ' + s.sub).toUpperCase()) + '</div><div class="mgrid">';
-        vis.forEach(function (it, i) {
-          var x = tiles[it.key], wide = vis.length % 2 === 1 && i === vis.length - 1;
-          var grew = lastBadge[it.key] != null && x.t > lastBadge[it.key];
-          lastBadge[it.key] = x.t;
-          h += '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
-            (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div><div class="n">' + esc(it.name) + '</div><div class="c">' +
-            (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
+      // руководитель 22.11: «Завод» — сначала две кнопки: Готовая продукция · Сырьё и упаковка; склады — внутри
+      var cats = mf === 'zav' ? CATS.filter(function (c) { return Object.keys(tiles).some(function (k) { return ITEM[k].g === c.g; }); }) : [];
+      if (cats.length > 1) {
+        h += '<div class="mgrid" style="margin-top:14px">';
+        cats.forEach(function (c) {
+          var t = 0, n0 = 0, busy = 0, total = 0;
+          Object.keys(tiles).forEach(function (k) {
+            if (ITEM[k].g !== c.g) return;
+            n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total;
+          });
+          h += '<div class="tile cat ' + c.cl + '" data-g="' + c.g + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + c.emoji +
+            '</div><div class="n">' + esc(c.name) + '</div><div class="c">' + n0 + ' ' + (n0 === 1 ? 'склад' : n0 < 5 ? 'склада' : 'складов') +
+            ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div></div>';
         });
         h += '</div>';
-      });
+      } else {
+        h += tilesHtml(tiles, function (it) { return mf === 'all' || it.f === mf; });
+      }
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
+      Array.prototype.forEach.call(view.querySelectorAll('.tile.cat'), function (el) {
+        el.onclick = function () {
+          var g = el.getAttribute('data-g');
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          setTimeout(function () { go(function () { showCat(g); }); }, 120);
+        };
+      });
       $('ref').onclick = function () { haptic('success'); showMenu(); };
       Array.prototype.forEach.call(view.querySelectorAll('.fchip'), function (el) {
         el.onclick = function () {
@@ -420,13 +482,7 @@
       });
       if ($('acc')) $('acc').onclick = function () { go(showAcc); };
       if ($('asx')) $('asx').onclick = function () { var n0 = asName; asName = ''; home(); go(showAcc); go(function () { showEmp(n0); }); };
-      Array.prototype.forEach.call(view.querySelectorAll('.tile'), function (el) {
-        el.onclick = function () {
-          var k = el.getAttribute('data-k');
-          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-          setTimeout(function () { go(function () { showWh(k, 'tasks'); }); }, 120);   // «пружинка» успевает сыграть
-        };
-      });
+      bindTiles();
       if (!old && !menuTimer) menuTimer = setInterval(function () { if (!document.hidden && cur === showMenu) { var y = window.scrollY; showMenu(); window.scrollTo(0, y); } }, 30000);
       if (!old) {
         var pf = [];
