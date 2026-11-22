@@ -311,6 +311,9 @@
   .spec .c { text-align: center; } .spec .r { text-align: right; white-space: nowrap; } .spec .tt td { font-weight: 700; }
   .spec .sw { margin: 6px 0 8px; }
   .spec table.sb { border-collapse: collapse; width: 100%; } .spec table.sb td { border: 1px solid #222; padding: 3px 4px; }
+  .spec.sf { border-color: #9fb7e6; } .spec.sf .sh { color: #17468f; }
+  .btag { display: inline-block; margin-top: 3px; font-size: 13px; padding: 2px 8px; border-radius: 8px; background: #fff3cc; color: #7a4a00; }
+  .btag.c1 { background: #e6efff; color: #17468f; }
   .spec .sft { margin-top: 6px; font-family: inherit; font-size: 10px; color: #888; text-align: right; }
   .prodb { display: inline-block; margin: -2px 0 12px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer;
            color: #fff; background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 3px 0 #0f6f36; }
@@ -534,7 +537,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '58ca8bf6', newBuild = '';
+  var BUILD = 'edcb537d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1312,6 +1315,7 @@
         el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} go(showProd); };
       });
       if (kind === 'inc') load2('/api/flow', { kind: 'prod' }, function () {});   // число «ждут места» — к следующему показу
+      if (kind === 'ship') load2('/api/ship_docs', {}, function () {});   // 22.11.2026: счёт-фактуры и спецификации всех отгрузок — заранее
       Array.prototype.forEach.call(box.querySelectorAll('[data-doc]'), function (el) {
         el.onclick = function () {
           var id = el.getAttribute('data-doc');
@@ -1320,6 +1324,25 @@
         };
       });
     });
+  }
+  // 22.11.2026 (руководитель): счёт-фактура 1С с партиями (снимок продаж 1С; суммы 1С без НДС, НДС 12 %)
+  function sfHtml(q) {
+    function m(v, d) { return (Number(v) || 0).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+    var tq = 0, ts = 0, tv = 0, tt = 0;
+    q.lines.forEach(function (l) { tq += l.qty; ts += l.sum; tv += l.vat; tt += l.total; });
+    var dd = String(q.date || '');
+    return '<div class="spec sf"><div class="sh">Счёт-фактура 1С № ' + esc(q.doc) + ' от ' + esc(dd.slice(8, 10) + '.' + dd.slice(5, 7) + '.' + dd.slice(0, 4)) +
+      (q.posted ? '' : ' <span style="color:#c0392b">(не проведена)</span>') + '</div>' +
+      '<div class="sreq"><table><tr><th>Покупатель:</th><td>' + esc(q.client) + '</td></tr><tr><th>ИНН:</th><td>' + esc(q.inn) + '</td></tr></table>' +
+      '<table><tr><th>Склад:</th><td>' + esc(q.warehouse) + '</td></tr><tr><th>Выписал:</th><td>' + esc(q.author) + '</td></tr></table></div>' +
+      '<div class="sscroll"><table class="st"><tr><th>№</th><th>Товар</th><th>Партия</th><th>Кол-во</th><th class="net">Сумма без НДС</th><th>НДС 12%</th><th>С НДС</th></tr>' +
+      q.lines.map(function (l, i) {
+        return '<tr><td class="c">' + (i + 1) + '</td><td>' + esc(l.item) + '</td><td class="c"><b>' + esc(l.batch || '—') + '</b></td><td class="c">' + m(l.qty, 0) +
+          '</td><td class="r net">' + m(l.sum, 2) + '</td><td class="r">' + m(l.vat, 2) + '</td><td class="r">' + m(l.total, 2) + '</td></tr>';
+      }).join('') +
+      '<tr class="tt"><td></td><td class="r" colspan="2">Итого:</td><td class="c">' + m(tq, 0) + '</td><td class="r net">' + m(ts, 2) + '</td><td class="r">' + m(tv, 2) +
+      '</td><td class="r">' + m(tt, 2) + '</td></tr></table></div>' +
+      '<div class="sft">Данные 1С на ' + esc(q.at) + '</div></div>';
   }
   // 22.11.2026 (руководитель): лист «Спецификация № … от …» как бумажный документ (данные Smartup)
   function specHtml(q) {
@@ -1396,8 +1419,10 @@
         h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
           var fq = formOf(y.name);
           return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
-            (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
+            (y.boxes ? ' · ' + esc(y.boxes) : '') + '<span class="bt" data-li="' + j + '"></span></div>';
         }).join('') + '</div>';
+        // 22.11.2026 (руководитель): счёт-фактура 1С с партиями; в составе — номер партии у каждой строки
+        h += '<div id="sfbox"></div>';
         // 22.11.2026 (руководитель): спецификация Smartup — листом сразу под составом (без скачивания)
         h += x.sys === 'SMARTUP' ? '<div id="specbox"><div class="spin" style="padding:16px 0">📄 Загружаю спецификацию…</div></div>'
           : '<div class="note">📄 Спецификации нет — отгрузка создана не через Smartup.</div>';
@@ -1412,11 +1437,30 @@
         h += '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
         view.innerHTML = h;
         bindTabs();
-        if ($('specbox')) call('/api/spec_data', { id: x.id }, 30000).then(function (q) {
+        // 22.11.2026 (руководитель «чтобы работало как будто быстро»): сначала — сохранённое (сервер грузит заранее, мини-апп
+        // забирает все документы при открытии «Отгрузки»), потом тихо — свежее с сервера, если изменилось
+        var sdAll = cget('/api/ship_docs' + JSON.stringify({})), sd = sdAll && sdAll.docs && sdAll.docs[String(x.id)];
+        var applySf = function (q) {
+          if (!q) return;
+          var bl = q.ok ? q.by_line : (q.plan_by_line || []), tag = q.ok ? '📑 1С' : '🧭 план';
+          Array.prototype.forEach.call(view.querySelectorAll('.bt[data-li]'), function (el) {
+            var b = bl[+el.getAttribute('data-li')] || [];
+            if (b.length) el.innerHTML = '<br><span class="btag' + (q.ok ? ' c1' : '') + '">' + tag + ' · ' + b.map(function (p) {
+              return 'партия <b>' + esc(p[0]) + '</b>' + (b.length > 1 ? ' — ' + n(p[1]) + ' шт' : ''); }).join(' + ') + '</span>';
+          });
+          var sb = $('sfbox');
+          if (sb) sb.innerHTML = q.ok ? sfHtml(q) : '<div class="note">📑 ' + esc(q.text) + (bl.some(function (b) { return b.length; }) ? ' Партии в составе — по плану сборки окна склада.' : '') + '</div>';
+        };
+        var applySpec = function (q) {
           var sb = $('specbox');
-          if (!sb) return;
+          if (!sb || !q) return;
           sb.innerHTML = q.ok ? specHtml(q) : '<div class="note">📄 ' + esc(q.text) + '</div>';
-        }).catch(function () { var sb = $('specbox'); if (sb) sb.innerHTML = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; });
+        };
+        var sig = function (v) { return JSON.stringify(v || null); };
+        if (sd) { applySf(sd.sf); applySpec(sd.spec); }
+        call('/api/sf_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.sf)) applySf(q); }).catch(function () {});
+        if ($('specbox')) call('/api/spec_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.spec)) applySpec(q); })
+          .catch(function () { if (!sd || !sd.spec) { var sb = $('specbox'); if (sb) sb.innerHTML = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; } });
         Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
           b.onclick = function () {
             var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
