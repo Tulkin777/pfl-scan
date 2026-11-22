@@ -562,7 +562,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '0ae24220', newBuild = '';
+  var BUILD = '239c371d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1966,7 +1966,12 @@
           b.textContent = '⏳ ' + b.textContent;
           var m0 = $('bmsg');
           if (m0) m0.innerHTML = '<div class="msg" style="margin-top:8px">⏳ Выполняется у бота склада… не нажимайте ещё раз</div>';
-          call('/api/kc_press', { wh: part, data: b.getAttribute('data-cb') }, 75000).then(function (r) {
+          var t0 = Date.now(), tick = setInterval(function () {   // долго — сказать почему и сколько уже ждём
+            var s = Math.round((Date.now() - t0) / 1000), mm = $('bmsg');
+            if (s >= 12 && mm) mm.innerHTML = '<div class="msg" style="margin-top:8px">⏳ Бот склада занят (медленный интернет) — нажатие в очереди, ' + s + ' с… не нажимайте ещё раз</div>';
+          }, 1000);
+          call('/api/kc_press', { wh: part, data: b.getAttribute('data-cb') }, 125000).then(function (r) {
+            clearInterval(tick);
             busy = false;
             var ans = (r.answers || []);
             var al = ans.filter(function (a) { return a.alert; }), tx = ans.map(function (a) { return a.text; }).join('\n');
@@ -1975,7 +1980,7 @@
             if (m) m.innerHTML = (tx || r.text) ? '<div class="msg ' + (r.ok ? 'good' : 'bad') + '" style="margin-top:8px">' + esc(tx || r.text) + '</div>' : '';
             haptic(r.ok ? 'success' : 'warning');
             draw(r.win);
-          }).catch(function (e) { busy = false; fail(e); });
+          }).catch(function (e) { clearInterval(tick); busy = false; fail(e); });
         };
       });
       if (auto) {   // задача из окна мини-аппа: s221748 / rR577 / W104534 → кнопка бота …:221748, …:R577, …:W104534
