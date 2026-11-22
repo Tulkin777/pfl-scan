@@ -189,6 +189,7 @@
   .brs .br0 { background: rgba(255,255,255,.3); color: #fff; }
   /* 📋 Инвентаризация */
   .fchip.inv { background: linear-gradient(150deg, #7fd3ff, #2f8fd6); color: #fff; box-shadow: 0 3px 0 #1d6aa6; }
+  .fchip.inv.on { background: #1b1f2a; box-shadow: 0 3px 0 #000; }
   .doc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 6px solid var(--orange); }
   .doc .dh { display: flex; align-items: center; gap: 8px; font-size: 17px; }
   .doc .dh .st { margin-left: auto; font-size: 12px; font-weight: 800; color: #a85a00; background: #fff0d9; border-radius: 8px; padding: 2px 7px; text-align: right; }
@@ -264,7 +265,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b8695c2f', newBuild = '';
+  var BUILD = 'd7974c02', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -444,10 +445,35 @@
                 pick: function (it) { return it.g === 'gp'; } },
               { g: 'raw', tab: 'zav', name: 'Сырьё и упаковка', emoji: '🧪', cl: 'y', title: '🧪 Сырьё и упаковка завода', flat: '',
                 pick: function (it) { return it.g === 'raw'; } },
-              { g: 'tP', tab: 'tas', ptag: 'ПЕРЕЧИСЛЕНИЕ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Перечисление', flat: 'name',
+              // руководитель 22.11: Ташкент как завод — сначала «Готовая продукция», внутри ПЕРЕЧИСЛЕНИЕ · ТЕРМИНАЛ, потом склады
+              { g: 'tgp', tab: 'tas', name: 'Готовая продукция', emoji: '🏙', cl: 'b', title: '🏙 Готовая продукция Ташкент', sub: ['tP', 'tT'],
+                pick: function (it) { return it.f === 'tas'; } },
+              { g: 'tP', ptag: 'ПЕРЕЧИСЛЕНИЕ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Перечисление', flat: 'name',
                 pick: function (it) { return it.f === 'tas' && it.sec.head === 'ПЕРЕЧИСЛЕНИЕ'; } },
-              { g: 'tT', tab: 'tas', ptag: 'ТЕРМИНАЛ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Терминал', flat: 'name',
+              { g: 'tT', ptag: 'ТЕРМИНАЛ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Терминал', flat: 'name',
                 pick: function (it) { return it.f === 'tas' && it.sec.head === 'ТЕРМИНАЛ'; } }];
+  function catOf(g) { return CATS.filter(function (x) { return x.g === g; })[0]; }
+  function catTile(c, tiles) {   // большая кнопка-раздел: задачи, склады, места, бренды
+    var t = 0, n0 = 0, busy = 0, total = 0, brl = [], usl = [];
+    Object.keys(tiles).forEach(function (k) {
+      if (!c.pick(ITEM[k])) return;
+      n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total; brl.push(tiles[k].br); usl.push(tiles[k].us);
+    });
+    if (!n0) return '';
+    return '<div class="tile cat ' + c.cl + '" data-g="' + c.g + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + c.emoji + '</div>' +
+      (c.ptag ? '<div class="ptag' + (c.ptag === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + c.ptag + '</div>' : '<div class="n">' + esc(c.name) + '</div>') +
+      '<div class="c">' + n0 + ' ' + (n0 === 1 ? 'склад' : n0 < 5 ? 'склада' : 'складов') +
+      ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div>' + brandsHtml(mergeBr(brl), mergeBr(usl)) + '</div>';
+  }
+  function bindCats() {
+    Array.prototype.forEach.call(view.querySelectorAll('.tile.cat[data-g]'), function (el) {
+      el.onclick = function () {
+        var g = el.getAttribute('data-g');
+        try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        setTimeout(function () { go(function () { showCat(g); }); }, 120);
+      };
+    });
+  }
   function tilesOf(W) {
     var total0 = 0, tiles = {};
     SECTIONS.forEach(function (s) {
@@ -519,7 +545,7 @@
     });
   }
   function showCat(g) {
-    var c = CATS.filter(function (x) { return x.g === g; })[0] || CATS[0], me = cur;
+    var c = catOf(g) || CATS[0], me = cur;
     title.textContent = c.title;
     sub.style.display = 'none';   // руководитель 22.11: подзаголовок не нужен
     view.innerHTML = '<div class="spin">Загрузка складов…</div>';
@@ -527,20 +553,27 @@
       if (cur !== me) return;
       var W = {};
       r.groups.forEach(function (q) { q.whs.forEach(function (w) { W[w.key] = w; }); });
-      view.innerHTML = tilesHtml(tilesOf(W).tiles, c.pick, c.flat) || '<div class="empty">Нет складов</div>';
+      var tiles = tilesOf(W).tiles;
+      if (c.sub) {   // раздел с подразделами (Ташкент → ПЕРЕЧИСЛЕНИЕ · ТЕРМИНАЛ)
+        view.innerHTML = '<div class="mgrid" style="margin-top:8px">' + c.sub.map(function (s) { return catTile(catOf(s), tiles); }).join('') + '</div>';
+        return bindCats();
+      }
+      view.innerHTML = tilesHtml(tiles, c.pick, c.flat) || '<div class="empty">Нет складов</div>';
       bindTiles();
     });
   }
 
   // ---------- 📋 Инвентаризация (руководитель 22.11: как кнопка в группе NAZORAT, агент Темур) ----------
   function whName(k) { return PARTNAME[k] || (ITEM[k] || {}).name || k; }
-  function showInv(s) {
-    var me = cur;
-    title.textContent = s.prod ? '📋 ' + s.prod + (s.kind && s.city === 'Завод' ? ' · ' + s.kind : ' · ' + s.city) : '📋 Инвентаризация' + (s.city ? ' · ' + s.city : '');
-    view.innerHTML = '<div class="spin">Загрузка документов ERP…</div>';
-    load('/api/inv', {}, function (r) {
-      if (cur !== me) return;
-      sub.textContent = 'Документы ERP на ' + (r.updated || '—') + ' · проверяет агент Темур';
+  // руководитель 22.11: шаги как на заводе — Завод/Ташкент → Готовая продукция/Сырьё → ПЕРЕЧИСЛЕНИЕ/ТЕРМИНАЛ → документы.
+  // box — первый шаг прямо под вкладками главного экрана (шапка и вкладки не пропадают)
+  function showInv(s, box) {
+    var me = cur, V = box || view;
+    if (!box) title.textContent = '📋 ' + ([s.city, s.kind, s.prod].filter(Boolean).join(' · ') || 'Инвентаризация');
+    if (!box) V.innerHTML = '<div class="spin">Загрузка документов ERP…</div>';
+    (box ? load2 : load)('/api/inv', {}, function (r) {
+      if (cur !== me || (box && !document.body.contains(box))) return;
+      if (!box) sub.textContent = 'Документы ERP на ' + (r.updated || '—') + ' · проверяет агент Темур';
       var rows = r.rows || [];
       function cnt(f) { return rows.filter(f).length; }
       // бренды готовой продукции — из главного меню (что сейчас лежит на этих складах)
@@ -551,35 +584,38 @@
         return brandsHtml(mergeBr(ks.map(function (k) { return (MW[k] || {}).brands; })), mergeBr(ks.map(function (k) { return (MW[k] || {}).brands_usual; })));
       }
       function docs(n) { return n ? n + ' ' + (n === 1 ? 'не проведена' : 'не проведены') : 'не проведённых нет'; }
-      var h = '';
+      function brOf(city, prods) {   // бренды готовой продукции на складах этих производств
+        var ks = [];
+        prods.forEach(function (p) { ks = ks.concat((r.wh || {})[city + '|' + p + '|Готовая продукция'] || []); });
+        return brandsHtml(mergeBr(ks.map(function (k) { return (MW[k] || {}).brands; })), mergeBr(ks.map(function (k) { return (MW[k] || {}).brands_usual; })));
+      }
+      function tile(ns, cl, emoji, label, n0, extra) {
+        return '<div class="tile cat ' + cl + '" data-s=\'' + JSON.stringify(ns) + '\'><div class="bd' + (n0 ? '' : ' z') + '">' + n0 + '</div><div class="e">' + emoji +
+          '</div>' + label + '<div class="c">' + docs(n0) + '</div>' + (extra || '') + '</div>';
+      }
+      var h = '', isT = s.city === 'Ташкент';
       if (!s.city) {
-        h = '<div class="mgrid">' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
-          var n0 = cnt(function (x) { return x.city === c[0]; });
-          return '<div class="tile cat ' + c[2] + '" data-s=\'' + JSON.stringify({ city: c[0] }) + '\'><div class="bd' + (n0 ? '' : ' z') + '">' + n0 + '</div><div class="e">' + c[1] +
-            '</div><div class="n">' + c[0] + '</div><div class="c">' + docs(n0) + '</div></div>';
+        h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
+          return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
         }).join('') + '</div>';
-      } else if (!s.prod) {
+      } else if (!s.kind) {   // всегда слева готовая продукция, справа сырьё (в Ташкенте — только готовая продукция)
+        h = '<div class="mgrid">' + [['Готовая продукция', isT ? '🏙' : '🏭', isT ? 'b' : 'g'], ['Сырьё', '🧪', 'y']].filter(function (k) { return !isT || k[0] !== 'Сырьё'; }).map(function (k) {
+          return tile({ city: s.city, kind: k[0] }, k[2], k[1], '<div class="n">' + k[0] + '</div>',
+            cnt(function (x) { return x.city === s.city && x.kind === k[0]; }), k[0] === 'Готовая продукция' ? brOf(s.city, ['Перечисление', 'Терминал']) : '');
+        }).join('') + '</div>';
+      } else if (!s.prod) {   // слева ПЕРЕЧИСЛЕНИЕ, справа ТЕРМИНАЛ
         h = '<div class="mgrid">' + ['Перечисление', 'Терминал'].map(function (p) {
-          var n0 = cnt(function (x) { return x.city === s.city && x.production === p; });
-          return '<div class="tile cat ' + (s.city === 'Завод' ? 'g' : 'b') + '" data-s=\'' + JSON.stringify({ city: s.city, prod: p }) + '\'><div class="bd' + (n0 ? '' : ' z') + '">' + n0 +
-            '</div><div class="e">' + (s.city === 'Завод' ? '🏭' : '🏙') + '</div><div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() +
-            '</div><div class="c">' + docs(n0) + '</div>' + (s.city === 'Ташкент' ? invBr(s.city, p) : '') + '</div>';   // в Ташкенте — только ГП
-        }).join('') + '</div>';
-      } else if (!s.kind && s.city === 'Завод') {
-        h = '<div class="mgrid">' + [['Готовая продукция', '🏭', 'g'], ['Сырьё', '🧪', 'y']]   /* руководитель 22.11: всегда слева ГП, справа сырьё */.map(function (k) {
-          var n0 = cnt(function (x) { return x.city === s.city && x.production === s.prod && x.kind === k[0]; });
-          return '<div class="tile ' + k[2] + '" data-s=\'' + JSON.stringify({ city: s.city, prod: s.prod, kind: k[0] }) + '\'><div class="bd' + (n0 ? '' : ' z') + '">' + n0 +
-            '</div><div class="e">' + k[1] + '</div><div class="n">' + k[0] + '</div><div class="c">' + docs(n0) + '</div>' +
-            (k[0] === 'Готовая продукция' ? invBr(s.city, s.prod) : '') + '</div>';
+          return tile({ city: s.city, kind: s.kind, prod: p }, s.kind === 'Сырьё' ? 'y' : isT ? 'b' : 'g', s.kind === 'Сырьё' ? '🧪' : isT ? '🏙' : '🏭',
+            '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div>',
+            cnt(function (x) { return x.city === s.city && x.kind === s.kind && x.production === p; }), s.kind === 'Готовая продукция' ? brOf(s.city, [p]) : '');
         }).join('') + '</div>';
       } else {
         return invList(s, r);
       }
-      view.innerHTML = h;
-      Array.prototype.forEach.call(view.querySelectorAll('.tile[data-s]'), function (el) {
+      V.innerHTML = h;
+      Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
         el.onclick = function () {
           var ns = JSON.parse(el.getAttribute('data-s'));
-          if (ns.city === 'Ташкент' && ns.prod) ns.kind = 'Готовая продукция';   // в Ташкенте только готовая продукция
           try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
           setTimeout(function () { go(function () { showInv(ns); }); }, 120);
         };
@@ -663,44 +699,30 @@
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
       var mf = fl.length < 2 ? 'all' : fl.some(function (f) { return f[0] === mfilter; }) ? mfilter : fl[0][0];   // одна вкладка — без вкладок
-      var invOn = r.inv && r.inv.lv >= 1;   // 📋 Инвентаризация — рядом с вкладками, по правам «👥 Доступ»
-      if (fl.length > 1 || invOn) h += '<div class="fchips">' + (fl.length > 1 ? fl.map(function (f) {
-        return '<div class="fchip' + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
-      }).join('') : '') + (invOn ? '<div class="fchip inv" id="invc">📋 Инвент.</div>' : '') + '</div>';
-      // руководитель 22.11: «Завод» — сначала две кнопки: Готовая продукция · Сырьё и упаковка; склады — внутри
+      // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
+      var invOn = r.inv && r.inv.lv >= 1;
+      if (invOn) fl.push(['inv', '📋 Инвент.']);
+      if (mfilter === 'inv' && invOn) mf = 'inv';
+      if (fl.length > 1) h += '<div class="fchips">' + fl.map(function (f) {
+        return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : '') + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
+      }).join('') + '</div>';
+      // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
       var cats = CATS.filter(function (c) { return c.tab === mf && Object.keys(tiles).some(function (k) { return c.pick(ITEM[k]); }); });
-      if (cats.length > 1) {
-        h += '<div class="mgrid" style="margin-top:14px">';
-        cats.forEach(function (c) {
-          var t = 0, n0 = 0, busy = 0, total = 0, brl = [], usl = [];
-          Object.keys(tiles).forEach(function (k) {
-            if (!c.pick(ITEM[k])) return;
-            n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total; brl.push(tiles[k].br); usl.push(tiles[k].us);
-          });
-          h += '<div class="tile cat ' + c.cl + '" data-g="' + c.g + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + c.emoji + '</div>' +
-            (c.ptag ? '<div class="ptag' + (c.ptag === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + c.ptag + '</div>' : '<div class="n">' + esc(c.name) + '</div>') +
-            '<div class="c">' + n0 + ' ' + (n0 === 1 ? 'склад' : n0 < 5 ? 'склада' : 'складов') +
-            ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div>' + brandsHtml(mergeBr(brl), mergeBr(usl)) + '</div>';
-        });
-        h += '</div>';
+      if (mf === 'inv') {
+        h += '<div id="invbox"><div class="spin">Загрузка документов ERP…</div></div>';
+      } else if (cats.length > 1 || mf === 'tas') {
+        var ct = cats.map(function (c) { return catTile(c, tiles); }).join('');
+        if (cats.length === 1) ct = ct.replace('tile cat ', 'tile cat wide ');   // одна кнопка — во всю ширину
+        h += '<div class="mgrid" style="margin-top:14px">' + ct + '</div>';
       } else {
         // руководитель 22.11: Ташкент — как завод: большие плитки с меткой ПЕРЕЧИСЛЕНИЕ / ТЕРМИНАЛ, названия те же, без заголовков
         h += tilesHtml(tiles, function (it) { return mf === 'all' || it.f === mf; }, mf === 'tas' ? 'tas' : '');
       }
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
-      Array.prototype.forEach.call(view.querySelectorAll('.tile.cat'), function (el) {
-        el.onclick = function () {
-          var g = el.getAttribute('data-g');
-          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-          setTimeout(function () { go(function () { showCat(g); }); }, 120);
-        };
-      });
+      bindCats();
+      if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
       $('ref').onclick = function () { haptic('success'); showMenu(); };
-      if ($('invc')) $('invc').onclick = function () {
-        try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-        go(function () { showInv({}); });
-      };
       Array.prototype.forEach.call(view.querySelectorAll('.fchip[data-f]'), function (el) {
         el.onclick = function () {
           mfilter = el.getAttribute('data-f');
