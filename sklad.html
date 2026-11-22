@@ -330,6 +330,16 @@
   .btag { display: inline-block; margin-top: 3px; font-size: 13px; padding: 2px 8px; border-radius: 8px; background: #fff3cc; color: #7a4a00; }
   .btag.c1 { background: #e6efff; color: #17468f; }
   .spec .sft { margin-top: 6px; font-family: inherit; font-size: 10px; color: #888; text-align: right; }
+  /* 22.11.2026 (мост): окно бота склада */
+  .botw { background: var(--bg2); border-radius: 14px; padding: 12px; margin: 10px 0; }
+  .botw .bt { font-size: 14px; line-height: 1.45; word-break: break-word; }
+  .botw .bk { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .botw .br { display: flex; gap: 6px; }
+  .botw .br button { flex: 1; min-width: 0; padding: 11px 6px; font-size: 14px; border-radius: 10px; background: #fff; color: #1f62c9;
+                     box-shadow: 0 2px 0 #c9d1de; white-space: normal; line-height: 1.2; }
+  .botw .br button:active { transform: translateY(2px); box-shadow: none; }
+  .botw .br button:disabled { opacity: .55; }
+  .botw .bat { margin-top: 8px; font-size: 11px; color: var(--hint); text-align: right; }
   .prodb { display: inline-block; margin: -2px 0 12px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer;
            color: #fff; background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 3px 0 #0f6f36; }
   .prodb:active { transform: translateY(2px); box-shadow: none; }
@@ -479,7 +489,7 @@
 </style>
 </head>
 <body>
-<div class="top"><h1 id="title">📦 Склады</h1><span class="tag">ТЕСТ</span></div>
+<div class="top"><h1 id="title">📦 Склады</h1></div>
 <p class="sub" id="sub">&nbsp;</p>
 <div id="view"><div class="spin">Загрузка…</div></div>
 
@@ -552,7 +562,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '4934b274', newBuild = '';
+  var BUILD = '0ae24220', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1741,7 +1751,8 @@
     for (var i = 0; i < FORMS.length; i++) if (u.indexOf(FORMS[i][0]) >= 0) return FORMS[i];
     return null;
   }
-  function verbOf(t) { return t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '📤 Взять (тест)'; }
+  // 22.11.2026 (руководитель «тест убрать, рабочая версия»): действие делает бот склада — кнопка открывает его окно с этой задачей
+  function verbOf(t) { return (t.kind === 'put' ? '📥 Поставить' : t.kind === 'move' ? '🔀 Переставить' : '📤 Взять') + ' — в окне склада'; }
 
   // откуда пришла задача — метка на кнопке (руководитель 22.11: всё входящее — одна колонка «Поступление», различаем меткой)
   function tagOf(t) {
@@ -1782,9 +1793,12 @@
       '<div class="occ" id="occ">&nbsp;</div>' +
       '<div id="panel" class="panel hint">' + HINT + '</div>' +
       '<div id="cols"><div class="spin">Загрузка задач…</div></div>' +
-      '<div class="row" style="margin-top:12px"><button id="ref">🔄 Обновить</button><button id="pl">🔀 Переставить</button></div>';
+      '<div class="row" style="margin-top:12px"><button id="ref">🔄 Обновить</button><button id="pl">🔀 Переставить</button></div>' +
+      // 22.11.2026 (мост): окно бота склада — все его кнопки, нажатие выполняет бот (как в группе)
+      '<button class="main" id="botw" style="margin-top:10px;background:linear-gradient(150deg,#4a5a7a,#26324a)">🤖 Окно склада · все кнопки бота</button>';
     view.innerHTML = h;
     bindTabs();
+    $('botw').onclick = function () { go(function () { showBotWin(k, part); }); };
     Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
       b.onclick = function () { var p = b.getAttribute('data-p'); cur = function () { showWh(k, p); }; cur(); };
     });
@@ -1907,6 +1921,80 @@
     me.k = k;
     whTimer = setInterval(function () { refresh(false); }, AUTO_SEC * 1000);
   }
+  // ---------- 22.11.2026 (руководитель «мост»): окно бота склада в мини-аппе ----------
+  // Текст и кнопки — те же, что бот держит в группе (зеркало). Нажатие уходит боту склада и выполняется его кодом
+  // (учёт склада меняет только бот). Ответ бота — сюда.
+  var botTimer = null;
+  function tgHtml(s, isHtml) {   // разметка Telegram → безопасный HTML (только b, i, u, s, code, pre, a)
+    var t = isHtml ? String(s || '') : esc(s || '');
+    if (isHtml) {
+      t = t.replace(/<(?!\/?(b|strong|i|em|u|ins|s|strike|del|code|pre)\b)[^>]*>/gi, '')
+           .replace(/<(\/?)(b|strong|i|em|u|ins|s|strike|del|code|pre)\b[^>]*>/gi, '<$1$2>');
+    }
+    return t.replace(/\n/g, '<br>');
+  }
+  function botWinHtml(w) {
+    if (!w || !w.ok) return '<div class="note">' + esc((w && w.text) || 'Окно не загрузилось') + '</div>';
+    return '<div class="botw"><div class="bt">' + tgHtml(w.text, w.html) + '</div>' +
+      '<div class="bk">' + (w.kb || []).map(function (row) {
+        return '<div class="br">' + row.map(function (b) {
+          var bt_ = String(b.text || '').replace(/[⠀\s]+$/g, '');   // бот добивает текст кнопки пустыми знаками — убрать
+          return b.callback_data ? '<button data-cb="' + esc(b.callback_data) + '">' + esc(bt_) + '</button>'
+            : b.url ? '<button data-url="' + esc(b.url) + '">' + esc(b.text) + ' ↗</button>' : '';
+        }).join('') + '</div>';
+      }).join('') + '</div><div class="bat">окно бота · ' + esc(w.at || '') + '</div></div>';
+  }
+  function showBotWin(k, part, auto) {   // auto — номер задачи окна мини-аппа: найти её кнопку у бота и открыть сразу
+    var me = cur, it = ITEM[k] || { name: k };
+    if (botTimer) { clearInterval(botTimer); botTimer = null; }
+    view.innerHTML = subTop(it.f || 'zav', 'Окно склада · ' + (PARTNAME[part] || it.name)) + '<div id="bmsg"></div><div id="bwin"><div class="spin">Загрузка окна бота…</div></div>';
+    bindTabs();
+    var busy = false;
+    function draw(w) {
+      var box = $('bwin');
+      if (!box || cur !== me) return;
+      box.innerHTML = botWinHtml(w);
+      Array.prototype.forEach.call(box.querySelectorAll('[data-url]'), function (b) {
+        b.onclick = function () { try { tg.openLink(b.getAttribute('data-url')); } catch (e) { window.open(b.getAttribute('data-url')); } };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-cb]'), function (b) {
+        b.onclick = function () {
+          if (busy) return;
+          busy = true;
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          Array.prototype.forEach.call(box.querySelectorAll('button'), function (x) { x.disabled = true; });
+          b.textContent = '⏳ ' + b.textContent;
+          var m0 = $('bmsg');
+          if (m0) m0.innerHTML = '<div class="msg" style="margin-top:8px">⏳ Выполняется у бота склада… не нажимайте ещё раз</div>';
+          call('/api/kc_press', { wh: part, data: b.getAttribute('data-cb') }, 75000).then(function (r) {
+            busy = false;
+            var ans = (r.answers || []);
+            var al = ans.filter(function (a) { return a.alert; }), tx = ans.map(function (a) { return a.text; }).join('\n');
+            if (al.length) say(al.map(function (a) { return a.text; }).join('\n'));
+            var m = $('bmsg');
+            if (m) m.innerHTML = (tx || r.text) ? '<div class="msg ' + (r.ok ? 'good' : 'bad') + '" style="margin-top:8px">' + esc(tx || r.text) + '</div>' : '';
+            haptic(r.ok ? 'success' : 'warning');
+            draw(r.win);
+          }).catch(function (e) { busy = false; fail(e); });
+        };
+      });
+      if (auto) {   // задача из окна мини-аппа: s221748 / rR577 / W104534 → кнопка бота …:221748, …:R577, …:W104534
+        var c1 = String(auto), cands = [c1, c1.slice(1)];
+        var hit = Array.prototype.filter.call(box.querySelectorAll('[data-cb]'), function (b) {
+          var d = b.getAttribute('data-cb');
+          return cands.some(function (c) { return c && (d.slice(-c.length - 1) === ':' + c || d.indexOf(':' + c + ':') >= 0); });
+        })[0];
+        auto = '';
+        if (hit) hit.click();
+      }
+    }
+    function load_() {
+      if (busy || cur !== me) return;
+      call('/api/kc_win', { wh: part }, 15000).then(draw).catch(function () {});
+    }
+    load_();
+    botTimer = setInterval(function () { if (cur !== me || !$('bwin')) { clearInterval(botTimer); botTimer = null; return; } load_(); }, 5000);
+  }
   var HINT = '👇 Нажмите задачу — на схеме покажу 🟧 откуда брать и 🟦 куда ставить';
   var wantTask = '';   // id задачи окна склада, которую выбрать при открытии (из карточки отгрузки)
 
@@ -1966,16 +2054,14 @@
           ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div><div class="rt"><span class="from">' + esc(p.addr) + '</span> → <span class="to">' + esc(to) + '</span></div>' +
           '<div class="row3"><button id="bbox">📷 Коробка</button><button id="bplace">📷 Место</button><button id="mvb">⬅️ Другое</button></div>' +
           '<div class="st" id="sbox"></div><div class="st" id="splace"></div>' +
-          '<button class="main" id="go">🔀 Переставить (тест)</button><div id="res"></div><button id="mvx" style="margin-top:6px">✖️ Отмена</button>';
+          '<button class="main" id="go">🔀 Переставить — в окне склада</button><div id="res"></div><button id="mvx" style="margin-top:6px">✖️ Отмена</button>';
         $('mvb').onclick = function () { step2(p); };
         $('mvx').onclick = cancel;
         $('bbox').onclick = function () { scanQr('QR наклейки коробки', function (c) { st.box = c; $('sbox').textContent = 'Коробка: ' + c; }); };
         $('bplace').onclick = function () { scanQr('QR таблички места ' + to, function (c) { st.place = c; $('splace').textContent = 'Место: ' + c; }); };
-        $('go').onclick = function () {
-          var b = this; b.disabled = true;
-          call('/api/swap', { wh: part, from: p.addr, to: to, box: st.box, place: st.place }).then(function (r) {
-            $('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>'; b.disabled = false; haptic(r.ok ? 'success' : 'warning');
-          }).catch(function (e) { b.disabled = false; fail(e); });
+        $('go').onclick = function () {   // 22.11.2026: переставляет бот склада (его «🔀 Переставить» в окне склада)
+          var ik = Object.keys(ITEM).filter(function (k2) { return partsOf(k2).indexOf(part) >= 0; })[0] || part;
+          go(function () { showBotWin(ik, part, 'mv:0'); });
         };
       }
       function cancel() { st.sel = null; P.className = 'panel hint'; P.innerHTML = HINT; drawScheme(part, null); }
@@ -2073,13 +2159,9 @@
     if (!ct) return;
     $('bbox').onclick = function () { mark('box', $('sbox'), 'Коробка'); };
     $('bplace').onclick = function () { mark('place', $('splace'), 'Место (' + where + ')'); };
-    $('go').onclick = function () {
-      var b = this; b.disabled = true; b.textContent = '⏳ Отправляю…';
-      call('/api/move', { id: id, box: st.box, place: st.place }).then(function (r) {
-        $('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>';
-        b.disabled = false; b.textContent = verb;
-        haptic(r.ok ? 'success' : 'warning');
-      }).catch(function (e) { b.disabled = false; b.textContent = verb; fail(e); });
+    $('go').onclick = function () {   // окно бота этого склада и сразу эта задача в нём
+      var wk = String(id).split('|')[0], ik = Object.keys(ITEM).filter(function (k2) { return partsOf(k2).indexOf(wk) >= 0; })[0] || wk;
+      go(function () { showBotWin(ik, wk, String(id).split('|').pop()); });
     };
   }
 
@@ -2323,7 +2405,7 @@
       if (s.box || s.place || (s.drawn && $('res') && $('res').innerHTML)) return;   // уже сканировали — не перерисовывать
       var x0 = t.lines[0];
       var where = t.scan === 'src' ? 'откуда' : 'куда';
-      var verb = t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '🚚 Взять (тест)';
+      var verb = verbOf(t);   // 22.11.2026: действие — в окне бота склада (не тест)
       var h = '<div class="box"><h3>' + esc(t.label) + '</h3>';
       if (t.lines.length === 1) {
         h += '<div class="big">' + esc(x0.short) + '</div><div>' + esc(x0.item) + '</div>' +
@@ -2373,14 +2455,9 @@
       $('bbox').onclick = function () { mark('box', $('sbox'), '1. Коробка'); };
       $('bplace').onclick = function () { mark('place', $('splace'), '2. Место'); };
       if ($('lbl')) $('lbl').onclick = function () { askLabels(function (which) { return call('/api/label', { id: id, which: which }, 60000); }); };
-      $('go').onclick = function () {
-        var b = this; b.disabled = true; b.textContent = '⏳ Отправляю…';
-        call('/api/move', { id: id, box: s.box, place: s.place }).then(function (r) {
-          $('res').innerHTML = '<div class="msg">' + rich(r.text) + '</div>';
-          b.disabled = false; b.textContent = verb;
-          haptic(r.ok ? 'success' : 'warning');
-          $('res').scrollIntoView({ behavior: 'smooth' });
-        }).catch(function (e) { b.disabled = false; b.textContent = verb; fail(e); });
+      $('go').onclick = function () {   // 22.11.2026: окно бота склада с этой задачей (не тест)
+        var wk = String(id).split('|')[0], ik = Object.keys(ITEM).filter(function (k2) { return partsOf(k2).indexOf(wk) >= 0; })[0] || wk;
+        go(function () { showBotWin(ik, wk, String(id).split('|').pop()); });
       };
     });
   }
