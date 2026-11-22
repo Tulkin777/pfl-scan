@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Склады PFL</title>
+<title>KO‘CHIRISH</title>
 <!-- PFL · тестовый Mini App складов KO‘CHIRISH (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера
      компьютера PFL через туннель и только после проверки подписи Telegram (initData) — и только руководителю. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -237,7 +237,26 @@
       '</p><button class="main" id="retry">🔄 Повторить</button></div>';
     $('retry').onclick = function () { cur ? cur() : showMenu(); };
   }
+  // 22.11.2026: бесплатный мост после перезапуска получает НОВЫЙ адрес; сторож кладёт его в api.json рядом со страницей.
+  // При обрыве берём свежий адрес оттуда и повторяем запрос — переоткрывать мини-апп не нужно.
+  var apiTry = 0;
+  function freshApi() {
+    if (Date.now() - apiTry < 20000) return Promise.resolve(false);
+    apiTry = Date.now();
+    return fetch('api.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      var u = String(j.api || '').replace(/\/+$/, '');
+      if (/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(u) && u !== api) { api = u; return true; }
+      return false;
+    }).catch(function () { return false; });
+  }
   function call(path, body, timeout) {
+    var b0 = JSON.stringify(body || {});
+    return call1(path, body, timeout).catch(function (e) {
+      if (!e || !e.down) throw e;
+      return freshApi().then(function (ok) { if (!ok) throw e; return call1(path, JSON.parse(b0), timeout); });
+    });
+  }
+  function call1(path, body, timeout) {
     if (!api) return Promise.reject({ down: true, text: 'Нет адреса сервера. Откройте мини-апп кнопкой «📦 Склады» в личке бота склада.' });
     var ctl = new AbortController();
     var timer = setTimeout(function () { ctl.abort(); }, timeout || 15000);
@@ -323,14 +342,14 @@
       { key: 'ter_gp', name: 'Готовая продукция завода', emoji: '🏭', cl: 'g', f: 'zav' },
       { key: 'ter_tas', name: 'Готовая продукция Ташкент', note: 'BP Pharma и Gynomedix', emoji: '🏙', cl: 'b', f: 'tas' } ] },
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
-      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🧪', cl: 'y', f: 'raw' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🧪', cl: 'y', f: 'raw' },
-      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'raw' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'raw' } ] },
+      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🧪', cl: 'y', f: 'zav' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🧪', cl: 'y', f: 'zav' },
+      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav' } ] },
     { head: 'ТЕРМИНАЛ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
-      { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'raw' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'raw' },
-      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'raw' } ] }
+      { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'zav' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav' },
+      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav' } ] }
   ];
   // руководитель 22.11: «Все» убрать — склады по вкладкам Завод · Ташкент · Сырьё (выбранная запоминается)
-  var FILTERS = [['zav', '🏭 Завод'], ['tas', '🏙 Ташкент'], ['raw', '🧪 Сырьё']];
+  var FILTERS = [['zav', '🏭 Завод'], ['tas', '🏙 Ташкент']];   // руководитель 22.11: сырьё — внутри «Завод», после готовой продукции
   var mfilter = 'zav';
   try { mfilter = localStorage.getItem('pfl:mfilter') || 'zav'; } catch (e) {}
   var lastBadge = {};
@@ -364,9 +383,9 @@
         });
       });
       var h = asName ? '<div class="asbar">👁 Так видит ' + esc(asName) + '<span style="flex:1"></span><button id="asx">✖️ Выйти</button></div>' : '';
-      h += '<div class="mtop"><div class="logo">📦</div><div class="t"><div class="tt">Склады PFL</div><div class="ts">' + total0 + ' задач · ' +
+      h += '<div class="mtop"><div class="logo">📦</div><div class="t"><div class="tt">KO‘CHIRISH 🔄</div><div class="ts">' + total0 + ' задач · ' +
         esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
-        '<div class="rb" id="ref" title="Обновить">🔄</div><div class="rb" id="qr" title="Сканер QR">📷</div>' +
+        '<div class="rb" id="ref" title="Обновить">🔄</div>' +   // руководитель 22.11: сканер QR на главном не нужен
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') + '</div>';
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
@@ -392,7 +411,6 @@
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
       $('ref').onclick = function () { haptic('success'); showMenu(); };
-      $('qr').onclick = freeScan;
       Array.prototype.forEach.call(view.querySelectorAll('.fchip'), function (el) {
         el.onclick = function () {
           mfilter = el.getAttribute('data-f');
