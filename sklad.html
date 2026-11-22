@@ -190,6 +190,27 @@
   /* 📋 Инвентаризация */
   .fchip.inv { background: linear-gradient(150deg, #7fd3ff, #2f8fd6); color: #fff; box-shadow: 0 3px 0 #1d6aa6; }
   .fchip.inv.on { background: #1b1f2a; box-shadow: 0 3px 0 #000; }
+  .fchip.ost { background: linear-gradient(150deg, #ffcf6b, #e89a12); color: #fff; box-shadow: 0 3px 0 #b87508; }
+  .fchip.ost.on { background: #1b1f2a; box-shadow: 0 3px 0 #000; }
+  .fchips.sq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; overflow: visible; }
+  .fchips.sq .fchip { padding: 7px 2px 6px; font-size: 12px; text-align: center; line-height: 1.2; }
+  .fchips.sq .fchip i { display: block; font-style: normal; font-size: 20px; }
+  /* 📦 Остаток */
+  .when { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 10px; font-size: 14px; }
+  .when .old { color: var(--red); font-weight: 800; }
+  .gate { background: #fde8e6; color: #1e1e1e; border-radius: 14px; padding: 10px 12px; margin: 0 0 10px; }
+  .gate h3 { margin: 0 0 6px; color: var(--red); font-size: 16px; }
+  .gate .gi { border-top: 1px solid #f3c2bc; padding: 6px 0; font-size: 13px; }
+  .gate .why { color: #8a3a2f; }
+  .fb { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .fb div { background: var(--bg2); border-radius: 14px; padding: 12px 8px; text-align: center; font-weight: 800; font-size: 15px; cursor: pointer;
+            box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+  .fb div span { display: block; font-size: 12px; color: var(--hint); font-weight: 600; }
+  .fb .w { grid-column: span 2; } .fb .m { background: #fff0d9; color: #1e1e1e; }
+  .prog { background: #e6efff; color: #1e1e1e; border-radius: 14px; padding: 14px; margin: 0 0 10px; font-size: 15px; }
+  .pbar { height: 10px; border-radius: 5px; background: #c9ddff; overflow: hidden; margin-top: 8px; }
+  .pbar i { display: block; height: 100%; width: 40%; background: var(--btn); animation: pmove 1.6s ease-in-out infinite; }
+  @keyframes pmove { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
   .doc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 6px solid var(--orange); }
   .doc .dh { display: flex; align-items: center; gap: 8px; font-size: 17px; }
   .doc .dh .st { margin-left: auto; font-size: 12px; font-weight: 800; color: #a85a00; background: #fff0d9; border-radius: 8px; padding: 2px 7px; text-align: right; }
@@ -265,7 +286,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd7974c02', newBuild = '';
+  var BUILD = 'f50681f5', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -678,6 +699,55 @@
     });
   }
 
+  // ---------- 📦 Остаток (руководитель 22.11: как /qoldiq — лист пересчёта сырья Перечисления, 1С + ERP) ----------
+  var OSTBTN = { g: '📎 Что не сходится — лист', i: '🧪 Сырьё', t: '🧴 Тара', p: '🏷 Упаковка', s: '📎 Всё', f: '📄 Полный (руководитель)' };
+  var ostTimer = null;
+  function showOst(box) {
+    if (ostTimer) { clearTimeout(ostTimer); ostTimer = null; }
+    load2('/api/ost', {}, function (r) {
+      if (!document.body.contains(box)) return;
+      var h = '<div class="when">📦 <b>Остаток сырья · Перечисление</b><br>';
+      if (r.when) {
+        var age = r.age >= 1440 ? Math.floor(r.age / 1440) + ' дн.' : r.age >= 60 ? Math.floor(r.age / 60) + ' ч' : r.age + ' мин';
+        h += 'Остатки на: <b>' + esc(r.when) + '</b>' + (r.fresh ? '' : '<br><span class="old">⚠️ лист старый (' + age + ') — обновите</span>');
+      } else h += 'Листа пересчёта пока нет.';
+      h += '</div>';
+      if (r.wait) {
+        h += '<div class="prog">⏳ <b>Обновляю остатки 1С и ERP на сейчас</b>' + (r.wait.step ? '<br>Сейчас: ' + esc(r.wait.step) : '') +
+          '<div class="pbar"><i></i></div></div><div class="note">Можно закрыть — кнопки появятся здесь сами</div>';
+      } else {
+        h += '<button class="main" id="ostupd" style="margin:0 0 10px">🔄 Обновить на сейчас · 1–3 мин</button>';
+      }
+      if (r.gate && r.gate.length) {
+        h += '<div class="gate"><h3>⛔ 1С ↔ ERP не сходится: ' + r.gate.length + '</h3><div style="font-size:13px;margin-bottom:4px">Остатки сравнивать пока нельзя.</div>' +
+          r.gate.map(function (x, i) {
+            return '<div class="gi"><b>' + (i + 1) + '. ' + esc(x.name) + '</b>' + (x.batch ? '<div>Партия <b>№' + esc(x.batch) + '</b> · ERP <b>' + esc(x.erp) + '</b> · 1С <b>' +
+              esc(x.c1) + '</b>' + (x.diff ? ' · ' + esc(x.diff) : '') + '</div>' : '') + (x.why ? '<div class="why">⚠️ ' + esc(x.why) + '</div>' : '') + '</div>';
+          }).join('') + '</div>';
+      }
+      var ks = r.kinds || [], cn = r.counts || {};
+      if (ks.length) {
+        h += '<div class="fb">' + ks.map(function (k) {
+          return '<div class="' + (k === 'f' || k === 'g' ? 'w' : '') + (k === 'f' ? ' m' : '') + '" data-k="' + k + '">' + OSTBTN[k] +
+            (cn[k] && 'itps'.indexOf(k) >= 0 ? '<span>' + cn[k] + ' позиций</span>' : '') + '</div>';
+        }).join('') + '</div><div class="note">Файл придёт вам в личку бота</div>';
+      }
+      box.innerHTML = h;
+      if ($('ostupd')) $('ostupd').onclick = function () {
+        var b = this; b.disabled = true; b.textContent = '⏳ Запускаю…';
+        call('/api/ost_refresh', {}, 30000).then(function () { haptic('success'); delete mem['/api/ost{}']; showOst(box); }).catch(function (e) { b.disabled = false; fail(e); });
+      };
+      Array.prototype.forEach.call(box.querySelectorAll('.fb [data-k]'), function (el) {
+        el.onclick = function () {
+          el.style.opacity = '.5';
+          call('/api/ost_file', { kind: el.getAttribute('data-k') }, 60000).then(function (q) { el.style.opacity = '1'; haptic(q.ok ? 'success' : 'warning'); say(q.text); })
+            .catch(function (e) { el.style.opacity = '1'; fail(e); });
+        };
+      });
+      if (r.wait) ostTimer = setTimeout(function () { if (document.body.contains(box)) showOst(box); }, 5000);   // пока обновляется — смотреть каждые 5 с
+    });
+  }
+
   var menuTimer = null;
   function showMenu() {
     if (newBuild && newBuild !== BUILD) return reloadTo(newBuild);   // вернулись на главный — подхватить новую версию
@@ -702,14 +772,19 @@
       // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
       var invOn = r.inv && r.inv.lv >= 1;
       if (invOn) fl.push(['inv', '📋 Инвент.']);
-      if (mfilter === 'inv' && invOn) mf = 'inv';
-      if (fl.length > 1) h += '<div class="fchips">' + fl.map(function (f) {
-        return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : '') + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
+      if (r.ost) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost)) mf = mfilter;
+      var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
+      if (fl.length > 1) h += '<div class="fchips' + (sq ? ' sq' : '') + '">' + fl.map(function (f) {
+        var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
+        return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + lb + '</div>';
       }).join('') + '</div>';
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
       var cats = CATS.filter(function (c) { return c.tab === mf && Object.keys(tiles).some(function (k) { return c.pick(ITEM[k]); }); });
       if (mf === 'inv') {
         h += '<div id="invbox"><div class="spin">Загрузка документов ERP…</div></div>';
+      } else if (mf === 'ost') {
+        h += '<div id="ostbox" style="margin-top:12px"><div class="spin">Загрузка листа остатков…</div></div>';
       } else if (cats.length > 1 || mf === 'tas') {
         var ct = cats.map(function (c) { return catTile(c, tiles); }).join('');
         if (cats.length === 1) ct = ct.replace('tile cat ', 'tile cat wide ');   // одна кнопка — во всю ширину
@@ -722,6 +797,7 @@
       view.innerHTML = h;
       bindCats();
       if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
+      if (mf === 'ost') showOst($('ostbox'));
       $('ref').onclick = function () { haptic('success'); showMenu(); };
       Array.prototype.forEach.call(view.querySelectorAll('.fchip[data-f]'), function (el) {
         el.onclick = function () {
