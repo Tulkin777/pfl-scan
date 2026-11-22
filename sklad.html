@@ -264,11 +264,23 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b7cc7948', newBuild = '';
-  function reloadTo(b) {
-    try { if (sessionStorage.getItem('pfl:rl') === b) return; sessionStorage.setItem('pfl:rl', b); } catch (e) {}
-    var q = new URLSearchParams(location.search); q.set('v', b);
+  var BUILD = '1f457269', newBuild = '';
+  // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
+  // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
+  function reloadTo(b, force) {
+    var n = 0;
+    try { n = +(sessionStorage.getItem('pfl:rl:' + b) || 0); sessionStorage.setItem('pfl:rl:' + b, n + 1); } catch (e) {}
+    if (!force && n >= 2) return showUpd();
+    var q = new URLSearchParams(location.search); q.set('v', b); q.set('t', Date.now());
     location.replace(location.pathname + '?' + q.toString());
+  }
+  function showUpd() {
+    if ($('updbar')) return;
+    var d = document.createElement('div');
+    d.id = 'updbar'; d.className = 'asbar';
+    d.innerHTML = '🔄 Есть новая версия<span style="flex:1"></span><button>Обновить</button>';
+    d.querySelector('button').onclick = function () { reloadTo(newBuild, true); };
+    document.body.insertBefore(d, document.body.firstChild);
   }
   function checkBuild() {
     if (BUILD.indexOf('BUILD') >= 0 || document.hidden) return;   // локальная копия — без проверки
@@ -276,13 +288,7 @@
       if (!j.build || j.build === BUILD) return;
       newBuild = j.build;
       if (cur === showMenu) return reloadTo(j.build);
-      if (!$('updbar')) {
-        var d = document.createElement('div');
-        d.id = 'updbar'; d.className = 'asbar';
-        d.innerHTML = '🔄 Есть новая версия<span style="flex:1"></span><button>Обновить</button>';
-        d.querySelector('button').onclick = function () { reloadTo(newBuild); };
-        document.body.insertBefore(d, document.body.firstChild);
-      }
+      showUpd();
     }).catch(function () {});
   }
   setTimeout(checkBuild, 4000);
