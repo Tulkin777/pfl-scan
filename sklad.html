@@ -250,6 +250,15 @@
   .fchip[data-f=mv] { background: linear-gradient(150deg, #8b7bff, #4b39c9); box-shadow: 0 4px 0 #34278f; }
   .fchip[data-f=inc] { background: linear-gradient(150deg, #b5e655, #5c9e12); box-shadow: 0 4px 0 #3f700a; }
   .fchip[data-f=ret] { background: linear-gradient(150deg, #ff8f8f, #d43c3c); box-shadow: 0 4px 0 #962424; }
+  .fchip[data-f=ship] { background: linear-gradient(150deg, #c18cff, #8a3fd1); box-shadow: 0 4px 0 #5f2a96; }
+  .rt2 .to.cl { background: #efeaff; color: #4b39c9; }
+  .who { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+  .who::-webkit-scrollbar { display: none; }
+  .who span { flex: none; padding: 9px 13px; border-radius: 14px; background: #fff3cc; color: #7a4a00; font-weight: 800; font-size: 13px;
+    box-shadow: 0 3px 0 #e6cf8a; white-space: nowrap; cursor: pointer; }
+  .who span.on { background: #e8820c; color: #fff; box-shadow: 0 3px 0 #a85f00; }
+  .who.cl span { background: #efeaff; color: #4b39c9; box-shadow: 0 3px 0 #cfc6ff; }
+  .who.cl span.on { background: #6b4fe0; color: #fff; box-shadow: 0 3px 0 #3f2a9a; }
   .fchip.free { background: transparent; border: 2px dashed #c9d1de; color: #9aa3b2; box-shadow: none; cursor: default; }
   .fchip.free i { opacity: .6; }
   .fchips + .fchips { margin-top: 2px; }
@@ -424,7 +433,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'c1f4e109', newBuild = '';
+  var BUILD = '8e2dde88', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1048,9 +1057,15 @@
   }
   // ---------- 📥 Приходы · ↩️ Возврат — как перемещения (руководитель 22.11): откуда → куда, шаги, отбор, полный экран ----------
   var DSTEPS = { inc: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на полке']],
-                 ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']] };
-  var docFlt = { inc: '', ret: '' };
+                 ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']],
+                 ship: [['new', '🟡', 'создан'], ['ready', '📦', 'собран'], ['ok', '🚚', 'отгружен']] };
+  var docFlt = { inc: '', ret: '', ship: '' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
+  // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
+  var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
+                 ship: [['t4', 'Ташкент · Перечисление', 'd1', [4]], ['t3', 'Ташкент · Терминал', 'd7', [3, 8]],
+                        ['g7', 'Gynomedix Ташкент', 'd2', [7]], ['zv', 'Завод', 'd6', [1, 2, 5, 6]]] };
   function docStep(kind, x) {
+    if (kind === 'ship') return x.step || 'new';
     if (x.status !== 2) return 'new';
     return kind === 'inc' && x.placed === true ? 'shelf' : 'ok';
   }
@@ -1061,6 +1076,9 @@
     }).join('') + '</div>';
   }
   function docFilters(kind) {   // плитки-отбор: нажатие показывает только эти документы
+    if (kind === 'ship') return [['new', '🟡 создан', 'd4', function (x) { return x.step === 'new'; }],
+                                 ['ready', '📦 собран', 'd7', function (x) { return x.step === 'ready'; }],
+                                 ['ok', '🚚 отгружен', 'd5', function (x) { return x.step === 'ok'; }]];
     return kind === 'inc'
       ? [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
          ['noshelf', '📍 не на полке', 'd7', function (x) { return x.status === 2 && x.placed === false; }],
@@ -1073,24 +1091,52 @@
     load2('/api/flow', { kind: kind }, function (r) {
       if (!document.body.contains(box)) return;
       var all = r.rows || [], F = docFilters(kind), f = F.filter(function (q) { return q[0] === docFlt[kind]; })[0];
-      var rows = f ? all.filter(f[3]) : all;
-      var h = '<div class="dir">' + F.map(function (q) {
-        var c = all.filter(q[3]).length;
+      var PL = DPLACE[kind], pl = PL && PL.filter(function (q) { return q[0] === docPl[kind]; })[0];
+      var inPl = function (x) { return !pl || pl[3].indexOf(+x.st) >= 0; }, inWho = function (x) { return !docWho[kind] || x.who === docWho[kind]; };
+      var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x); });
+      var h = '';
+      if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
+        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
+          var c = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (!f || f[3](x)); }).length;
+          return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
+        }).join('') + '</div>';
+        var WC = {};
+        all.forEach(function (x) { if (inPl(x) && (!f || f[3](x))) WC[x.who] = (WC[x.who] || 0) + 1; });
+        var WL = Object.keys(WC).sort(function (a, b) { return WC[b] - WC[a]; });
+        if (docWho[kind] && !WC[docWho[kind]]) WL.unshift(docWho[kind]);
+        if (WL.length) h += '<div class="msec">' + (kind === 'inc' ? 'ПОСТАВЩИК' : 'КЛИЕНТ') + '</div><div class="who' + (kind === 'ship' ? ' cl' : '') + '">' + WL.map(function (w) {
+          return '<span data-dw="' + esc(w) + '"' + (docWho[kind] === w ? ' class="on"' : '') + '>' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(w.length > 24 ? w.slice(0, 23) + '…' : w) + ' · ' + (WC[w] || 0) + '</span>';
+        }).join('') + '</div>';
+        h += '<div class="msec">ШАГИ</div>';
+      }
+      h += '<div class="dir">' + F.map(function (q) {
+        var c = all.filter(function (x) { return q[3](x) && inPl(x) && inWho(x); }).length;
         return '<div class="' + q[2] + (c ? '' : ' z') + (docFlt[kind] === q[0] ? ' on' : '') + '" data-df="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
       }).join('') + '</div>';
-      h += '<div class="note" style="margin:-4px 0 8px">' + (f ? 'Показаны: ' + f[1] + ' · нажмите ещё раз — все' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
+      var any = f || pl || docWho[kind];
+      h += '<div class="note" style="margin:-4px 0 8px">' + (any ? 'Показано ' + rows.length + ' · нажмите ещё раз — снять отбор' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
       if (!rows.length) h += '<div class="empty">Ничего нет</div>';
       h += rows.map(function (x) {
         var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '', st = docStep(kind, x);
-        var fq = formOf(l0.name);
-        return '<div class="tcard st-' + (st === 'new' ? 'new' : 'ok') + '" data-doc="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
-          '<div class="rt2"><span class="fr">' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(x.who) + '</span><i>→</i><span class="to">' + esc(x.store) + '</span></div>' +
-          '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + '</b></div>' +
+        var fq = formOf(l0.name), tot = x.lines.reduce(function (a, y) { return a + (+y.qty || 0); }, 0);
+        var route = kind === 'ship'
+          ? '<span class="fr">📤 ' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 ' + esc(x.who) + '</span>'
+          : '<span class="fr">' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(x.who) + '</span><i>→</i><span class="to">' + esc(x.store) + '</span>';
+        return '<div class="tcard st-' + (st === 'new' ? 'new' : st === 'ready' ? 'ready' : 'ok') + '" data-doc="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
+          '<div class="rt2">' + route + '</div>' +
+          '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' ' + esc(l0.name || '') + more + '<br><b>' +
+          (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
           docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') + '</div>';
       }).join('');
       box.innerHTML = h;
       Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
         el.onclick = function () { var q = el.getAttribute('data-df'); docFlt[kind] = docFlt[kind] === q ? '' : q; showDocs(kind, box); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-dp]'), function (el) {
+        el.onclick = function () { var q = el.getAttribute('data-dp'); docPl[kind] = docPl[kind] === q ? '' : q; showDocs(kind, box); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-dw]'), function (el) {
+        el.onclick = function () { var q = el.getAttribute('data-dw'); docWho[kind] = docWho[kind] === q ? '' : q; showDocs(kind, box); };
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-doc]'), function (el) {
         el.onclick = function () {
@@ -1102,7 +1148,7 @@
     });
   }
   function showDoc(kind, id) {
-    var me = cur, NM = kind === 'inc' ? 'Приходы' : 'Возврат';
+    var me = cur, NM = kind === 'inc' ? 'Приходы' : kind === 'ship' ? 'Отгрузка' : 'Возврат';
     view.innerHTML = '<div class="spin">Загрузка…</div>';
     load('/api/flow', { kind: kind }, function (r) {
       if (cur !== me) return;
@@ -1110,6 +1156,35 @@
       if (!x) { view.innerHTML = subTop(kind, NM) + '<div class="empty">Документ уже не в списке</div>'; return bindTabs(); }
       var st = docStep(kind, x), SN = { new: '🟡 СОЗДАН — НЕ ПРОВЕДЁН', ok: '🟢 ПРОВЕДЁН', shelf: '📍 НА ПОЛКЕ' };
       var h = subTop(kind, NM + ' · №' + x.id);
+      if (kind === 'ship') {   // 🛒 Отгрузка: склад → клиент; собрать — в окне склада, провести — в ERP
+        var SS = { new: '🟡 ЖДЁТ СБОРКИ', ready: '📦 СОБРАН — ЖДЁТ ОТГРУЗКИ', ok: '🚚 ОТГРУЖЕН' };
+        h += '<div class="dhead st-' + st + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' +
+          '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
+          docBar(kind, st);
+        h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+          var fq = formOf(y.name);
+          return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
+            (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
+        }).join('') + '</div>';
+        var T2 = [['🟡', x.date, 'заказ в ERP · ' + x.author, true],
+                  ['📦', null, st === 'new' ? 'ждём: кладовщик соберёт по номерам (схема покажет места)' : 'собран в окне склада', st !== 'new'],
+                  ['🚚', null, st === 'ok' ? 'отгружен (проведён в ERP)' : 'потом: отгрузка проводится в ERP', st === 'ok']];
+        h += '<div class="box"><h3>Ход</h3><div class="tl">' + T2.map(function (t) {
+          return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
+        }).join('') + '</div></div>';
+        if (x.to_wh) h += '<button class="main" style="background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' + x.to_wh + '">➡ Склад «откуда»' +
+          (st === 'new' ? ' · собрать по номерам' : '') + '</button>';
+        h += '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
+        view.innerHTML = h;
+        bindTabs();
+        Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
+          b.onclick = function () {
+            var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
+            if (it) go(function () { showWh(it, w); });
+          };
+        });
+        return;
+      }
       h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
         '<div class="rt2 big"><span class="fr">' + (kind === 'inc' ? '🏭 Поставщик<br>' : '🛒 Клиент<br>') + esc(x.who) + '</span><i>→</i><span class="to">📥 Склад<br>' + esc(x.store) + '</span></div>' +
         docBar(kind, st);
@@ -1137,7 +1212,7 @@
   }
   function showFlow(kind, box) {
     if (kind === 'mv') return showMoves(box);
-    if (kind === 'inc' || kind === 'ret') return showDocs(kind, box);
+    if (kind === 'inc' || kind === 'ret' || kind === 'ship') return showDocs(kind, box);
     load2('/api/flow', { kind: kind }, function (r) {
       if (!document.body.contains(box)) return;
       var rows = r.rows || [], h = '';
@@ -1240,8 +1315,8 @@
       if (r.inv_n != null) tabCount.inv = r.inv_n;
       if (r.ost_n != null) tabCount.ost = r.ost_n;
       // руководитель 22.11: второй ряд — 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (ERP, только чтение)
-      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы'], ['ret', '↩️ Возврат']] : [];
-      if (r.flow) { tabCount.mv = r.flow.mv; tabCount.inc = r.flow.inc; tabCount.ret = r.flow.ret; }
+      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы'], ['ret', '↩️ Возврат'], ['ship', '🛒 Отгрузка']] : [];
+      if (r.flow) { tabCount.mv = r.flow.mv; tabCount.inc = r.flow.inc; tabCount.ret = r.flow.ret; tabCount.ship = r.flow.ship; }
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
@@ -1250,7 +1325,7 @@
       var invOn = r.inv && r.inv.lv >= 1;
       if (invOn) fl.push(['inv', '📋 Инвент.']);
       if (r.ost) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
-      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost) || (/^(mv|inc|ret)$/.test(mfilter) && r.flow)) mf = mfilter;
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost) || (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow)) mf = mfilter;
       lastTabs = fl;
       h += tabsHtml(mf);
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
@@ -1259,7 +1334,7 @@
         h += '<div id="invbox"><div class="spin">Загрузка документов ERP…</div></div>';
       } else if (mf === 'ost') {
         h += '<div id="ostbox" style="margin-top:12px"><div class="spin">Загрузка листа остатков…</div></div>';
-      } else if (/^(mv|inc|ret)$/.test(mf)) {
+      } else if (/^(mv|inc|ret|ship)$/.test(mf)) {
         h += '<div id="flowbox" style="margin-top:12px"><div class="spin">Загрузка из ERP…</div></div>';
       } else if (cats.length > 1 || mf === 'tas') {
         var ct = cats.map(function (c) { return catTile(c, tiles); }).join('');
