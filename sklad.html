@@ -320,6 +320,11 @@
   .sgs .sg { font-size: 11.5px; font-weight: 800; padding: 2px 7px; border-radius: 8px; background: #eceef3; color: #9aa0ab; }
   .sgs .sg.y { background: #dff5e7; color: #17964a; }
   .sgs .sg.wt { background: #fff1d6; color: #b36b00; }
+  .nums { display: flex; flex-wrap: wrap; gap: 5px; margin: -2px 0 8px; }
+  .nums .nm { font-size: 13px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: #eceef3; color: #9aa0ab; }
+  .nums .nm i { font-style: normal; font-size: 11px; opacity: .75; margin-right: 1px; }
+  .nums .nm.y { background: #1f2a44; color: #fff; }
+  .nums.big { margin: 8px 0 10px; } .nums.big .nm { font-size: 15px; padding: 5px 10px; }
   .btag { display: inline-block; margin-top: 3px; font-size: 13px; padding: 2px 8px; border-radius: 8px; background: #fff3cc; color: #7a4a00; }
   .btag.c1 { background: #e6efff; color: #17468f; }
   .spec .sft { margin-top: 6px; font-family: inherit; font-size: 10px; color: #888; text-align: right; }
@@ -545,7 +550,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '07355e3f', newBuild = '';
+  var BUILD = '6aab8b7f', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1295,7 +1300,8 @@
         var route = kind === 'ship'
           ? '<span class="fr">📤 ' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 ' + esc(x.who) + '</span>'
           : '<span class="fr">' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(x.who) + '</span><i>→</i><span class="to">' + esc(x.store) + '</span>';
-        return '<div class="tcard st-' + (st === 'new' ? 'new' : st === 'ready' ? 'ready' : 'ok') + '" data-doc="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
+        return '<div class="tcard st-' + (st === 'new' ? 'new' : st === 'ready' ? 'ready' : 'ok') + '" data-doc="' + esc(x.id) + '"><div class="th"><b>' +
+          (kind === 'ship' ? 'ERP ' : '№') + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' + (kind === 'ship' ? numRow(x) : '') +
           '<div class="rt2">' + route + '</div>' +
           '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' ' + esc(l0.name || '') + more + '<br><b>' +
           (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
@@ -1335,13 +1341,21 @@
       });
     });
   }
+  // 22.11.2026 (руководитель): номера документа — ERP · SU (спецификация Smartup) · 1С (счёт-фактура; только Перечисление BP).
+  // Нет номера — «—»; Gynomedix и Терминал — без 1С
+  function numRow(x, big) {
+    var s = x.sig || {};
+    var p = function (t, v) { return '<span class="nm' + (v ? ' y' : '') + '"><i>' + t + '</i> ' + (v ? esc(v) : '—') + '</span>'; };
+    // ERP — крупно в заголовке; здесь следом SU и 1С
+    var h = (x.sys === 'SMARTUP' ? p('SU', s.su) : '') + (s.c1need ? p('1С', s.c1) : '');
+    return h ? '<div class="nums' + (big ? ' big' : '') + '">' + h + '</div>' : '';
+  }
   // 22.11.2026 (руководитель): признаки отгрузки — ERP проведена · Smartup номер спецификации · 1С счёт-фактура
   function sigRow(x) {
     var s = x.sig || {};
     var b = function (ok, t) { return '<span class="sg' + (ok ? ' y' : '') + '">' + (ok ? '✓ ' : '· ') + t + '</span>'; };
     var w = x.wh;   // склад подтвердил, что забрал (бот склада)
-    return '<div class="sgs">' + b(s.erp, 'ERP') + (x.sys === 'SMARTUP' ? b(!!s.su, 'спец.' + (s.su ? ' №' + esc(s.su) : '')) : '') +
-      (s.c1need ? b(!!s.c1, 'с/ф 1С' + (s.c1 ? ' №' + esc(s.c1) : '')) : '') +
+    return '<div class="sgs">' + b(s.erp, s.erp ? 'проведена в ERP' : 'в ERP не проведена') +
       (x.step !== 'new' ? '<span class="sg' + (w ? ' y' : ' wt') + '">' + (w ? '✓ склад: ' + esc(String(w.by || '').slice(0, 14)) + ' ' + esc(w.at || '') : '⏳ склад не подтвердил') + '</span>' : '') + '</div>';
   }
   // 22.11.2026 (руководитель): счёт-фактура 1С с партиями (снимок продаж 1С; суммы 1С без НДС, НДС 12 %)
@@ -1432,7 +1446,7 @@
       var h = subTop(kind, NM + ' · №' + x.id);
       if (kind === 'ship') {   // 🛒 Отгрузка: склад → клиент; собрать — в окне склада, провести — в ERP
         var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : '🚚 ОТГРУЖЕНО' };
-        h += '<div class="dhead st-' + st + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' +
+        h += '<div class="dhead st-' + st + '"><div class="dn">ERP ' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' + numRow(x, true) +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st) + sigRow(x);
         h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
