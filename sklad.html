@@ -260,7 +260,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '570e4e3d', newBuild = '';
+  var BUILD = '79c185f3', newBuild = '';
   function reloadTo(b) {
     try { if (sessionStorage.getItem('pfl:rl') === b) return; sessionStorage.setItem('pfl:rl', b); } catch (e) {}
     var q = new URLSearchParams(location.search); q.set('v', b);
@@ -444,7 +444,7 @@
         lastBadge[it.key] = x.t;
         var nm = fl === 'gp' ? '' : esc(it.name);
         var tag = fl ? '<div class="ptag' + (ter ? ' ter' : '') + '">' + (ter ? 'ТЕРМИНАЛ' : 'ПЕРЕЧИСЛЕНИЕ') + '</div>' : '';
-        return '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + (fl === 'gp' ? ' cat' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
+        return '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + (fl === 'gp' || fl === 'tas' ? ' cat' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
           (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div>' + tag + (nm ? '<div class="n">' + nm + '</div>' : '') + '<div class="c">' +
           (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
       }).join('');
@@ -616,7 +616,8 @@
         });
         h += '</div>';
       } else {
-        h += tilesHtml(tiles, function (it) { return mf === 'all' || it.f === mf; });
+        // руководитель 22.11: Ташкент — как завод: большие плитки с меткой ПЕРЕЧИСЛЕНИЕ / ТЕРМИНАЛ, названия те же, без заголовков
+        h += tilesHtml(tiles, function (it) { return mf === 'all' || it.f === mf; }, mf === 'tas' ? 'tas' : '');
       }
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
