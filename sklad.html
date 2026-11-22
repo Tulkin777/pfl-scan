@@ -246,6 +246,37 @@
   .seg button .sb { display: inline-block; min-width: 22px; border-radius: 11px; padding: 0 6px; margin-left: 6px; font-size: 13px;
                     background: var(--orange); color: #fff; }
   .seg button .sb.z { background: rgba(127,127,127,.25); color: inherit; }
+  /* 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (руководитель 22.11) */
+  .fchip[data-f=mv] { background: linear-gradient(150deg, #8b7bff, #4b39c9); box-shadow: 0 4px 0 #34278f; }
+  .fchip[data-f=inc] { background: linear-gradient(150deg, #b5e655, #5c9e12); box-shadow: 0 4px 0 #3f700a; }
+  .fchip[data-f=ret] { background: linear-gradient(150deg, #ff8f8f, #d43c3c); box-shadow: 0 4px 0 #962424; }
+  .fchip.free { background: transparent; border: 2px dashed #c9d1de; color: #9aa3b2; box-shadow: none; cursor: default; }
+  .fchip.free i { opacity: .6; }
+  .fchips + .fchips { margin-top: 2px; }
+  .dir { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 0 0 10px; }
+  .dir div { border-radius: 14px; padding: 10px 4px; text-align: center; font-weight: 800; font-size: 12.5px; color: #fff; line-height: 1.25;
+             box-shadow: 0 3px 0 rgba(0,0,0,.25); cursor: pointer; }
+  .dir div b { display: block; font-size: 20px; }
+  .dir div.on { box-shadow: inset 0 0 0 3px #fff, 0 3px 0 rgba(0,0,0,.25); transform: translateY(-2px); }
+  .dir .d1 { background: linear-gradient(150deg, #4fd68a, #1f62c9); } .dir .d2 { background: linear-gradient(150deg, #1f62c9, #4fd68a); }
+  .dir .d3 { background: linear-gradient(150deg, #aab3c4, #6b7385); } .dir .d4 { background: linear-gradient(150deg, #ffbf55, #e8820c); }
+  .dir .d5 { background: linear-gradient(150deg, #4fd68a, #17964a); }
+  .mvc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 7px solid #ccc; }
+  .mvc.st1 { border-left-color: #f5b400; } .mvc.st2 { border-left-color: #22a559; } .mvc.st3 { border-left-color: #999; }
+  .mvc.rt.st2 { border-left-color: #d43c3c; }
+  .mvc .mh { display: flex; align-items: center; font-size: 17px; }
+  .mvc .mh span { margin-left: auto; font-size: 12px; font-weight: 800; border-radius: 8px; padding: 2px 7px; background: #fff; color: #555; }
+  .mvc.st1 .mh span { color: #a86b00; background: #fff3cc; } .mvc.st2 .mh span { color: #0f7a3c; background: #dcf5e6; }
+  .rt2 { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 13px; font-weight: 800; }
+  .rt2 span { border-radius: 9px; padding: 4px 7px; flex: 1; text-align: center; }
+  .rt2 .fr { background: #ffe2c2; color: #a14d00; } .rt2 .to { background: #d6e6ff; color: #16479c; } .rt2 i { font-style: normal; font-size: 18px; }
+  .mvc .mm { font-size: 13px; color: var(--hint); margin: 2px 0; } .mvc .mm b { color: var(--fg); }
+  .mvc .mm.big { font-size: 15px; color: var(--fg); }
+  .mvc .drv { background: linear-gradient(150deg, #8b7bff, #4b39c9); color: #fff; box-shadow: 0 3px 0 #34278f; }
+  .mvc .chk { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .mvc .chk span { font-size: 12px; font-weight: 800; border-radius: 8px; padding: 3px 7px; }
+  .mvc .chk .ok { background: #dcf5e6; color: #0f7a3c; } .mvc .chk .no { background: #fde8e6; color: #c0392b; }
+  .mvc .sost .ln { font-size: 13px; }
   /* «⬅️ Назад · где вы» — вместо подписи раздела */
   .backp { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0 8px; padding: 8px 14px 8px 10px; border-radius: 22px; cursor: pointer;
            background: linear-gradient(150deg, #ffffff, #e9eef7); box-shadow: 0 3px 0 #c9d1de, 0 6px 12px rgba(0,0,0,.08); color: #1e1e1e;
@@ -356,7 +387,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd8dd492d', newBuild = '';
+  var BUILD = 'ffc90d40', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -545,17 +576,20 @@
                 pick: function (it) { return it.f === 'tas' && it.sec.head === 'ТЕРМИНАЛ'; } }];
   // руководитель 22.11: вкладки Завод · Ташкент · Инвент. · Остаток видны и внутри (Готовая продукция, Сырьё, инвентаризация…),
   // а большая шапка «N задач» — только на главном: экран выше, места больше
-  var lastTabs = [], tabCount = {};
+  var lastTabs = [], lastTabs2 = [], tabCount = {};
   function tabsHtml(active) {
     var fl = lastTabs;
-    if (fl.length < 2) return '';
+    if (fl.length < 2 && !lastTabs2.length) return '';
     var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
+    return tabRow(fl, sq, active) + (lastTabs2.length ? tabRow(lastTabs2, true, active, true) : '');
+  }
+  function tabRow(fl, sq, active, free) {   // руководитель 22.11: второй ряд — того же размера, с одним свободным местом
     return '<div class="fchips' + (sq ? ' sq' : '') + '">' + fl.map(function (f) {
       var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
       var cnt = tabCount[f[0]];   // руководитель 22.11: на вкладке — сколько задач / документов / расхождений
       var bd = cnt != null ? '<span class="tbd' + (cnt ? (f[0] === 'ost' ? ' red' : '') : ' z') + '">' + cnt + '</span>' : '';
       return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + bd + lb + '</div>';
-    }).join('') + '</div>';
+    }).join('') + (free ? new Array(Math.max(0, 4 - fl.length) + 1).join('<div class="fchip free"><i>＋</i>свободно</div>') : '') + '</div>';
   }
   function bindTabs() {
     Array.prototype.forEach.call(view.querySelectorAll('.fchip[data-f]'), function (el) {
@@ -855,6 +889,66 @@
     });
   }
 
+  // ---------- 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (руководитель 22.11: ERP, только чтение) ----------
+  var flowDir = '';
+  function showFlow(kind, box) {
+    load2('/api/flow', { kind: kind }, function (r) {
+      if (!document.body.contains(box)) return;
+      var rows = r.rows || [], h = '';
+      var SL = kind === 'mv' ? { 1: ['st1', '🟡 создано — ждёт'], 2: ['st2', '🟢 принято'], 3: ['st3', '⚪ отменено'] }
+        : { 1: ['st1', '🟡 новый — не проведён'], 2: ['st2', '🟢 проведён'] };
+      function dtf(s) { s = String(s || ''); return s.slice(8, 10) + '.' + s.slice(5, 7) + ' ' + s.slice(11, 16); }
+      if (kind === 'mv') {   // направления — нажатие отбирает карточки
+        var D = [['Завод→Ташкент', 'Завод → Ташкент', 'd1'], ['Ташкент→Завод', 'Ташкент → Завод', 'd2'], ['in', 'внутри', 'd3']];
+        h += '<div class="dir">' + D.map(function (d) {
+          var c = rows.filter(function (x) { return d[0] === 'in' ? x.dir.split('→')[0] === x.dir.split('→')[1] : x.dir === d[0]; }).length;
+          return '<div class="' + d[2] + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
+        }).join('') + '</div>';
+        if (flowDir) rows = rows.filter(function (x) { return flowDir === 'in' ? x.dir.split('→')[0] === x.dir.split('→')[1] : x.dir === flowDir; });
+      } else {
+        var wait = rows.filter(function (x) { return x.status === 1; }).length;
+        h += '<div class="dir"><div class="d4"><b>' + wait + '</b>ждут</div><div class="d5"><b>' + (rows.length - wait) + '</b>проведены</div>' +
+          '<div class="d3"><b>' + rows.length + '</b>за ' + r.days + ' дн.</div></div>';
+      }
+      if (!rows.length) h += '<div class="empty">За ' + r.days + ' дн. ничего нет</div>';
+      h += rows.map(function (x, i) {
+        var s = SL[x.status] || ['st1', '?'], first = (x.lines[0] || {}).name || '', more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '';
+        var tot = x.lines.reduce(function (a, y) { return a + (+y.qty || 0); }, 0);
+        var c = '<div class="mvc ' + s[0] + (kind === 'ret' ? ' rt' : '') + '"><div class="mh"><b>№' + esc(x.id) + '</b><span>' + s[1] + '</span></div>';
+        if (kind === 'mv') {
+          c += '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
+            '<div class="mm">📦 ' + esc(first) + more + ' · <b>' + n(tot) + '</b></div>' +
+            '<div class="mm">создал ' + esc(x.author) + ' ' + dtf(x.date) + (x.acc ? ' · принято ' + dtf(x.acc) : '') + '</div>';
+        } else {
+          c += '<div class="mm big">' + (kind === 'inc' ? '🏭 ' : '🛒 ') + '<b>' + esc(x.who) + '</b></div>' +
+            '<div class="mm">' + (kind === 'inc' ? '' : '↩ ') + esc(first) + more + ' · <b>' + n(tot) + '</b> → ' + esc(x.store) + '</div>' +
+            '<div class="mm">' + dtf(x.date) + ' · ' + esc(x.author) + '</div>';
+          if (x.placed != null) c += '<div class="chk">' + (x.placed ? '<span class="ok">✅ на полке</span>' : '<span class="no">⏳ на полку не поставлен</span>') + '</div>';
+        }
+        c += '<div class="row3"><button data-sost="' + i + '">📄 Состав · ' + x.lines.length + '</button>' +
+          (kind === 'mv' && x.status === 1 ? '<button class="drv" data-drv="' + i + '">🚛 Водителю</button>' : '') + '</div><div class="sost" id="sost' + i + '"></div></div>';
+        return c;
+      }).join('');
+      box.innerHTML = h;
+      Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
+        el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; showFlow(kind, box); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-sost]'), function (b) {
+        b.onclick = function () {
+          var i = +b.getAttribute('data-sost'), el = $('sost' + i);
+          if (el.innerHTML) { el.innerHTML = ''; return; }
+          el.innerHTML = rows[i].lines.map(function (y, j) {
+            var fq = formOf(y.name);
+            return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b></div>';
+          }).join('');
+        };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-drv]'), function (b) {
+        b.onclick = function () { say('🚛 Водителю — следующий шаг: сначала покажу вам текст для водителя, отправка — после вашего «да».'); };
+      });
+    });
+  }
+
   var menuTimer = null;
   function showMenu() {
     if (newBuild && newBuild !== BUILD) return reloadTo(newBuild);   // вернулись на главный — подхватить новую версию
@@ -876,6 +970,9 @@
       Object.keys(tiles).forEach(function (k2) { if (tabCount[ITEM[k2].f] != null) tabCount[ITEM[k2].f] += tiles[k2].t; });
       if (r.inv_n != null) tabCount.inv = r.inv_n;
       if (r.ost_n != null) tabCount.ost = r.ost_n;
+      // руководитель 22.11: второй ряд — 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (ERP, только чтение)
+      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы'], ['ret', '↩️ Возврат']] : [];
+      if (r.flow) { tabCount.mv = r.flow.mv; tabCount.inc = r.flow.inc; tabCount.ret = r.flow.ret; }
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
@@ -884,7 +981,7 @@
       var invOn = r.inv && r.inv.lv >= 1;
       if (invOn) fl.push(['inv', '📋 Инвент.']);
       if (r.ost) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
-      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost)) mf = mfilter;
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost) || (/^(mv|inc|ret)$/.test(mfilter) && r.flow)) mf = mfilter;
       lastTabs = fl;
       h += tabsHtml(mf);
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
@@ -893,6 +990,8 @@
         h += '<div id="invbox"><div class="spin">Загрузка документов ERP…</div></div>';
       } else if (mf === 'ost') {
         h += '<div id="ostbox" style="margin-top:12px"><div class="spin">Загрузка листа остатков…</div></div>';
+      } else if (/^(mv|inc|ret)$/.test(mf)) {
+        h += '<div id="flowbox" style="margin-top:12px"><div class="spin">Загрузка из ERP…</div></div>';
       } else if (cats.length > 1 || mf === 'tas') {
         var ct = cats.map(function (c) { return catTile(c, tiles); }).join('');
         if (cats.length === 1) ct = ct.replace('tile cat ', 'tile cat wide ');   // одна кнопка — во всю ширину
@@ -906,6 +1005,7 @@
       bindCats();
       if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
       if (mf === 'ost') showOst($('ostbox'));
+      if ($('flowbox')) showFlow(mf, $('flowbox'));
       $('ref').onclick = function () { haptic('success'); showMenu(); };
       bindTabs();
       if ($('acc')) $('acc').onclick = function () { go(showAcc); };
