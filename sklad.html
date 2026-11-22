@@ -275,6 +275,11 @@
   .dir.dir4 { grid-template-columns: 1fr 1fr; }
   .dir .d6 { background: linear-gradient(150deg, #4fd68a, #0f8a4a); } .dir .d7 { background: linear-gradient(150deg, #6fb2ff, #174fa8); }
   .dir div.z { opacity: .45; filter: saturate(.6); }
+  /* 22.11.2026 (руководитель): пусто — без цвета, просто серый 0 */
+  .dir div.z { opacity: 1; filter: none; background: #eef0f4; color: #9aa0ab; box-shadow: 0 3px 0 #d9dde5; }
+  .dir div.z.on { box-shadow: inset 0 0 0 3px #9aa0ab; }
+  .stp.s3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .stp.s3 .sp { font-size: 13px; padding: 9px 2px; } .stp.s3 .sp b { font-size: 21px; }
   .mvc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 7px solid #ccc; }
   .mvc.st1 { border-left-color: #f5b400; } .mvc.st2 { border-left-color: #22a559; } .mvc.st3 { border-left-color: #999; }
   .mvc.rt.st2 { border-left-color: #d43c3c; }
@@ -493,7 +498,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '3331fa61', newBuild = '';
+  var BUILD = '02ea5d70', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1126,7 +1131,7 @@
   // ---------- 📥 Приходы · ↩️ Возврат — как перемещения (руководитель 22.11): откуда → куда, шаги, отбор, полный экран ----------
   var DSTEPS = { inc: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на полке']],
                  ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']],
-                 ship: [['new', '🟡', 'создан'], ['ready', '📦', 'собран'], ['ok', '🚚', 'отгружен']] };
+                 ship: [['new', '🟡', 'создано'], ['ready', '📦', 'готово'], ['ok', '🚚', 'отгружено']] };
   var docFlt = { inc: '', ret: '', ship: '' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
   // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
   var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
@@ -1144,9 +1149,9 @@
     }).join('') + '</div>';
   }
   function docFilters(kind) {   // плитки-отбор: нажатие показывает только эти документы
-    if (kind === 'ship') return [['new', '🟡 создан', 'd4', function (x) { return x.step === 'new'; }],
-                                 ['ready', '📦 собран', 'd7', function (x) { return x.step === 'ready'; }],
-                                 ['ok', '🚚 отгружен', 'd5', function (x) { return x.step === 'ok'; }]];
+    if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.step === 'new'; }],
+                                 ['ready', '📦 готово', 'd7', function (x) { return x.step === 'ready'; }],
+                                 ['ok', '🚚 отгружено', 'd5', function (x) { return x.step === 'ok'; }]];
     return kind === 'inc'
       ? [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
          ['noshelf', '📍 не на полке', 'd7', function (x) { return x.status === 2 && x.placed === false; }],
@@ -1175,11 +1180,11 @@
         if (WL.length) h += '<div class="msec">' + (kind === 'inc' ? 'ПОСТАВЩИК' : 'КЛИЕНТ') + '</div><div class="who' + (kind === 'ship' ? ' cl' : '') + '">' + WL.map(function (w) {
           return '<span data-dw="' + esc(w) + '"' + (docWho[kind] === w ? ' class="on"' : '') + '>' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(w.length > 24 ? w.slice(0, 23) + '…' : w) + ' · ' + (WC[w] || 0) + '</span>';
         }).join('') + '</div>';
-        h += '<div class="msec">ШАГИ</div>';
       }
-      h += '<div class="dir">' + F.map(function (q) {
+      // 22.11.2026 (руководитель): шаги — как в перемещениях (создан · собран · отгружен), нажатие отбирает список ниже
+      h += '<div class="stp s3"' + (F.length !== 3 ? ' style="grid-template-columns:repeat(' + F.length + ',1fr)"' : '') + '>' + F.map(function (q) {
         var c = all.filter(function (x) { return q[3](x) && inPl(x) && inWho(x); }).length;
-        return '<div class="' + q[2] + (c ? '' : ' z') + (docFlt[kind] === q[0] ? ' on' : '') + '" data-df="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
+        return '<div class="sp' + (docFlt[kind] === q[0] ? ' on' : '') + (c ? '' : ' z') + '" data-df="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
       }).join('') + '</div>';
       var any = f || pl || docWho[kind];
       h += '<div class="note" style="margin:-4px 0 8px">' + (any ? 'Показано ' + rows.length + ' · нажмите ещё раз — снять отбор' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
