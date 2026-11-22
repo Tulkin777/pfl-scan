@@ -278,12 +278,15 @@
   /* 22.11.2026 (руководитель): пусто — без цвета, просто серый 0 */
   .dir div.z { opacity: 1; filter: none; background: #eef0f4; color: #9aa0ab; box-shadow: 0 3px 0 #d9dde5; }
   .dir div.z.on { box-shadow: inset 0 0 0 3px #9aa0ab; }
-  .dir div.shp { position: relative; text-align: left; padding: 10px 10px 10px; display: flex; flex-direction: column; align-items: flex-start; min-height: 96px; }
+  .dir.dir4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .dir div.shp { min-width: 0; position: relative; text-align: left; padding: 10px 10px 10px; display: flex; flex-direction: column; align-items: flex-start; min-height: 96px; }
   .dir div.shp .sc { position: absolute; top: 8px; right: 8px; min-width: 28px; text-align: center; border-radius: 14px; padding: 2px 7px;
     background: #fff; color: #1e1e1e; font-size: 16px; font-weight: 900; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
   .dir div.shp .cty { font-size: 16px; font-weight: 900; padding-right: 34px; line-height: 1.15; }
   .dir div.shp .ptag { margin-top: 6px; font-size: 11px; letter-spacing: .3px; padding: 3px 7px; }
-  .dir div.shp .brs { margin-top: 7px; } .dir div.shp .brs span { font-size: 11.5px; }
+  .dir div.shp .brs { margin-top: 7px; flex-wrap: nowrap; gap: 3px; max-width: 100%; overflow: hidden; }
+  .dir div.shp .brs span { font-size: 10px; padding: 2px 4px; border-radius: 6px; white-space: nowrap; letter-spacing: -.2px; }
+  .dir div.shp .ptag.ter { background: #10295c; color: #fff; }   /* руководитель 22.11: голубой сливался с синей плиткой */
   .dir div.shp.z .sc { background: #dfe3ea; color: #9aa0ab; box-shadow: none; } .dir div.shp.z .ptag { background: #e4e7ee; color: #9aa0ab; box-shadow: none; }
   .dir div.shp.z .brs .br0 { background: #e4e7ee; color: #9aa0ab; }
   .stp.s3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -506,7 +509,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6fb724b4', newBuild = '';
+  var BUILD = '819d316b', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1156,7 +1159,7 @@
   // ---------- 📥 Приходы · ↩️ Возврат — как перемещения (руководитель 22.11): откуда → куда, шаги, отбор, полный экран ----------
   var DSTEPS = { inc: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на полке']],
                  ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']],
-                 ship: [['new', '🟡', 'создано'], ['ready', '📦', 'готово'], ['ok', '🚚', 'отгружено']] };
+                 ship: [['new', '🟡', 'создано'], ['ok', '🚚', 'отгружено']] };   // 22.11.2026 (руководитель): без «готово»
   var docFlt = { inc: '', ret: '', ship: '' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
   // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
   var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
@@ -1172,11 +1175,13 @@
     var ks = Object.keys(B).sort(function (a, b) { return B[b] - B[a]; });
     return '<div class="' + q[2] + ' shp' + (c ? '' : ' z') + (on ? ' on' : '') + '" data-dp="' + q[0] + '"><span class="sc">' + c + '</span>' +
       '<span class="cty">' + esc(q[4]) + '</span>' + (q[5] ? '<span class="ptag' + (q[5] === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + q[5] + '</span>' : '') +
-      '<span class="brs">' + (ks.length ? ks.map(function (b) { return '<span class="br ' + (BRCL[b] || '') + '">' + esc(b) + ' · ' + B[b] + '</span>'; }).join('')
+      '<span class="brs">' + (ks.length ? ks.map(function (b) {   // 3 бренда — коротко, чтобы в один ряд
+        var nm = ks.length > 2 ? ({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[b] || b) : b;
+        return '<span class="br ' + (BRCL[b] || '') + '">' + esc(nm) + ' ' + B[b] + '</span>'; }).join('')
         : '<span class="br0">пусто</span>') + '</span></div>';
   }
   function docStep(kind, x) {
-    if (kind === 'ship') return x.step || 'new';
+    if (kind === 'ship') return x.status === 2 ? 'ok' : 'new';
     if (x.status !== 2) return 'new';
     return kind === 'inc' && x.placed === true ? 'shelf' : 'ok';
   }
@@ -1187,9 +1192,10 @@
     }).join('') + '</div>';
   }
   function docFilters(kind) {   // плитки-отбор: нажатие показывает только эти документы
-    if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.step === 'new'; }],
-                                 ['ready', '📦 готово', 'd7', function (x) { return x.step === 'ready'; }],
-                                 ['ok', '🚚 отгружено', 'd5', function (x) { return x.step === 'ok'; }]];
+    // 22.11.2026 (руководитель): создано · отгружено (за сутки) · 🗄 архив (отгружено 1–3 дня назад, показывается только по нажатию)
+    if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.status === 1; }],
+                                 ['ok', '🚚 отгружено', 'd5', function (x) { return x.step === 'ok'; }],
+                                 ['arch', '🗄 архив', 'd3', function (x) { return x.step === 'arch'; }]];
     return kind === 'inc'
       ? [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
          ['noshelf', '📍 не на полке', 'd7', function (x) { return x.status === 2 && x.placed === false; }],
@@ -1204,11 +1210,13 @@
       var all = r.rows || [], F = docFilters(kind), f = F.filter(function (q) { return q[0] === docFlt[kind]; })[0];
       var PL = DPLACE[kind], pl = PL && PL.filter(function (q) { return q[0] === docPl[kind]; })[0];
       var inPl = function (x) { return !pl || pl[3].indexOf(+x.st) >= 0; }, inWho = function (x) { return !docWho[kind] || x.who === docWho[kind]; };
-      var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x); });
+      if (kind === 'ship') docWho.ship = '';   // 22.11.2026 (руководитель): у отгрузки строки клиентов нет
+      var live = function (x) { return kind !== 'ship' || docFlt.ship === 'arch' || x.step !== 'arch'; };   // архив — только по нажатию
+      var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x) && live(x); });
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
         h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
-          var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (!f || f[3](x)); }), c = rq.length;
+          var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (!f || f[3](x)) && live(x); }), c = rq.length;
           if (kind === 'ship') return shipTile(q, c, rq, docPl[kind] === q[0]);
           return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
         }).join('') + '</div>';
@@ -1216,6 +1224,7 @@
         all.forEach(function (x) { if (inPl(x) && (!f || f[3](x))) WC[x.who] = (WC[x.who] || 0) + 1; });
         var WL = Object.keys(WC).sort(function (a, b) { return WC[b] - WC[a]; });
         if (docWho[kind] && !WC[docWho[kind]]) WL.unshift(docWho[kind]);
+        if (kind === 'ship') WL = [];
         if (WL.length) h += '<div class="msec">' + (kind === 'inc' ? 'ПОСТАВЩИК' : 'КЛИЕНТ') + '</div><div class="who' + (kind === 'ship' ? ' cl' : '') + '">' + WL.map(function (w) {
           return '<span data-dw="' + esc(w) + '"' + (docWho[kind] === w ? ' class="on"' : '') + '>' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(w.length > 24 ? w.slice(0, 23) + '…' : w) + ' · ' + (WC[w] || 0) + '</span>';
         }).join('') + '</div>';
@@ -1226,7 +1235,8 @@
         return '<div class="sp' + (docFlt[kind] === q[0] ? ' on' : '') + (c ? '' : ' z') + '" data-df="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
       }).join('') + '</div>';
       var any = f || pl || docWho[kind];
-      h += '<div class="note" style="margin:-4px 0 8px">' + (any ? 'Показано ' + rows.length + ' · нажмите ещё раз — снять отбор' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
+      h += '<div class="note" style="margin:-4px 0 8px">' + (any ? 'Показано ' + rows.length + ' · нажмите ещё раз — снять отбор'
+        : kind === 'ship' ? 'Создано и отгружено за сутки · ' + rows.length + ' · архив — отдельно' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
       if (!rows.length) h += '<div class="empty">Ничего нет</div>';
       h += rows.map(function (x) {
         var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '', st = docStep(kind, x);
@@ -1238,7 +1248,8 @@
           '<div class="rt2">' + route + '</div>' +
           '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' ' + esc(l0.name || '') + more + '<br><b>' +
           (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
-          docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') + '</div>';
+          docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') +
+          (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') + '</div>';
       }).join('');
       box.innerHTML = h;
       Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
@@ -1269,7 +1280,7 @@
       var st = docStep(kind, x), SN = { new: '🟡 СОЗДАН — НЕ ПРОВЕДЁН', ok: '🟢 ПРОВЕДЁН', shelf: '📍 НА ПОЛКЕ' };
       var h = subTop(kind, NM + ' · №' + x.id);
       if (kind === 'ship') {   // 🛒 Отгрузка: склад → клиент; собрать — в окне склада, провести — в ERP
-        var SS = { new: '🟡 ЖДЁТ СБОРКИ', ready: '📦 СОБРАН — ЖДЁТ ОТГРУЗКИ', ok: '🚚 ОТГРУЖЕН' };
+        var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : '🚚 ОТГРУЖЕНО' };
         h += '<div class="dhead st-' + st + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st);
@@ -1279,8 +1290,8 @@
             (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
         }).join('') + '</div>';
         var T2 = [['🟡', x.date, 'заказ в ERP · ' + x.author, true],
-                  ['📦', null, st === 'new' ? 'ждём: кладовщик соберёт по номерам (схема покажет места)' : 'собран в окне склада', st !== 'new'],
-                  ['🚚', null, st === 'ok' ? 'отгружен (проведён в ERP)' : 'потом: отгрузка проводится в ERP', st === 'ok']];
+                  ['🚚', x.done || null, st === 'ok' ? 'отгружено (проведено в ERP)' + (x.step === 'arch' ? ' · 🗄 в архиве' : '')
+                    : 'ждём: кладовщик соберёт по номерам, потом отгрузка проводится в ERP', st === 'ok']];
         h += '<div class="box"><h3>Ход</h3><div class="tl">' + T2.map(function (t) {
           return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
         }).join('') + '</div></div>';
