@@ -280,6 +280,9 @@
   .mvc .chk span { font-size: 12px; font-weight: 800; border-radius: 8px; padding: 3px 7px; }
   .mvc .chk .ok { background: #dcf5e6; color: #0f7a3c; } .mvc .chk .no { background: #fde8e6; color: #c0392b; }
   .mvc .sost .ln { font-size: 13px; }
+  .mvc .chk .dr { background: #efeaff; color: #4b39c9; }
+  .ackw { text-align: center; padding: 30px 10px; }
+  .ackw .big2 { font-size: 64px; } .ackw h2 { margin: 10px 0 6px; font-size: 22px; } .ackw p { color: var(--hint); margin: 0 0 20px; }
   /* «⬅️ Назад · где вы» — вместо подписи раздела */
   .backp { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0 8px; padding: 8px 14px 8px 10px; border-radius: 22px; cursor: pointer;
            background: linear-gradient(150deg, #ffffff, #e9eef7); box-shadow: 0 3px 0 #c9d1de, 0 6px 12px rgba(0,0,0,.08); color: #1e1e1e;
@@ -390,7 +393,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'a9dcd141', newBuild = '';
+  var BUILD = '815c0f95', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -926,6 +929,13 @@
           c += '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
             '<div class="mm">📦 ' + esc(first) + more + ' · <b>' + n(tot) + '</b></div>' +
             '<div class="mm">создал ' + esc(x.author) + ' ' + dtf(x.date) + (x.acc ? ' · принято ' + dtf(x.acc) : '') + '</div>';
+          if (x.drv) {   // 🚛 отметки водителя
+            var dv = x.drv;
+            c += '<div class="chk"><span class="dr">🚛 ' + esc(dv.driver) + ' · ' + dtf(dv.sent) + '</span>' +
+              (dv.taken ? '<span class="ok">✅ взял ' + dtf(dv.taken).slice(6) + '</span>' : '<span class="no">⏳ не взял</span>') +
+              (dv.done ? '<span class="ok">🏁 привёз ' + dtf(dv.done).slice(6) + '</span>' : '') +
+              (dv.prob ? '<span class="no">❗ проблема ' + dtf(dv.prob).slice(6) + '</span>' : '') + '</div>';
+          }
         } else {
           c += '<div class="mm big">' + (kind === 'inc' ? '🏭 ' : '🛒 ') + '<b>' + esc(x.who) + '</b></div>' +
             '<div class="mm">' + (kind === 'inc' ? '' : '↩ ') + esc(first) + more + ' · <b>' + n(tot) + '</b> → ' + esc(x.store) + '</div>' +
@@ -950,8 +960,22 @@
           }).join('');
         };
       });
-      Array.prototype.forEach.call(box.querySelectorAll('[data-drv]'), function (b) {
-        b.onclick = function () { say('🚛 Водителю — следующий шаг: сначала покажу вам текст для водителя, отправка — после вашего «да».'); };
+      Array.prototype.forEach.call(box.querySelectorAll('[data-drv]'), function (b) {   // руководитель 22.11: «Да, включай»
+        b.onclick = function () {
+          var x = rows[+b.getAttribute('data-drv')], ds = (r.drivers || []).slice(0, 2);
+          if (!ds.length) return say('Водители не указаны.');
+          function send(dn) {
+            b.disabled = true; b.textContent = '⏳ Отправляю…';
+            call('/api/driver_send', { id: x.id, driver: dn }, 30000).then(function (q) {
+              haptic(q.ok ? 'success' : 'warning'); say(q.text); delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; showFlow(kind, box);
+            }).catch(function (e) { b.disabled = false; b.textContent = '🚛 Водителю'; fail(e); });
+          }
+          if (tg && tg.showPopup) {
+            tg.showPopup({ title: '🚛 Кому везти №' + x.id + '?', message: x.src + ' → ' + x.dst,
+              buttons: ds.map(function (dn) { return { id: dn, type: 'default', text: dn }; }).concat([{ id: '', type: 'cancel' }]) },
+              function (id) { if (id) send(id); });
+          } else send(ds[0]);
+        };
       });
     });
   }
@@ -1709,7 +1733,19 @@
 
   if (tg) { tg.ready(); tg.expand(); }
   if (!tg || !tg.initData) {
-    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «📦 Склады» в личке бота склада.</p></div>';
+    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «KO‘CHIRISH 🔄» в личке бота склада.</p></div>';
+  } else if (new URLSearchParams(location.search).get('drv')) {
+    // 🚛 водитель нажал «Взял / Привёз / Проблема» под сообщением бота — отмечаем и показываем итог (руководитель 22.11)
+    var qd = new URLSearchParams(location.search), aid = qd.get('drv'), act = qd.get('act');
+    var AW = { take: ['✅', 'Взял'], done: ['🏁', 'Привёз'], prob: ['❗', 'Проблема'] }[act] || ['❔', '?'];
+    topShow(false);
+    view.innerHTML = '<div class="ackw"><div class="big2">' + AW[0] + '</div><h2>Отмечаю: ' + AW[1] + '…</h2><p>Перемещение №' + esc(aid) + '</p></div>';
+    call('/api/driver_ack', { id: aid, act: act }, 30000).then(function (q) {
+      haptic(q.ok ? 'success' : 'error');
+      view.innerHTML = '<div class="ackw"><div class="big2">' + (q.ok ? AW[0] : '⚠️') + '</div><h2>' + esc(q.text) + '</h2><p>Перемещение №' + esc(aid) + '</p>' +
+        '<button class="main" id="ackx">Закрыть</button></div>';
+      $('ackx').onclick = function () { try { tg.close(); } catch (e) {} };
+    }).catch(fail);
   } else home();
 })();
 </script>
