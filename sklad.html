@@ -207,24 +207,42 @@
                       box-shadow: 0 7px 0 rgba(0,0,0,.28), 0 10px 18px rgba(0,0,0,.22), inset 0 0 0 3px rgba(255,255,255,.9); }
   .fchip[data-f]:active { transform: translateY(3px); box-shadow: none; }
   /* 22.11.2026 (руководитель): задачи — цвет и значок по форме, по плитке пробегает блик (привлекает внимание) */
-  /* блик — второй фон, который движется (не влияет на ширину текста и его ужатие) */
-  .tb.fm { color: #fff; border-color: transparent; box-shadow: 0 3px 0 var(--fd);
-           background-image: linear-gradient(100deg, rgba(255,255,255,0) 40%, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 60%), var(--fg);
-           background-size: 260% 100%, 100% 100%; background-repeat: no-repeat; animation: shine 4.5s ease-in-out infinite; }
+  /* 22.11.2026 (руководитель): у каждого действия свой шаблон — шапка колонки и задачи в её цвете (Из произв. зелёный,
+     Перемещение синий, Приход оранжевый, Отгрузка фиолетовый, Возврат красный); полоска слева — форма товара;
+     белый жирный шрифт с тенью — читается на цвете; блик — второй фон (не мешает ужатию текста) */
+  .ac-prod { --ag: linear-gradient(150deg, #4fd68a, #17964a); --ad: #0f6f36; --ac: #17964a; }
+  .ac-move, .ac-mv, .ac-out { --ag: linear-gradient(150deg, #6fb2ff, #1f62c9); --ad: #154a9a; --ac: #1f62c9; }
+  .ac-in { --ag: linear-gradient(150deg, #ffbf55, #e8820c); --ad: #a85f00; --ac: #e8820c; }
+  .ac-ship { --ag: linear-gradient(150deg, #b592ff, #6a3fd1); --ad: #4a2a9a; --ac: #6a3fd1; }
+  .ac-ret { --ag: linear-gradient(150deg, #ff8f8f, #d43c3c); --ad: #962424; --ac: #d43c3c; }
+  .col[class*="ac-"] h4 { background: var(--ag); color: #fff; margin: -6px -5px 6px; padding: 6px 2px; height: 50px; border-bottom: 0;
+                          text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .col[class*="ac-"] h4 span { background: #fff; color: var(--ac); font-weight: 900; box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+  .tb.act { color: #fff; border: 0; border-left: 6px solid var(--fs, rgba(255,255,255,.55)); box-shadow: 0 3px 0 var(--ad);
+            text-shadow: 0 1px 2px rgba(0,0,0,.4); font-weight: 700;
+            background-image: linear-gradient(100deg, rgba(255,255,255,0) 40%, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 60%), var(--ag);
+            background-size: 260% 100%, 100% 100%; background-repeat: no-repeat; animation: shine 4.5s ease-in-out infinite; }
   @keyframes shine { 0%, 60% { background-position: 130% 0, 0 0; } 100% { background-position: -30% 0, 0 0; } }
-  .tb.fm b, .tb.fm span, .tb.fm u, .tb.fm i { color: #fff; }
-  .tb.fm em { font-style: normal; margin-right: 3px; }
-  .tb.fm.sel { box-shadow: 0 0 0 3px var(--btn), 0 3px 0 var(--fd); }
-  .fm-syr  { --fd: #a85600; --fg: linear-gradient(150deg, #ffbe55, #e07b00); }
-  .fm-kaps { --fd: #9c1f4b; --fg: linear-gradient(150deg, #ff86a6, #d6336c); }
-  .fm-kapl { --fd: #0f6f9c; --fg: linear-gradient(150deg, #66d8ff, #1793c9); }
-  .fm-supp { --fd: #5a2fa3; --fg: linear-gradient(150deg, #c7a2ff, #7e4bd1); }
-  .fm-tabl { --fd: #46577f; --fg: linear-gradient(150deg, #aebee0, #6378a8); }
-  .fm-rr   { --fd: #0b7a61; --fg: linear-gradient(150deg, #66e3c4, #11a383); }
-  .fm-mix  { --fd: #2b3f8f; --fg: linear-gradient(150deg, #8aa2ff, #4a5fd6); }
-  .tb.fm.fm-kaps { border-radius: 18px; }   /* капсулы — «таблеткой» */
+  .tb.act b, .tb.act span, .tb.act u, .tb.act i { color: #fff; }
+  .tb.act em { font-style: normal; margin-right: 3px; }
+  .tb.act.sel { box-shadow: 0 0 0 3px #1b1f2a, 0 3px 0 var(--ad); }
+  .tb.act:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ad); }
+  .fm-syr  { --fs: #ffd23f; --fd: #a85600; --fg: linear-gradient(150deg, #ffbe55, #e07b00); }
+  .fm-kaps { --fs: #ff4f8b; --fd: #9c1f4b; --fg: linear-gradient(150deg, #ff86a6, #d6336c); }
+  .fm-kapl { --fs: #3fd4ff; --fd: #0f6f9c; --fg: linear-gradient(150deg, #66d8ff, #1793c9); }
+  .fm-supp { --fs: #b98bff; --fd: #5a2fa3; --fg: linear-gradient(150deg, #c7a2ff, #7e4bd1); }
+  .fm-tabl { --fs: #e8edf7; --fd: #46577f; --fg: linear-gradient(150deg, #aebee0, #6378a8); }
+  .fm-rr   { --fs: #33e0b0; --fd: #0b7a61; --fg: linear-gradient(150deg, #66e3c4, #11a383); }
+  .fm-mix  { --fs: #1b1f2a; --fd: #2b3f8f; --fg: linear-gradient(150deg, #8aa2ff, #4a5fd6); }
   .flegend { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 0; justify-content: center; }
-  .flegend span { font-size: 12px; font-weight: 800; color: #fff; border-radius: 9px; padding: 3px 8px; background-image: var(--fg); box-shadow: 0 2px 0 var(--fd); }
+  .flegend span { font-size: 12px; font-weight: 800; color: #1e1e1e; border-radius: 9px; padding: 3px 8px 3px 6px; background: var(--bg2);
+                  border-left: 6px solid var(--fs); }
+  /* числа на вкладках и маленькая строка «обновлено» */
+  .tbd { position: absolute; top: 3px; right: 4px; min-width: 20px; height: 20px; line-height: 20px; border-radius: 10px; padding: 0 5px;
+         background: #fff; color: #1b1f2a; font-size: 12px; font-weight: 900; box-shadow: 0 2px 0 rgba(0,0,0,.25); z-index: 1; }
+  .tbd.red { background: #ff4d4d; color: #fff; } .tbd.z { opacity: .55; }
+  .mtop.sm { margin: 0 0 6px; } .mtop.sm .ts { font-size: 13px; }
+  .mtop.sm .rb { width: 36px; height: 36px; flex-basis: 36px; font-size: 16px; }
   .seg button .sb { display: inline-block; min-width: 22px; border-radius: 11px; padding: 0 6px; margin-left: 6px; font-size: 13px;
                     background: var(--orange); color: #fff; }
   .seg button .sb.z { background: rgba(127,127,127,.25); color: inherit; }
@@ -338,7 +356,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e947b14d', newBuild = '';
+  var BUILD = 'd8dd492d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -527,14 +545,16 @@
                 pick: function (it) { return it.f === 'tas' && it.sec.head === 'ТЕРМИНАЛ'; } }];
   // руководитель 22.11: вкладки Завод · Ташкент · Инвент. · Остаток видны и внутри (Готовая продукция, Сырьё, инвентаризация…),
   // а большая шапка «N задач» — только на главном: экран выше, места больше
-  var lastTabs = [];
+  var lastTabs = [], tabCount = {};
   function tabsHtml(active) {
     var fl = lastTabs;
     if (fl.length < 2) return '';
     var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
     return '<div class="fchips' + (sq ? ' sq' : '') + '">' + fl.map(function (f) {
       var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
-      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + lb + '</div>';
+      var cnt = tabCount[f[0]];   // руководитель 22.11: на вкладке — сколько задач / документов / расхождений
+      var bd = cnt != null ? '<span class="tbd' + (cnt ? (f[0] === 'ost' ? ' red' : '') : ' z') + '">' + cnt + '</span>' : '';
+      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + bd + lb + '</div>';
     }).join('') + '</div>';
   }
   function bindTabs() {
@@ -848,10 +868,14 @@
       if (cur !== showMenu) return;
       var TT = tilesOf(W), tiles = TT.tiles, total0 = TT.total;
       var h = asName ? '<div class="asbar">👁 Так видит ' + esc(asName) + '<span style="flex:1"></span><button id="asx">✖️ Выйти</button></div>' : '';
-      h += '<div class="mtop"><div class="logo">📦</div><div class="t"><div class="tt">' + total0 + ' задач</div><div class="ts">обновлено ' +
-        esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
-        '<div class="rb" id="ref" title="Обновить">🔄</div>' +   // руководитель 22.11: сканер QR на главном не нужен
+      // руководитель 22.11: вместо «N задач» — маленькая строка «обновлено», числа — на самих вкладках
+      h += '<div class="mtop sm"><div class="t"><div class="ts">🕒 обновлено ' + esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
+        '<div class="rb" id="ref" title="Обновить">🔄</div>' +
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') + '</div>';
+      tabCount = { zav: 0, tas: 0 };
+      Object.keys(tiles).forEach(function (k2) { if (tabCount[ITEM[k2].f] != null) tabCount[ITEM[k2].f] += tiles[k2].t; });
+      if (r.inv_n != null) tabCount.inv = r.inv_n;
+      if (r.ost_n != null) tabCount.ost = r.ost_n;
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
@@ -1015,12 +1039,12 @@
       var c = '<div class="cols">', CF = colsFor(k), one = !!ONE[k], usedForms = {};
       CF[0].forEach(function (col) {
         var mine = tasks.filter(function (t) { return CF[1](t) === col[0]; });
-        c += '<div class="col"><h4><span>' + mine.length + '</span><br>' + col[1] + '</h4>';
+        c += '<div class="col ac-' + col[0] + '"><h4><span>' + mine.length + '</span><br>' + col[1] + '</h4>';   // руководитель 22.11: у каждого действия свой цвет
         if (!mine.length) c += '<div class="none">—</div>';
         mine.forEach(function (t) {
           var x = t.lines[0], i = tasks.indexOf(t), fresh = seen && seen.indexOf(t.id) < 0;
           var fm = t.lines.length > 1 ? ['', 'mix', '🛒'] : formOf(x.item);   // руководитель 22.11: цвет и значок по форме
-          var cls = 'tb' + (one ? ' one1' : '') + (fm ? ' fm fm-' + fm[1] : '') + (t.id === st.sel ? ' sel' : '') + (fresh ? ' new' : '');
+          var cls = 'tb act ac-' + col[0] + (one ? ' one1' : '') + (fm ? ' fm-' + fm[1] : '') + (t.id === st.sel ? ' sel' : '') + (fresh ? ' new' : '');
           var ic = fm && !one ? '<em>' + fm[2] + '</em>' : '';   // в узкой колонке — только цвет (значки — в подсказке ниже)
           if (fm) usedForms[fm[1]] = fm;
           if (one && t.lines.length > 1) {   // заказ клиента из нескольких товаров: клиент · позиций
