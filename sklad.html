@@ -181,7 +181,7 @@
   .ptag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 900; letter-spacing: 1px;
           background: #ffe39a; color: #7a4a00; box-shadow: 0 3px 0 rgba(0,0,0,.15); }   /* руководитель 22.11: не чёрно-белое, спокойные цвета */
   .ptag.ter { background: #c9ddff; color: #17468f; }
-  .tile.cat .ptag { font-size: 14px; letter-spacing: .3px; padding: 6px 10px; margin-top: 12px; max-width: 100%; }
+  .tile.cat .ptag { font-size: 12px; letter-spacing: 0; padding: 5px 8px; margin-top: 12px; max-width: 100%; }
   .tile.cat { min-height: 168px; padding-top: 18px; }
   .brs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
   .brs span { font-size: 11px; font-weight: 800; border-radius: 7px; padding: 2px 6px; background: rgba(255,255,255,.9); color: #333; }
@@ -264,7 +264,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'efc30109', newBuild = '';
+  var BUILD = '67bd8d57', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -439,8 +439,15 @@
   function fullName(k) { var it = ITEM[k]; return it ? it.name + ' · ' + it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() : k; }
 
   // руководитель 22.11: внутри «Завод» — две кнопки; склады открываются уже внутри них
-  var CATS = [{ g: 'gp', name: 'Готовая продукция', emoji: '🏭', cl: 'g', title: '🏭 Готовая продукция завода', sub: 'Перечисление и Терминал' },
-              { g: 'raw', name: 'Сырьё и упаковка', emoji: '🧪', cl: 'y', title: '🧪 Сырьё и упаковка завода', sub: 'Сырьё, упаковка, флаконы · Перечисление и Терминал' }];
+  // руководитель 22.11: Ташкент тоже сначала две кнопки — ПЕРЕЧИСЛЕНИЕ · ТЕРМИНАЛ, склады внутри
+  var CATS = [{ g: 'gp', tab: 'zav', name: 'Готовая продукция', emoji: '🏭', cl: 'g', title: '🏭 Готовая продукция завода', flat: 'gp',
+                pick: function (it) { return it.g === 'gp'; } },
+              { g: 'raw', tab: 'zav', name: 'Сырьё и упаковка', emoji: '🧪', cl: 'y', title: '🧪 Сырьё и упаковка завода', flat: '',
+                pick: function (it) { return it.g === 'raw'; } },
+              { g: 'tP', tab: 'tas', ptag: 'ПЕРЕЧИСЛЕНИЕ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Перечисление', flat: 'name',
+                pick: function (it) { return it.f === 'tas' && it.sec.head === 'ПЕРЕЧИСЛЕНИЕ'; } },
+              { g: 'tT', tab: 'tas', ptag: 'ТЕРМИНАЛ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Терминал', flat: 'name',
+                pick: function (it) { return it.f === 'tas' && it.sec.head === 'ТЕРМИНАЛ'; } }];
   function tilesOf(W) {
     var total0 = 0, tiles = {};
     SECTIONS.forEach(function (s) {
@@ -495,8 +502,8 @@
         var grew = lastBadge[it.key] != null && x.t > lastBadge[it.key], ter = it.sec.head === 'ТЕРМИНАЛ';
         lastBadge[it.key] = x.t;
         var nm = fl === 'gp' ? '' : esc(it.name);
-        var tag = fl ? '<div class="ptag' + (ter ? ' ter' : '') + '">' + (ter ? 'ТЕРМИНАЛ' : 'ПЕРЕЧИСЛЕНИЕ') + '</div>' : '';
-        return '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + (fl === 'gp' || fl === 'tas' ? ' cat' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
+        var tag = fl === 'gp' || fl === 'tas' ? '<div class="ptag' + (ter ? ' ter' : '') + '">' + (ter ? 'ТЕРМИНАЛ' : 'ПЕРЕЧИСЛЕНИЕ') + '</div>' : '';
+        return '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + (fl === 'gp' || fl === 'tas' || fl === 'name' ? ' cat' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
           (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div>' + tag + (nm ? '<div class="n">' + nm + '</div>' : '') + '<div class="c">' +
           (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div>' + brandsHtml(x.br, x.us) + '</div>';
       }).join('');
@@ -520,7 +527,7 @@
       if (cur !== me) return;
       var W = {};
       r.groups.forEach(function (q) { q.whs.forEach(function (w) { W[w.key] = w; }); });
-      view.innerHTML = tilesHtml(tilesOf(W).tiles, function (it) { return it.g === g; }, g === 'gp' ? 'gp' : '') || '<div class="empty">Нет складов</div>';   // руководитель 22.11: метки — только у готовой продукции
+      view.innerHTML = tilesHtml(tilesOf(W).tiles, c.pick, c.flat) || '<div class="empty">Нет складов</div>';
       bindTiles();
     });
   }
@@ -661,18 +668,19 @@
         return '<div class="fchip' + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
       }).join('') : '') + (invOn ? '<div class="fchip inv" id="invc">📋 Инвент.</div>' : '') + '</div>';
       // руководитель 22.11: «Завод» — сначала две кнопки: Готовая продукция · Сырьё и упаковка; склады — внутри
-      var cats = mf === 'zav' ? CATS.filter(function (c) { return Object.keys(tiles).some(function (k) { return ITEM[k].g === c.g; }); }) : [];
+      var cats = CATS.filter(function (c) { return c.tab === mf && Object.keys(tiles).some(function (k) { return c.pick(ITEM[k]); }); });
       if (cats.length > 1) {
         h += '<div class="mgrid" style="margin-top:14px">';
         cats.forEach(function (c) {
-          var t = 0, n0 = 0, busy = 0, total = 0, brl = [];
+          var t = 0, n0 = 0, busy = 0, total = 0, brl = [], usl = [];
           Object.keys(tiles).forEach(function (k) {
-            if (ITEM[k].g !== c.g) return;
-            n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total; brl.push(tiles[k].br);
+            if (!c.pick(ITEM[k])) return;
+            n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total; brl.push(tiles[k].br); usl.push(tiles[k].us);
           });
-          h += '<div class="tile cat ' + c.cl + '" data-g="' + c.g + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + c.emoji +
-            '</div><div class="n">' + esc(c.name) + '</div><div class="c">' + n0 + ' ' + (n0 === 1 ? 'склад' : n0 < 5 ? 'склада' : 'складов') +
-            ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div>' + brandsHtml(mergeBr(brl)) + '</div>';
+          h += '<div class="tile cat ' + c.cl + '" data-g="' + c.g + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + c.emoji + '</div>' +
+            (c.ptag ? '<div class="ptag' + (c.ptag === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + c.ptag + '</div>' : '<div class="n">' + esc(c.name) + '</div>') +
+            '<div class="c">' + n0 + ' ' + (n0 === 1 ? 'склад' : n0 < 5 ? 'склада' : 'складов') +
+            ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div>' + brandsHtml(mergeBr(brl), mergeBr(usl)) + '</div>';
         });
         h += '</div>';
       } else {
