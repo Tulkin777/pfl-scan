@@ -20,7 +20,7 @@
     --green: #1e8240; --red: #c0392b; --orange: #e67e22; --blue: #1f6fd1;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 12px 16px 28px; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  body { margin: 0; padding: calc(12px + var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px)) 16px 28px; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
          background: var(--bg); color: var(--fg); font-size: 17px; line-height: 1.35; -webkit-text-size-adjust: 100%; }
   .top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
   .top h1 { font-size: 20px; margin: 0; flex: 1; word-break: break-word; }
@@ -515,7 +515,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e4808c99', newBuild = '';
+  var BUILD = '4d11a705', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1444,6 +1444,7 @@
       var h = asName ? '<div class="asbar">👁 Так видит ' + esc(asName) + '<span style="flex:1"></span><button id="asx">✖️ Выйти</button></div>' : '';
       // руководитель 22.11: вместо «N задач» — маленькая строка «обновлено», числа — на самих вкладках
       h += '<div class="mtop sm"><div class="t"><div class="ts">🕒 обновлено ' + esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
+        (canFull() ? '<div class="rb" id="fsb" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
         '<div class="rb" id="ref" title="Обновить">🔄</div>' +
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') + '</div>';
       tabCount = { zav: 0, tas: 0 };
@@ -1489,6 +1490,9 @@
       $('ref').onclick = function () { haptic('success'); showMenu(); };
       bindTabs();
       if ($('acc')) $('acc').onclick = function () { go(showAcc); };
+      if ($('fsb')) $('fsb').onclick = function () {   // 22.11.2026 (руководитель): ⛶ во весь экран / 🗗 обратно
+        try { if (tg.isFullscreen) tg.exitFullscreen(); else tg.requestFullscreen(); } catch (e) {}
+      };
       if ($('asx')) $('asx').onclick = function () { var n0 = asName; asName = ''; home(); go(showAcc); go(function () { showEmp(n0); }); };
       bindTiles();
       if (!old && !menuTimer) menuTimer = setInterval(function () { if (!document.hidden && cur === showMenu) { var y = window.scrollY; showMenu(); window.scrollTo(0, y); } }, 30000);
@@ -2250,6 +2254,15 @@
         } catch (e) {}
       });
     }).catch(function () { start(); });   // сервер не ответил — не мешаем работать
+  }
+  function canFull() {   // во весь экран — Telegram 8.0+ (телефон и компьютер)
+    try { return !!(tg && tg.requestFullscreen && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')); } catch (e) { return false; }
+  }
+  if (canFull()) {
+    try {
+      tg.onEvent('fullscreenChanged', function () { var b = $('fsb'); if (b) b.textContent = tg.isFullscreen ? '🗗' : '⛶'; });
+      tg.onEvent('fullscreenFailed', function () { say('Этот Telegram не умеет «во весь экран» — обновите Telegram.'); });
+    } catch (e) {}
   }
   function boot(fn) {   // нет адреса сервера (открыли из группы / на компьютере) — сначала api.json, потом экран
     if (api) return fn();
