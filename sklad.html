@@ -257,6 +257,33 @@
       '</p><button class="main" id="retry">🔄 Повторить</button></div>';
     $('retry').onclick = function () { cur ? cur() : showMenu(); };
   }
+  // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
+  // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
+  // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
+  var BUILD = '570e4e3d', newBuild = '';
+  function reloadTo(b) {
+    try { if (sessionStorage.getItem('pfl:rl') === b) return; sessionStorage.setItem('pfl:rl', b); } catch (e) {}
+    var q = new URLSearchParams(location.search); q.set('v', b);
+    location.replace(location.pathname + '?' + q.toString());
+  }
+  function checkBuild() {
+    if (BUILD.indexOf('BUILD') >= 0 || document.hidden) return;   // локальная копия — без проверки
+    fetch('ver.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.build || j.build === BUILD) return;
+      newBuild = j.build;
+      if (cur === showMenu) return reloadTo(j.build);
+      if (!$('updbar')) {
+        var d = document.createElement('div');
+        d.id = 'updbar'; d.className = 'asbar';
+        d.innerHTML = '🔄 Есть новая версия<span style="flex:1"></span><button>Обновить</button>';
+        d.querySelector('button').onclick = function () { reloadTo(newBuild); };
+        document.body.insertBefore(d, document.body.firstChild);
+      }
+    }).catch(function () {});
+  }
+  setTimeout(checkBuild, 4000);
+  setInterval(checkBuild, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checkBuild(); });
   // 22.11.2026: бесплатный мост после перезапуска получает НОВЫЙ адрес; сторож кладёт его в api.json рядом со страницей.
   // При обрыве берём свежий адрес оттуда и повторяем запрос — переоткрывать мини-апп не нужно.
   var apiTry = 0;
@@ -550,6 +577,7 @@
 
   var menuTimer = null;
   function showMenu() {
+    if (newBuild && newBuild !== BUILD) return reloadTo(newBuild);   // вернулись на главный — подхватить новую версию
     title.textContent = '📦 Склады';
     view.innerHTML = '<div class="spin">Загрузка складов…</div>';
     load('/api/menu', {}, function (r, old) {
