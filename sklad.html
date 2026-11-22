@@ -498,7 +498,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '02ea5d70', newBuild = '';
+  var BUILD = '1f6e7c72', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -555,21 +555,29 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) checkBuild(); });
   // 22.11.2026: бесплатный мост после перезапуска получает НОВЫЙ адрес; сторож кладёт его в api.json рядом со страницей.
   // При обрыве берём свежий адрес оттуда и повторяем запрос — переоткрывать мини-апп не нужно.
-  var apiTry = 0;
+  // 22.11.2026: из группы (кнопка «Открыть KO‘CHIRISH») мини-апп открывается без ?api — адрес берём из api.json.
+  // Один поиск адреса на всех: параллельные запросы ждут его же (раньше лишние падали в «Нет связи»).
+  var apiTry = 0, apiP = null;
   function freshApi() {
+    if (apiP) return apiP;
     if (Date.now() - apiTry < 20000) return Promise.resolve(false);
     apiTry = Date.now();
-    return fetch('api.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+    apiP = fetch('api.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       var u = String(j.api || '').replace(/\/+$/, '');
       if (/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(u) && u !== api) { api = u; return true; }
       return false;
-    }).catch(function () { return false; });
+    }).catch(function () { return false; }).then(function (ok) { apiP = null; return ok; });
+    return apiP;
   }
   function call(path, body, timeout) {
-    var b0 = JSON.stringify(body || {});
+    var b0 = JSON.stringify(body || {}), was = api;
     return call1(path, body, timeout).catch(function (e) {
       if (!e || !e.down) throw e;
-      return freshApi().then(function (ok) { if (!ok) throw e; return call1(path, JSON.parse(b0), timeout); });
+      if (api && api !== was) return call1(path, JSON.parse(b0), timeout);   // адрес уже обновил другой запрос
+      return freshApi().then(function (ok) {
+        if (!ok && (!api || api === was)) throw e;
+        return call1(path, JSON.parse(b0), timeout);
+      });
     });
   }
   function call1(path, body, timeout) {
@@ -2131,7 +2139,12 @@
   if (pcKey && 'serviceWorker' in navigator) {   // 💻 «Установить» как программу (значок на рабочем столе)
     try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   }
-  if (pcKey) home();
+  function boot(fn) {   // нет адреса сервера (открыли из группы / на компьютере) — сначала api.json, потом экран
+    if (api) return fn();
+    view.innerHTML = '<div class="spin">Подключаюсь…</div>';
+    freshApi().then(function () { fn(); });
+  }
+  if (pcKey) boot(home);
   else if (!tg || !tg.initData) {
     view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «KO‘CHIRISH 🔄» в личке бота склада.</p>' +
       '<p>💻 На компьютере: в личке бота склада напишите <b>/pc</b>.</p></div>';
@@ -2147,7 +2160,7 @@
         '<button class="main" id="ackx">Закрыть</button></div>';
       $('ackx').onclick = function () { try { tg.close(); } catch (e) {} };
     }).catch(fail);
-  } else home();
+  } else boot(home);
 })();
 </script>
 </body>
