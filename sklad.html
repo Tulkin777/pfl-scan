@@ -333,6 +333,22 @@
              background: linear-gradient(150deg, #6fb2ff, #1f62c9); box-shadow: 0 2px 0 #154a9a; font-size: 15px; flex: 0 0 28px; }
   .backp span { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .backp:active { transform: translateY(2px); box-shadow: none; }
+  /* 22.11.2026 (руководитель): «Назад» — отдельная крупная кнопка; рядом — где вы (просто надпись, не кнопка) */
+  .navb { display: flex; align-items: stretch; gap: 10px; margin: 14px 0 10px; }
+  .navb .bk { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 0 14px 0 10px; min-height: 52px; border-radius: 16px;
+              cursor: pointer; color: #fff; font-weight: 900; font-size: 16px; letter-spacing: .2px;
+              background: linear-gradient(150deg, #4a5a7a, #26324a); box-shadow: 0 4px 0 #141c2c, 0 8px 14px rgba(20,28,44,.25); }
+  .navb .bk i { font-style: normal; font-size: 22px; line-height: 1; }
+  .navb .bk:active { transform: translateY(3px); box-shadow: 0 1px 0 #141c2c; }
+  .navb .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 6px 12px;
+              border-left: 6px solid var(--nc, #1f62c9); border-radius: 4px 14px 14px 4px; background: var(--nbg, #eef4ff); }
+  .navb .nt small { font-size: 12px; font-weight: 700; color: #6b7385; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .navb .nt b { font-size: 16px; font-weight: 900; line-height: 1.2; color: #1a2233; overflow: hidden; text-overflow: ellipsis;
+                display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
+  .navb.c-zav .nt { --nc: #17964a; --nbg: #e7f7ee; } .navb.c-tas .nt { --nc: #1f62c9; --nbg: #e8f0ff; }
+  .navb.c-inv .nt { --nc: #2b9ad6; --nbg: #e6f5fd; } .navb.c-ost .nt { --nc: #e8820c; --nbg: #fff3e2; }
+  .navb.c-mv .nt { --nc: #5b4fe0; --nbg: #efedff; } .navb.c-inc .nt { --nc: #5c9e12; --nbg: #f0f8e4; }
+  .navb.c-ret .nt { --nc: #d43c3c; --nbg: #fdecec; } .navb.c-ship .nt { --nc: #8a3fd1; --nbg: #f4ebff; }
   /* 📦 Остаток */
   .when { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 10px; font-size: 14px; }
   .when .old { color: var(--red); font-weight: 800; }
@@ -399,6 +415,7 @@
     #view > .seg { grid-column: 1 / -1; }
     #view:has(.dhead) > .box { grid-column: auto; }
     .backp { max-width: 640px; }
+    .navb { max-width: 760px; }
   }
 </style>
 </head>
@@ -476,7 +493,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'a20ebf03', newBuild = '';
+  var BUILD = '3331fa61', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -697,7 +714,12 @@
   // внутренний экран: вкладки сверху до самого конца + «⬅️ Назад · где вы» (руководитель 22.11), без шапки «N задач»
   function subTop(active, label) {
     topShow(false);
-    return tabsHtml(active) + '<div class="backp" data-back="1"><b>⬅</b><span>Назад · ' + esc(label) + '</span></div>';
+    // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
+    var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
+    var TABN = { zav: 'Завод', tas: 'Ташкент', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
+    return tabsHtml(active) + '<div class="navb c-' + esc(active) + '"><div class="bk" data-back="1"><i>⬅</i>Назад</div>' +
+      '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div></div>';
   }
   document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
     var b = e.target.closest && e.target.closest('[data-back]');
