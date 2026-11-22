@@ -509,7 +509,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd25517ff', newBuild = '';
+  var BUILD = '1f15a9ff', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -697,8 +697,8 @@
   ];
   // руководитель 22.11: «Все» убрать — склады по вкладкам Завод · Ташкент · Сырьё (выбранная запоминается)
   var FILTERS = [['zav', '🏭 Завод'], ['tas', '🏙 Ташкент']];   // руководитель 22.11: сырьё — внутри «Завод», после готовой продукции
-  var mfilter = 'zav';
-  try { mfilter = localStorage.getItem('pfl:mfilter') || 'zav'; } catch (e) {}
+  var mfilter = 'ship';   // 22.11.2026 (руководитель): первая вкладка — Отгрузка
+  try { mfilter = localStorage.getItem('pfl:mfilter') || 'ship'; } catch (e) {}
   var lastBadge = {};
   var ITEM = {}, PARTNAME = { gp1: 'Склад 1', gp2: 'Склад 2' };
   SECTIONS.forEach(function (s) { s.items.forEach(function (it) { it.sec = s; ITEM[it.key] = it; }); });
@@ -725,7 +725,14 @@
     var fl = lastTabs;
     if (fl.length < 2 && !lastTabs2.length) return '';
     var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
-    return tabRow(fl, sq, active) + (lastTabs2.length ? tabRow(lastTabs2, true, active, true) : '');
+    if (lastTabs2.length) {   // 22.11.2026 (руководитель): порядок — Отгрузка · Перемещ. · Возврат · Приходы / Завод · Ташкент · Инвент. · Остаток
+      var ORD = ['ship', 'mv', 'ret', 'inc', 'zav', 'tas', 'inv', 'ost'], all8 = fl.concat(lastTabs2);
+      all8.sort(function (a, b) { var i = ORD.indexOf(a[0]), j = ORD.indexOf(b[0]); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+      var h8 = '';
+      for (var i8 = 0; i8 < all8.length; i8 += 4) h8 += tabRow(all8.slice(i8, i8 + 4), true, active, i8 + 4 >= all8.length);
+      return h8;
+    }
+    return tabRow(fl, sq, active);
   }
   function tabRow(fl, sq, active, free) {   // руководитель 22.11: второй ряд — того же размера, с одним свободным местом
     return '<div class="fchips' + (sq ? ' sq' : '') + '">' + fl.map(function (f) {
@@ -1176,7 +1183,7 @@
     return '<div class="' + q[2] + ' shp' + (c ? '' : ' z') + (on ? ' on' : '') + '" data-dp="' + q[0] + '"><span class="sc">' + c + '</span>' +
       '<span class="cty">' + esc(q[4]) + '</span>' + (q[5] ? '<span class="ptag' + (q[5] === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + q[5] + '</span>' : '') +
       '<span class="brs">' + (ks.length ? ks.map(function (b) {   // 3 бренда — коротко, чтобы в один ряд
-        var nm = ks.length > 2 ? ({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[b] || b) : b;
+        var nm = ks.length > 1 ? ({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[b] || b) : b;   // 2+ бренда — коротко, в один ряд
         return '<span class="br ' + (BRCL[b] || '') + '">' + esc(nm) + ' ' + B[b] + '</span>'; }).join('')
         : '<span class="br0">пусто</span>') + '</span></div>';
   }
