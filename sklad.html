@@ -509,7 +509,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ec9f4fdc', newBuild = '';
+  var BUILD = 'b5c4e39d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -2183,7 +2183,7 @@
   }
   // 22.11.2026 (руководитель «открыл два раза — второй не открывать»): одно окно мини-аппа. Новое окно спрашивает
   // соседей (BroadcastChannel, тот же браузер/Telegram); если кто-то отвечает — экран «уже открыт»: закрыть это или открыть здесь.
-  var WIN = Math.random().toString(36).slice(2), bc = null, winOff = false;
+  var WIN = Math.random().toString(36).slice(2), bc = null, winOff = false, winOn = false;
   try { bc = new BroadcastChannel('pfl-kochirish'); } catch (e) {}
   function winOne(start) {
     if (!bc) return start();
@@ -2191,7 +2191,7 @@
     bc.onmessage = function (m) {
       var d = m.data || {};
       if (d.to && d.to !== WIN) return;
-      if (d.t === 'hello' && !winOff) bc.postMessage({ t: 'here', to: d.from, from: WIN });
+      if (d.t === 'hello' && !winOff && winOn) bc.postMessage({ t: 'here', to: d.from, from: WIN });   // отвечает только уже работающее окно
       else if (d.t === 'here') answered = true;
       else if (d.t === 'take' && !winOff) {   // другое окно забрало работу — это закрыть
         winOff = true; cur = function () {}; stack = []; topShow(false);
@@ -2203,7 +2203,7 @@
     };
     bc.postMessage({ t: 'hello', from: WIN });
     setTimeout(function () {
-      if (!answered) return start();
+      if (!answered) { winOn = true; return start(); }
       // руководитель 22.11: второе окно не открывать — всплывающее сообщение и закрыть, «открыть здесь» не даём
       winOff = true; topShow(false);
       view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>KO‘CHIRISH уже открыт</h2><p>Работайте в открытом окне.</p></div>';
