@@ -264,15 +264,26 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1f457269', newBuild = '';
+  var BUILD = 'c9b21b5b', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
+  // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
+  // заранее качаем в фоне (та же ссылка), чтобы перезагрузка была мгновенной. Плашка — только если 2 попытки не помогли.
+  function updUrl(b, n) {
+    var q = new URLSearchParams(location.search); q.set('v', b); q.set('t', b + (n ? '-' + n : ''));
+    return location.pathname + '?' + q.toString();
+  }
+  var warmed = '';
+  function warm(b) {
+    if (warmed === b) return;
+    warmed = b;
+    fetch(updUrl(b, 0), { cache: 'reload' }).catch(function () {});
+  }
   function reloadTo(b, force) {
     var n = 0;
     try { n = +(sessionStorage.getItem('pfl:rl:' + b) || 0); sessionStorage.setItem('pfl:rl:' + b, n + 1); } catch (e) {}
     if (!force && n >= 2) return showUpd();
-    var q = new URLSearchParams(location.search); q.set('v', b); q.set('t', Date.now());
-    location.replace(location.pathname + '?' + q.toString());
+    location.replace(updUrl(b, force ? Date.now() : n));
   }
   function showUpd() {
     if ($('updbar')) return;
@@ -287,10 +298,22 @@
     fetch('ver.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.build || j.build === BUILD) return;
       newBuild = j.build;
-      if (cur === showMenu) return reloadTo(j.build);
-      showUpd();
+      warm(j.build);
+      if (cur === showMenu) return reloadTo(j.build);   // внутри склада — ждём возврата на главный, без плашки
     }).catch(function () {});
   }
+  // руководитель 22.11: ошибки страницы у людей — на сервер (miniapp/client_errors.jsonl), Ибрахим проверяет после каждого обновления
+  var errN = 0;
+  function reportErr(msg) {
+    if (errN++ >= 5 || !api) return;
+    try { call1('/api/err', { msg: String(msg).slice(0, 500), build: BUILD, screen: (cur && cur.name) || '' }).catch(function () {}); } catch (e) {}
+  }
+  window.addEventListener('error', function (e) { reportErr((e.message || 'ошибка') + ' @' + String(e.filename || '').split('/').pop().split('?')[0] + ':' + e.lineno + ':' + e.colno); });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    if (r && (r.down || r.text)) return;   // нет связи / ответ сервера — это не ошибка страницы
+    reportErr('promise: ' + (r && (r.message || r)));
+  });
   setTimeout(checkBuild, 4000);
   setInterval(checkBuild, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) checkBuild(); });
