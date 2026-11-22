@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KO‘CHIRISH</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#8a3fd1">
 <!-- PFL · тестовый Mini App складов KO‘CHIRISH (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера
      компьютера PFL через туннель и только после проверки подписи Telegram (initData) — и только руководителю. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -380,6 +382,24 @@
   .tile.new { animation: pop 1.2s ease-out; }
   @keyframes pop { 0% { filter: brightness(1.5); } 100% { filter: none; } }
   input.txt { font: inherit; width: 100%; padding: 11px 12px; border-radius: 12px; border: 2px solid var(--btn); margin: 6px 0; background: var(--bg); color: var(--fg); }
+  /* 22.11.2026 (руководитель «Да, делай»): компьютер — широкий экран; телефон не меняется */
+  @media (min-width: 900px) {
+    body { max-width: 1400px; margin: 0 auto; padding: 18px 28px 40px; }
+    #view { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; align-items: start; }
+    #view > * { grid-column: 1 / -1; }
+    #view > .fchips.sq { grid-column: auto; margin-bottom: 14px; }
+    #view .mgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    #flowbox { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; align-items: start; }
+    #flowbox > * { grid-column: 1 / -1; }
+    #flowbox > .tcard { grid-column: auto; }
+    #flowbox .dir { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    #view:has(.schw) { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+    #view > .schw { grid-column: 1; grid-row: span 8; margin: 0; }
+    #view > #occ, #view > #panel, #view > #cols, #view > .row { grid-column: 2; }
+    #view > .seg { grid-column: 1 / -1; }
+    #view:has(.dhead) > .box { grid-column: auto; }
+    .backp { max-width: 640px; }
+  }
 </style>
 </head>
 <body>
@@ -391,7 +411,18 @@
 (function () {
   'use strict';
   var tg = window.Telegram && window.Telegram.WebApp;
-  var view = document.getElementById('view'), sub = document.getElementById('sub'), title = document.getElementById('title');
+  // 22.11.2026 (руководитель «Да, делай»): 💻 компьютер — личный ключ из /pc в боте склада (?pc=…), хранится в браузере;
+  // сервер проверяет его каждый раз (право «💻 Компьютер», 08:50–18:00). Вне Telegram — без Telegram-функций.
+  var pcKey = '';
+  (function () {
+    var q = new URLSearchParams(location.search), k = q.get('pc');
+    try {
+      if (k) { localStorage.setItem('pfl:pc', k); q.delete('pc'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q.toString() : '')); }
+      if (!(tg && tg.initData)) pcKey = localStorage.getItem('pfl:pc') || '';
+    } catch (e) { if (k && !(tg && tg.initData)) pcKey = k; }
+  })();
+  if (tg && !tg.initData) tg = null;
+  var view =document.getElementById('view'), sub = document.getElementById('sub'), title = document.getElementById('title');
   var stack = [];          // экраны для «Назад»
   var cur = null;          // текущий экран: функция перерисовки
 
@@ -425,6 +456,15 @@
   if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
 
   // ---------- связь с сервером ----------
+  function pcOff(text) {   // 💻 ключ кончился / право снято — экран-замок, новая ссылка: /pc в боте
+    cur = function () {}; stack = []; topShow(false); pcKey = '';
+    try {   // ключ и сохранённые данные складов с этого компьютера — убрать
+      Object.keys(localStorage).forEach(function (k) { if (k.indexOf('pfl:') === 0 && k !== 'pfl:mfilter') localStorage.removeItem(k); });
+    } catch (e) {}
+    mem = {};
+    view.innerHTML = '<div class="down"><div class="ico">🔒</div><h2>Доступ на компьютере закончился</h2><p>' + esc(text || '') +
+      '</p><p>В личке бота склада напишите <b>/pc</b> и нажмите «💻 Открыть на компьютере».</p></div>';
+  }
   function down(text) {
     view.innerHTML = '<div class="down"><div class="ico">🔌</div><h2>Сервер недоступен</h2><p>' + esc(text) +
       '</p><button class="main" id="retry">🔄 Повторить</button></div>';
@@ -433,7 +473,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8e2dde88', newBuild = '';
+  var BUILD = 'bdbc7b9d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -513,12 +553,14 @@
     var timer = setTimeout(function () { ctl.abort(); }, timeout || 15000);
     body = body || {};
     body.initData = tg ? tg.initData : '';
+    if (pcKey) body.pc = pcKey;
     if (asName && path !== '/api/acc' && path !== '/api/acc_set') body.as = asName;
     return fetch(api + path, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), signal: ctl.signal })
       .then(function (r) {
         clearTimeout(timer);
         return r.json().catch(function () { return {}; }).then(function (j) {
           if (r.status >= 500 && !j.error) throw { down: true, text: 'Компьютер PFL выключен или туннель не работает. Попробуйте позже.' };
+          if (j.pc_off) { pcOff(j.error); throw { text: j.error, pcOff: true }; }
           if (!r.ok) throw { text: j.error || ('Ошибка ' + r.status) };
           return j;
         });
@@ -528,6 +570,7 @@
       });
   }
   function fail(e) {
+    if (e && e.pcOff) return;   // экран-замок уже показан
     if (e && e.down) return down(e.text);
     view.innerHTML = '<div class="msg bad">' + esc((e && e.text) || 'Ошибка') + '</div><button id="back2">⬅️ Назад</button>';
     $('back2').onclick = function () { stack.length ? goBack() : home(); };
@@ -1801,6 +1844,7 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
+      if (k === 'pc') return [];
       return k === 'inv' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
@@ -1824,6 +1868,9 @@
     h += '<div class="agrp">ПЕРЕМЕЩЕНИЯ</div>';
     row({ key: 'mv', emoji: '🚚', name: 'Перемещения' });
     h += '<div class="note">📦 Отправить — собрать и отдать (кладовщик «откуда») · 🚛 Везти — Забрал / Привёз (водитель) · 📥 Принять — поставить на место (кладовщик «куда»)</div>';
+    h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
+    row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
+    h += '<div class="note">💻 👁 или ✋ — можно: /pc в боте даёт ссылку, работает 08:50–18:00. ⛔ — нельзя, ссылка сразу перестаёт работать. Склады — те же права.</div>';
     return { html: h, bind: function () {
       Array.prototype.forEach.call(view.querySelectorAll('.lv span'), function (el) {
         el.onclick = function () {
@@ -2051,8 +2098,13 @@
   }
 
   if (tg) { tg.ready(); tg.expand(); }
-  if (!tg || !tg.initData) {
-    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «KO‘CHIRISH 🔄» в личке бота склада.</p></div>';
+  if (pcKey && 'serviceWorker' in navigator) {   // 💻 «Установить» как программу (значок на рабочем столе)
+    try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
+  }
+  if (pcKey) home();
+  else if (!tg || !tg.initData) {
+    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «KO‘CHIRISH 🔄» в личке бота склада.</p>' +
+      '<p>💻 На компьютере: в личке бота склада напишите <b>/pc</b>.</p></div>';
   } else if (new URLSearchParams(location.search).get('drv')) {
     // 🚛 водитель нажал «Взял / Привёз / Проблема» под сообщением бота — отмечаем и показываем итог (руководитель 22.11)
     var qd = new URLSearchParams(location.search), aid = qd.get('drv'), act = qd.get('act');
