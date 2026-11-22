@@ -183,6 +183,10 @@
   .ptag.ter { background: #c9ddff; color: #17468f; }
   .tile.cat .ptag { font-size: 14px; letter-spacing: .3px; padding: 6px 10px; margin-top: 12px; max-width: 100%; }
   .tile.cat { min-height: 168px; padding-top: 18px; }
+  .brs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+  .brs span { font-size: 11px; font-weight: 800; border-radius: 7px; padding: 2px 6px; background: rgba(255,255,255,.9); color: #333; }
+  .brs .bp { color: #0f6b33; } .brs .bm { color: #a3245c; } .brs .gx { color: #6a2b91; }
+  .brs .br0 { background: rgba(255,255,255,.3); color: #fff; }
   /* 📋 Инвентаризация */
   .fchip.inv { background: linear-gradient(150deg, #7fd3ff, #2f8fd6); color: #fff; box-shadow: 0 3px 0 #1d6aa6; }
   .doc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 6px solid var(--orange); }
@@ -260,7 +264,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '79c185f3', newBuild = '';
+  var BUILD = 'bba2f821', newBuild = '';
   function reloadTo(b) {
     try { if (sessionStorage.getItem('pfl:rl') === b) return; sessionStorage.setItem('pfl:rl', b); } catch (e) {}
     var q = new URLSearchParams(location.search); q.set('v', b);
@@ -413,20 +417,34 @@
     SECTIONS.forEach(function (s) {
       s.items.forEach(function (it) {
         if (!partsOf(it.key).some(function (p) { return W[p]; })) return;   // ⛔ не видит — склада нет
-        var pm = (W[partsOf(it.key)[0]] || {}).perm || {}, t = 0, busy = 0, total = 0, unk = false;
+        var pm = (W[partsOf(it.key)[0]] || {}).perm || {}, t = 0, busy = 0, total = 0, unk = false, br = null;
         partsOf(it.key).forEach(function (p) {
           var w = W[p] || {};
           if (w.tasks == null) unk = true; else t += w.tasks;
           busy += w.busy || 0; total += w.total || 0;
+          if (w.brands) { br = br || {}; for (var b in w.brands) br[b] = (br[b] || 0) + w.brands[b]; }
         });
         total0 += t;
-        tiles[it.key] = { t: t, unk: unk, busy: busy, total: total, ro: pm.lv === 1 };
+        tiles[it.key] = { t: t, unk: unk, busy: busy, total: total, ro: pm.lv === 1, br: br };
       });
     });
     return { tiles: tiles, total: total0 };
   }
   // flat (руководитель 22.11): внутри «Готовая продукция» / «Сырьё и упаковка» — без заголовков разделов;
   // на плитке цветная метка ПЕРЕЧИСЛЕНИЕ / ТЕРМИНАЛ; у готовой продукции название плитки = само «Перечисление» / «Терминал»
+  // 22.11.2026 (руководитель): бренды на кнопках готовой продукции — что сейчас лежит, больше — первым
+  var BRCL = { 'BP Pharma': 'bp', 'Bromedix': 'bm', 'Gynomedix': 'gx' };
+  function brandsHtml(br) {
+    if (!br) return '';
+    var ks = Object.keys(br).sort(function (a, b) { return br[b] - br[a]; });
+    if (!ks.length) return '<div class="brs"><span class="br0">пусто</span></div>';
+    return '<div class="brs">' + ks.map(function (b) { return '<span class="br ' + (BRCL[b] || '') + '">' + esc(b) + '</span>'; }).join('') + '</div>';
+  }
+  function mergeBr(list) {
+    var o = null;
+    list.forEach(function (br) { if (!br) return; o = o || {}; for (var b in br) o[b] = (o[b] || 0) + br[b]; });
+    return o;
+  }
   function tilesHtml(tiles, pick, flat) {
     var h = '', all = [];
     SECTIONS.forEach(function (s) {
@@ -446,7 +464,7 @@
         var tag = fl ? '<div class="ptag' + (ter ? ' ter' : '') + '">' + (ter ? 'ТЕРМИНАЛ' : 'ПЕРЕЧИСЛЕНИЕ') + '</div>' : '';
         return '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + (fl === 'gp' || fl === 'tas' ? ' cat' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
           (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div>' + tag + (nm ? '<div class="n">' + nm + '</div>' : '') + '<div class="c">' +
-          (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
+          (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div>' + brandsHtml(x.br) + '</div>';
       }).join('');
     }
   }
@@ -484,6 +502,12 @@
       sub.textContent = 'Документы ERP на ' + (r.updated || '—') + ' · проверяет агент Темур';
       var rows = r.rows || [];
       function cnt(f) { return rows.filter(f).length; }
+      // бренды готовой продукции — из главного меню (что сейчас лежит на этих складах)
+      var MW = {}, mc = cget('/api/menu' + JSON.stringify({}));
+      ((mc && mc.groups) || []).forEach(function (g) { g.whs.forEach(function (w) { MW[w.key] = w; }); });
+      function invBr(city, prod) {
+        return brandsHtml(mergeBr(((r.wh || {})[city + '|' + prod + '|Готовая продукция'] || []).map(function (k) { return (MW[k] || {}).brands; })));
+      }
       function docs(n) { return n ? n + ' ' + (n === 1 ? 'не проведена' : 'не проведены') : 'не проведённых нет'; }
       var h = '';
       if (!s.city) {
@@ -497,13 +521,14 @@
           var n0 = cnt(function (x) { return x.city === s.city && x.production === p; });
           return '<div class="tile cat ' + (s.city === 'Завод' ? 'g' : 'b') + '" data-s=\'' + JSON.stringify({ city: s.city, prod: p }) + '\'><div class="bd' + (n0 ? '' : ' z') + '">' + n0 +
             '</div><div class="e">' + (s.city === 'Завод' ? '🏭' : '🏙') + '</div><div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() +
-            '</div><div class="c">' + docs(n0) + '</div></div>';
+            '</div><div class="c">' + docs(n0) + '</div>' + (s.city === 'Ташкент' ? invBr(s.city, p) : '') + '</div>';   // в Ташкенте — только ГП
         }).join('') + '</div>';
       } else if (!s.kind && s.city === 'Завод') {
         h = '<div class="mgrid">' + [['Сырьё', '🧪', 'y'], ['Готовая продукция', '🏭', 'g']].map(function (k) {
           var n0 = cnt(function (x) { return x.city === s.city && x.production === s.prod && x.kind === k[0]; });
           return '<div class="tile ' + k[2] + '" data-s=\'' + JSON.stringify({ city: s.city, prod: s.prod, kind: k[0] }) + '\'><div class="bd' + (n0 ? '' : ' z') + '">' + n0 +
-            '</div><div class="e">' + k[1] + '</div><div class="n">' + k[0] + '</div><div class="c">' + docs(n0) + '</div></div>';
+            '</div><div class="e">' + k[1] + '</div><div class="n">' + k[0] + '</div><div class="c">' + docs(n0) + '</div>' +
+            (k[0] === 'Готовая продукция' ? invBr(s.city, s.prod) : '') + '</div>';
         }).join('') + '</div>';
       } else {
         return invList(s, r);
@@ -605,14 +630,14 @@
       if (cats.length > 1) {
         h += '<div class="mgrid" style="margin-top:14px">';
         cats.forEach(function (c) {
-          var t = 0, n0 = 0, busy = 0, total = 0;
+          var t = 0, n0 = 0, busy = 0, total = 0, brl = [];
           Object.keys(tiles).forEach(function (k) {
             if (ITEM[k].g !== c.g) return;
-            n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total;
+            n0++; t += tiles[k].t; busy += tiles[k].busy; total += tiles[k].total; brl.push(tiles[k].br);
           });
           h += '<div class="tile cat ' + c.cl + '" data-g="' + c.g + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + c.emoji +
             '</div><div class="n">' + esc(c.name) + '</div><div class="c">' + n0 + ' ' + (n0 === 1 ? 'склад' : n0 < 5 ? 'склада' : 'складов') +
-            ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div></div>';
+            ' · ' + busy + (total ? ' / ' + total : '') + ' мест</div>' + brandsHtml(mergeBr(brl)) + '</div>';
         });
         h += '</div>';
       } else {
