@@ -424,7 +424,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'cc3b34b8', newBuild = '';
+  var BUILD = 'c1f4e109', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1046,8 +1046,98 @@
       };
     });
   }
+  // ---------- 📥 Приходы · ↩️ Возврат — как перемещения (руководитель 22.11): откуда → куда, шаги, отбор, полный экран ----------
+  var DSTEPS = { inc: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на полке']],
+                 ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']] };
+  var docFlt = { inc: '', ret: '' };
+  function docStep(kind, x) {
+    if (x.status !== 2) return 'new';
+    return kind === 'inc' && x.placed === true ? 'shelf' : 'ok';
+  }
+  function docBar(kind, step) {
+    var S = DSTEPS[kind], i = S.map(function (s) { return s[0]; }).indexOf(step);
+    return '<div class="trk">' + S.map(function (s, j) {
+      return '<span class="' + (j < i ? 'done' : j === i ? 'cur' : '') + '"><i>' + s[1] + '</i>' + s[2] + '</span>';
+    }).join('') + '</div>';
+  }
+  function docFilters(kind) {   // плитки-отбор: нажатие показывает только эти документы
+    return kind === 'inc'
+      ? [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
+         ['noshelf', '📍 не на полке', 'd7', function (x) { return x.status === 2 && x.placed === false; }],
+         ['done', '🟢 готово', 'd5', function (x) { return x.status === 2 && x.placed !== false; }]]
+      : [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
+         ['done', '🟢 проведены', 'd5', function (x) { return x.status === 2; }],
+         ['tas', '🏙 Ташкент', 'd7', function (x) { return x.city === 'Ташкент'; }]];
+  }
+  function showDocs(kind, box) {
+    load2('/api/flow', { kind: kind }, function (r) {
+      if (!document.body.contains(box)) return;
+      var all = r.rows || [], F = docFilters(kind), f = F.filter(function (q) { return q[0] === docFlt[kind]; })[0];
+      var rows = f ? all.filter(f[3]) : all;
+      var h = '<div class="dir">' + F.map(function (q) {
+        var c = all.filter(q[3]).length;
+        return '<div class="' + q[2] + (c ? '' : ' z') + (docFlt[kind] === q[0] ? ' on' : '') + '" data-df="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
+      }).join('') + '</div>';
+      h += '<div class="note" style="margin:-4px 0 8px">' + (f ? 'Показаны: ' + f[1] + ' · нажмите ещё раз — все' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
+      if (!rows.length) h += '<div class="empty">Ничего нет</div>';
+      h += rows.map(function (x) {
+        var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '', st = docStep(kind, x);
+        var fq = formOf(l0.name);
+        return '<div class="tcard st-' + (st === 'new' ? 'new' : 'ok') + '" data-doc="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
+          '<div class="rt2"><span class="fr">' + (kind === 'inc' ? '🏭 ' : '🛒 ') + esc(x.who) + '</span><i>→</i><span class="to">' + esc(x.store) + '</span></div>' +
+          '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + '</b></div>' +
+          docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') + '</div>';
+      }).join('');
+      box.innerHTML = h;
+      Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
+        el.onclick = function () { var q = el.getAttribute('data-df'); docFlt[kind] = docFlt[kind] === q ? '' : q; showDocs(kind, box); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-doc]'), function (el) {
+        el.onclick = function () {
+          var id = el.getAttribute('data-doc');
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          setTimeout(function () { go(function () { showDoc(kind, id); }); }, 100);
+        };
+      });
+    });
+  }
+  function showDoc(kind, id) {
+    var me = cur, NM = kind === 'inc' ? 'Приходы' : 'Возврат';
+    view.innerHTML = '<div class="spin">Загрузка…</div>';
+    load('/api/flow', { kind: kind }, function (r) {
+      if (cur !== me) return;
+      var x = (r.rows || []).filter(function (y) { return String(y.id) === String(id); })[0];
+      if (!x) { view.innerHTML = subTop(kind, NM) + '<div class="empty">Документ уже не в списке</div>'; return bindTabs(); }
+      var st = docStep(kind, x), SN = { new: '🟡 СОЗДАН — НЕ ПРОВЕДЁН', ok: '🟢 ПРОВЕДЁН', shelf: '📍 НА ПОЛКЕ' };
+      var h = subTop(kind, NM + ' · №' + x.id);
+      h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
+        '<div class="rt2 big"><span class="fr">' + (kind === 'inc' ? '🏭 Поставщик<br>' : '🛒 Клиент<br>') + esc(x.who) + '</span><i>→</i><span class="to">📥 Склад<br>' + esc(x.store) + '</span></div>' +
+        docBar(kind, st);
+      h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+        var fq = formOf(y.name);
+        return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b></div>';
+      }).join('') + '</div>';
+      var T = [['🟡', x.date, 'создан в ERP · ' + x.author, true],
+               ['🟢', null, x.status === 2 ? 'проведён в ERP' : 'ждём: проведение в ERP', x.status === 2]];
+      if (kind === 'inc') T.push(['📍', null, x.placed === true ? 'поставлен на полку' : x.placed === false ? 'ждём: кладовщик поставит на полку' : x.status !== 2 ? 'потом: кладовщик поставит на полку' : 'полка — нет данных по этому складу', x.placed === true]);
+      h += '<div class="box"><h3>Ход</h3><div class="tl">' + T.map(function (t) {
+        return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
+      }).join('') + '</div></div>';
+      if (x.to_wh) h += '<button class="main" data-go="' + x.to_wh + '">➡ Склад «куда»' + (kind === 'inc' && x.placed === false ? ' · поставить на полку' : '') + '</button>';
+      h += '<div class="note">Провести — в ERP; поставить на место — в окне склада (как в группе).</div>';
+      view.innerHTML = h;
+      bindTabs();
+      Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
+        b.onclick = function () {
+          var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
+          if (it) go(function () { showWh(it, w); });
+        };
+      });
+    });
+  }
   function showFlow(kind, box) {
     if (kind === 'mv') return showMoves(box);
+    if (kind === 'inc' || kind === 'ret') return showDocs(kind, box);
     load2('/api/flow', { kind: kind }, function (r) {
       if (!document.body.contains(box)) return;
       var rows = r.rows || [], h = '';
