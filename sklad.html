@@ -387,7 +387,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ffc90d40', newBuild = '';
+  var BUILD = '6839436f', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -431,7 +431,9 @@
     if (errN++ >= 5 || !api) return;
     try { call1('/api/err', { msg: String(msg).slice(0, 500), build: BUILD, screen: (cur && cur.name) || '' }).catch(function () {}); } catch (e) {}
   }
-  window.addEventListener('error', function (e) { reportErr((e.message || 'ошибка') + ' @' + String(e.filename || '').split('/').pop().split('?')[0] + ':' + e.lineno + ':' + e.colno); });
+  window.addEventListener('error', function (e) {
+    if (/^Script error\.?$/.test(e.message || '') && !e.lineno) return;   // чужой скрипт (telegram-web-app.js) — браузер скрывает подробности, не наша ошибка
+    reportErr((e.message || 'ошибка') + ' @' + String(e.filename || '').split('/').pop().split('?')[0] + ':' + e.lineno + ':' + e.colno); });
   window.addEventListener('unhandledrejection', function (e) {
     var r = e.reason;
     if (r && (r.down || r.text)) return;   // нет связи / ответ сервера — это не ошибка страницы
