@@ -261,6 +261,9 @@
   .dir .d1 { background: linear-gradient(150deg, #4fd68a, #1f62c9); } .dir .d2 { background: linear-gradient(150deg, #1f62c9, #4fd68a); }
   .dir .d3 { background: linear-gradient(150deg, #aab3c4, #6b7385); } .dir .d4 { background: linear-gradient(150deg, #ffbf55, #e8820c); }
   .dir .d5 { background: linear-gradient(150deg, #4fd68a, #17964a); }
+  .dir.dir4 { grid-template-columns: 1fr 1fr; }
+  .dir .d6 { background: linear-gradient(150deg, #4fd68a, #0f8a4a); } .dir .d7 { background: linear-gradient(150deg, #6fb2ff, #174fa8); }
+  .dir div.z { opacity: .45; filter: saturate(.6); }
   .mvc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 7px solid #ccc; }
   .mvc.st1 { border-left-color: #f5b400; } .mvc.st2 { border-left-color: #22a559; } .mvc.st3 { border-left-color: #999; }
   .mvc.rt.st2 { border-left-color: #d43c3c; }
@@ -387,7 +390,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6839436f', newBuild = '';
+  var BUILD = 'a9dcd141', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -901,12 +904,14 @@
         : { 1: ['st1', '🟡 новый — не проведён'], 2: ['st2', '🟢 проведён'] };
       function dtf(s) { s = String(s || ''); return s.slice(8, 10) + '.' + s.slice(5, 7) + ' ' + s.slice(11, 16); }
       if (kind === 'mv') {   // направления — нажатие отбирает карточки
-        var D = [['Завод→Ташкент', 'Завод → Ташкент', 'd1'], ['Ташкент→Завод', 'Ташкент → Завод', 'd2'], ['in', 'внутри', 'd3']];
-        h += '<div class="dir">' + D.map(function (d) {
-          var c = rows.filter(function (x) { return d[0] === 'in' ? x.dir.split('→')[0] === x.dir.split('→')[1] : x.dir === d[0]; }).length;
-          return '<div class="' + d[2] + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
+        // руководитель 22.11: 4 направления; «внутри» — отдельно завод и Ташкент; пустое — бледное, но видно
+        var D = [['Завод→Ташкент', 'Завод → Ташкент', 'd1'], ['Ташкент→Завод', 'Ташкент → Завод', 'd2'],
+                 ['Завод→Завод', 'Внутри завода', 'd6'], ['Ташкент→Ташкент', 'Внутри Ташкента', 'd7']];
+        h += '<div class="dir dir4">' + D.map(function (d) {
+          var c = rows.filter(function (x) { return x.dir === d[0]; }).length;
+          return '<div class="' + d[2] + (c ? '' : ' z') + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
         }).join('') + '</div>';
-        if (flowDir) rows = rows.filter(function (x) { return flowDir === 'in' ? x.dir.split('→')[0] === x.dir.split('→')[1] : x.dir === flowDir; });
+        if (flowDir) rows = rows.filter(function (x) { return x.dir === flowDir; });
       } else {
         var wait = rows.filter(function (x) { return x.status === 1; }).length;
         h += '<div class="dir"><div class="d4"><b>' + wait + '</b>ждут</div><div class="d5"><b>' + (rows.length - wait) + '</b>проведены</div>' +
