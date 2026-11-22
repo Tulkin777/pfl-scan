@@ -178,6 +178,10 @@
               font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 rgba(0,0,0,.2); }
   .tile .bd.z { background: rgba(255,255,255,.35); color: #fff; box-shadow: none; }
   .tile.wide { grid-column: span 2; min-height: 104px; }
+  .ptag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 900; letter-spacing: 1px;
+          background: #ffe39a; color: #7a4a00; box-shadow: 0 3px 0 rgba(0,0,0,.15); }   /* руководитель 22.11: не чёрно-белое, спокойные цвета */
+  .ptag.ter { background: #c9ddff; color: #17468f; }
+  .tile.cat .ptag { font-size: 14px; letter-spacing: .3px; padding: 6px 10px; margin-top: 12px; max-width: 100%; }
   .tile.cat { min-height: 168px; padding-top: 18px; }
   .tile.cat .e { font-size: 46px; }
   .tile.cat .n { font-size: 18px; margin-top: 10px; }
@@ -381,23 +385,30 @@
     });
     return { tiles: tiles, total: total0 };
   }
-  function tilesHtml(tiles, pick) {
-    var h = '';
+  // flat (руководитель 22.11): внутри «Готовая продукция» / «Сырьё и упаковка» — без заголовков разделов;
+  // на плитке цветная метка ПЕРЕЧИСЛЕНИЕ / ТЕРМИНАЛ; у готовой продукции название плитки = само «Перечисление» / «Терминал»
+  function tilesHtml(tiles, pick, flat) {
+    var h = '', all = [];
     SECTIONS.forEach(function (s) {
       var vis = s.items.filter(function (it) { return tiles[it.key] && pick(it); });
       if (!vis.length) return;
-      h += '<div class="msec">' + esc((s.head + ' · ' + s.sub).toUpperCase()) + '</div><div class="mgrid">';
-      vis.forEach(function (it, i) {
-        var x = tiles[it.key], wide = vis.length % 2 === 1 && i === vis.length - 1;
-        var grew = lastBadge[it.key] != null && x.t > lastBadge[it.key];
-        lastBadge[it.key] = x.t;
-        h += '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
-          (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div><div class="n">' + esc(it.name) + '</div><div class="c">' +
-          (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
-      });
-      h += '</div>';
+      if (flat) { all = all.concat(vis); return; }
+      h += '<div class="msec">' + esc((s.head + ' · ' + s.sub).toUpperCase()) + '</div><div class="mgrid">' + tileRow(vis) + '</div>';
     });
+    if (flat && all.length) h = '<div class="mgrid" style="margin-top:8px">' + tileRow(all, flat) + '</div>';
     return h;
+    function tileRow(vis, fl) {
+      return vis.map(function (it, i) {
+        var x = tiles[it.key], wide = vis.length % 2 === 1 && i === vis.length - 1;
+        var grew = lastBadge[it.key] != null && x.t > lastBadge[it.key], ter = it.sec.head === 'ТЕРМИНАЛ';
+        lastBadge[it.key] = x.t;
+        var nm = fl === 'gp' ? '' : esc(it.name);
+        var tag = fl ? '<div class="ptag' + (ter ? ' ter' : '') + '">' + (ter ? 'ТЕРМИНАЛ' : 'ПЕРЕЧИСЛЕНИЕ') + '</div>' : '';
+        return '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + (fl === 'gp' ? ' cat' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
+          (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div>' + tag + (nm ? '<div class="n">' + nm + '</div>' : '') + '<div class="c">' +
+          (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
+      }).join('');
+    }
   }
   function bindTiles() {
     Array.prototype.forEach.call(view.querySelectorAll('.tile[data-k]'), function (el) {
@@ -411,13 +422,13 @@
   function showCat(g) {
     var c = CATS.filter(function (x) { return x.g === g; })[0] || CATS[0], me = cur;
     title.textContent = c.title;
-    sub.textContent = c.sub;
+    sub.style.display = 'none';   // руководитель 22.11: подзаголовок не нужен
     view.innerHTML = '<div class="spin">Загрузка складов…</div>';
     load('/api/menu', {}, function (r) {
       if (cur !== me) return;
       var W = {};
       r.groups.forEach(function (q) { q.whs.forEach(function (w) { W[w.key] = w; }); });
-      view.innerHTML = tilesHtml(tilesOf(W).tiles, function (it) { return it.g === g; }) || '<div class="empty">Нет складов</div>';
+      view.innerHTML = tilesHtml(tilesOf(W).tiles, function (it) { return it.g === g; }, g === 'gp' ? 'gp' : '') || '<div class="empty">Нет складов</div>';   // руководитель 22.11: метки — только у готовой продукции
       bindTiles();
     });
   }
