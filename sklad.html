@@ -518,7 +518,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f925203a', newBuild = '';
+  var BUILD = 'd1b6f3fb', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1176,7 +1176,8 @@
   var DSTEPS = { inc: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на полке']],
                  ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']],
                  ship: [['new', '🟡', 'создано'], ['ok', '🚚', 'отгружено']] };   // 22.11.2026 (руководитель): без «готово»
-  var docFlt = { inc: '', ret: '', ship: '' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
+  // 22.11.2026 (руководитель): в Отгрузке всегда выбран шаг, по умолчанию «создано»
+  var docFlt = { inc: '', ret: '', ship: 'new' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
   // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
   var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
                  ship: [['t4', 'Ташкент · Перечисление', 'd1', [4], 'Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['t3', 'Ташкент · Терминал', 'd7', [3, 8], 'Ташкент', 'ТЕРМИНАЛ'],
@@ -1256,7 +1257,8 @@
         return '<div class="sp' + (docFlt[kind] === q[0] ? ' on' : '') + (c ? '' : ' z') + '" data-df="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
       }).join('') + '</div>';
       var any = f || pl || docWho[kind];
-      h += '<div class="note" style="margin:-4px 0 8px">' + (any ? 'Показано ' + rows.length + ' · нажмите ещё раз — снять отбор'
+      h += '<div class="note" style="margin:-4px 0 8px">' + (kind === 'ship' ? 'Показано ' + rows.length + (pl ? ' · ещё раз на склад — все склады' : '')
+        : any ? 'Показано ' + rows.length + ' · нажмите ещё раз — снять отбор'
         : kind === 'ship' ? 'Создано и отгружено за сутки · ' + rows.length + ' · архив — отдельно' : 'Все за ' + r.days + ' дн. · ' + all.length) + '</div>';
       if (!rows.length) h += '<div class="empty">Ничего нет</div>';
       h += rows.map(function (x) {
@@ -1274,10 +1276,18 @@
       }).join('');
       box.innerHTML = h;
       Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
-        el.onclick = function () { var q = el.getAttribute('data-df'); docFlt[kind] = docFlt[kind] === q ? '' : q; showDocs(kind, box); };
+        el.onclick = function () {
+          var q = el.getAttribute('data-df');
+          docFlt[kind] = kind === 'ship' ? q : (docFlt[kind] === q ? '' : q);   // отгрузка: шаг не снимается — всегда один выбран
+          showDocs(kind, box);
+        };
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-dp]'), function (el) {
-        el.onclick = function () { var q = el.getAttribute('data-dp'); docPl[kind] = docPl[kind] === q ? '' : q; showDocs(kind, box); };
+        el.onclick = function () {
+          var q = el.getAttribute('data-dp'); docPl[kind] = docPl[kind] === q ? '' : q;
+          if (kind === 'ship') docFlt.ship = 'new';   // выбрали «откуда» — сразу «создано»
+          showDocs(kind, box);
+        };
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-dw]'), function (el) {
         el.onclick = function () { var q = el.getAttribute('data-dw'); docWho[kind] = docWho[kind] === q ? '' : q; showDocs(kind, box); };
