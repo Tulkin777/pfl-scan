@@ -281,6 +281,37 @@
   .mvc .chk .ok { background: #dcf5e6; color: #0f7a3c; } .mvc .chk .no { background: #fde8e6; color: #c0392b; }
   .mvc .sost .ln { font-size: 13px; }
   .mvc .chk .dr { background: #efeaff; color: #4b39c9; }
+  /* 🚚 5 шагов перемещения */
+  .stp { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0 0 10px; }
+  .stp .sp { text-align: center; border-radius: 12px; padding: 6px 1px; font-size: 10.5px; font-weight: 800; background: var(--bg2); color: var(--fg);
+             box-shadow: 0 2px 0 rgba(0,0,0,.1); cursor: pointer; line-height: 1.2; }
+  .stp .sp b { display: block; font-size: 18px; } .stp .sp.z { opacity: .5; }
+  .stp .sp.on { box-shadow: inset 0 0 0 3px #4b39c9; background: #efeaff; color: #4b39c9; opacity: 1; }
+  .tcard { background: var(--bg2); border-radius: 16px; padding: 10px 12px; margin: 0 0 10px; border-left: 8px solid #ccc; cursor: pointer;
+           box-shadow: 0 3px 0 rgba(0,0,0,.06); }
+  .tcard:active { transform: translateY(2px); }
+  .tcard.st-new { border-left-color: #f5b400; } .tcard.st-ready { border-left-color: #e8820c; } .tcard.st-road { border-left-color: #4b39c9; }
+  .tcard.st-came { border-left-color: #1f62c9; } .tcard.st-ok { border-left-color: #22a559; }
+  .tcard .th { display: flex; align-items: baseline; } .tcard .th b { font-size: 19px; } .tcard .th span { margin-left: auto; font-size: 12px; color: var(--hint); }
+  .tcard .what { font-size: 14px; margin: 4px 0; } .tcard .what b { font-size: 16px; }
+  .tcard .tdrv { font-size: 12px; font-weight: 800; color: #4b39c9; margin-top: 4px; }
+  .trk { display: flex; margin: 8px 0 2px; border-radius: 10px; overflow: hidden; }
+  .trk span { flex: 1; text-align: center; font-size: 10px; font-weight: 800; padding: 5px 1px; background: #e2e5ec; color: #9aa3b2; line-height: 1.2; }
+  .trk span i { display: block; font-style: normal; font-size: 15px; }
+  .trk span.done { background: #cdeedd; color: #0f7a3c; } .trk span.cur { background: #4b39c9; color: #fff; animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%, 100% { filter: none; } 50% { filter: brightness(1.25); } }
+  .dhead { display: flex; align-items: center; border-radius: 16px; padding: 12px 14px; margin: 0 0 10px; color: #fff;
+           background: linear-gradient(150deg, #8b7bff, #4b39c9); box-shadow: 0 4px 0 #34278f; }
+  .dhead.st-new { background: linear-gradient(150deg, #ffd25a, #e0a100); box-shadow: 0 4px 0 #a37400; }
+  .dhead.st-ready { background: linear-gradient(150deg, #ffbf55, #e8820c); box-shadow: 0 4px 0 #a85f00; }
+  .dhead.st-came { background: linear-gradient(150deg, #6fb2ff, #1f62c9); box-shadow: 0 4px 0 #154a9a; }
+  .dhead.st-ok { background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 4px 0 #0f6f36; }
+  .dhead .dn { font-size: 26px; font-weight: 900; } .dhead .ds { margin-left: auto; font-weight: 900; font-size: 14px; background: rgba(255,255,255,.22); border-radius: 10px; padding: 4px 10px; }
+  .rt2.big { font-size: 14px; }
+  .tl div { font-size: 14px; padding: 5px 0; border-top: 1px solid rgba(127,127,127,.15); } .tl .nx { color: var(--hint); }
+  .act-road { background: linear-gradient(150deg, #8b7bff, #4b39c9) !important; box-shadow: 0 4px 0 #34278f; margin-top: 8px; }
+  .act-came { background: linear-gradient(150deg, #6fb2ff, #1f62c9) !important; box-shadow: 0 4px 0 #154a9a; margin-top: 8px; }
+  button.drv { background: linear-gradient(150deg, #8b7bff, #4b39c9); color: #fff; box-shadow: 0 3px 0 #34278f; }
   .ackw { text-align: center; padding: 30px 10px; }
   .ackw .big2 { font-size: 64px; } .ackw h2 { margin: 10px 0 6px; font-size: 22px; } .ackw p { color: var(--hint); margin: 0 0 20px; }
   /* «⬅️ Назад · где вы» — вместо подписи раздела */
@@ -393,7 +424,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '815c0f95', newBuild = '';
+  var BUILD = 'cc3b34b8', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -899,7 +930,124 @@
 
   // ---------- 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (руководитель 22.11: ERP, только чтение) ----------
   var flowDir = '';
+  // ---------- 🚚 Перемещения: 5 шагов, карточки-«поезда», полный экран (руководитель 22.11 «Да, делай») ----------
+  var MSTEPS = [['new', '🟡', 'создано'], ['ready', '📦', 'готово'], ['road', '🚛', 'в дороге'], ['came', '🏁', 'прибыло'], ['ok', '🟢', 'принято']];
+  var MDIR = [['Завод→Ташкент', 'Завод → Ташкент', 'd1'], ['Ташкент→Завод', 'Ташкент → Завод', 'd2'],
+              ['Завод→Завод', 'Внутри завода', 'd6'], ['Ташкент→Ташкент', 'Внутри Ташкента', 'd7']];
+  var mvStep = '';
+  function dtf2(s) { s = String(s || ''); return s.slice(8, 10) + '.' + s.slice(5, 7) + ' ' + s.slice(11, 16); }
+  function trkBar(step) {
+    var i = MSTEPS.map(function (s) { return s[0]; }).indexOf(step);
+    return '<div class="trk">' + MSTEPS.map(function (s, j) {
+      return '<span class="' + (i < 0 ? '' : j < i ? 'done' : j === i ? 'cur' : '') + '"><i>' + s[1] + '</i>' + s[2] + '</span>';
+    }).join('') + '</div>';
+  }
+  function showMoves(box) {
+    load2('/api/flow', { kind: 'mv' }, function (r) {
+      if (!document.body.contains(box)) return;
+      var all = (r.rows || []).filter(function (x) { return x.step !== 'cancel'; });
+      var rows = flowDir ? all.filter(function (x) { return x.dir === flowDir; }) : all;
+      var h = '<div class="dir dir4">' + MDIR.map(function (d) {
+        var c = all.filter(function (x) { return x.dir === d[0]; }).length;
+        return '<div class="' + d[2] + (c ? '' : ' z') + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
+      }).join('') + '</div>';
+      h += '<div class="stp">' + MSTEPS.map(function (s) {
+        var c = rows.filter(function (x) { return x.step === s[0]; }).length;
+        return '<div class="sp' + (mvStep === s[0] ? ' on' : '') + (c ? '' : ' z') + '" data-st="' + s[0] + '"><b>' + c + '</b>' + s[1] + ' ' + s[2] + '</div>';
+      }).join('') + '</div>';
+      if (mvStep) rows = rows.filter(function (x) { return x.step === mvStep; });
+      if (!rows.length) h += '<div class="empty">Нет перемещений за ' + r.days + ' дн.</div>';
+      h += rows.map(function (x) {
+        var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '';
+        var fq = formOf(l0.name);
+        return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
+          '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
+          '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
+          trkBar(x.step) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
+      }).join('');
+      box.innerHTML = h;
+      Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
+        el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; showMoves(box); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-st]'), function (el) {
+        el.onclick = function () { var s = el.getAttribute('data-st'); mvStep = mvStep === s ? '' : s; showMoves(box); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-mv]'), function (el) {
+        el.onclick = function () {
+          var id = el.getAttribute('data-mv');
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          setTimeout(function () { go(function () { showMove(id); }); }, 100);
+        };
+      });
+    });
+  }
+  function showMove(id) {
+    var me = cur;
+    view.innerHTML = '<div class="spin">Загрузка…</div>';
+    load('/api/flow', { kind: 'mv' }, function (r) {
+      if (cur !== me) return;
+      var x = (r.rows || []).filter(function (y) { return String(y.id) === String(id); })[0];
+      if (!x) { view.innerHTML = subTop('mv', 'Перемещения') + '<div class="empty">Перемещение уже не в списке (старше ' + r.days + ' дн.)</div>'; return bindTabs(); }
+      var pm = r.perm || {}, can = function (a) { return r.admin || (pm.lv === 2 && (pm.acts || []).indexOf(a) >= 0); };
+      var SN = { new: '🟡 СОЗДАНО', ready: '📦 ГОТОВО К ОТПРАВКЕ', road: '🚛 В ДОРОГЕ', came: '🏁 ПРИБЫЛО', ok: '🟢 ПРИНЯТО', cancel: '⚪ ОТМЕНЕНО' };
+      var h = subTop('mv', 'Перемещения · ' + x.dir.replace('→', ' → '));
+      h += '<div class="dhead st-' + x.step + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[x.step] + '</div></div>' +
+        '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step);
+      h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+        var fq = formOf(y.name);
+        return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '<br><b>' + n(y.qty) + ' шт</b>' + (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
+      }).join('') + '</div>';
+      var d = x.drv || {}, rd = x.ready, fin = x.status === 2;   // принято без отметок водителя — не «ждём», а «без отметки»
+      var accBy = x.acc_by === 'claude' ? 'бот (по «Принять» в группе)' : x.acc_by;
+      var T = [['🟡', x.date, 'создано в ERP · ' + x.author, true],
+               ['📦', rd && rd.at, rd ? 'собрано · ' + rd.by + (rd.batches ? ' · партий: ' + rd.batches : '') : (fin ? 'собрано — без отметки бота' : 'ждём: кладовщик соберёт и отдаст'), !!rd],
+               ['🚛', d.taken, d.taken ? 'водитель ' + d.driver + ' забрал' : (fin ? 'без отметки водителя' : d.driver ? 'назначен водитель ' + d.driver + ' — ещё не забрал' : 'ждём: водитель заберёт'), !!d.taken],
+               ['🏁', d.done, d.done ? 'водитель привёз' : (fin ? 'без отметки водителя' : 'ждём: водитель привезёт'), !!d.done],
+               ['🟢', x.acc, fin ? 'принято' + (accBy ? ' · ' + accBy : '') : 'ждём: кладовщик «куда» примет', fin]];
+      if (d.prob) T.splice(4, 0, ['❗', d.prob, 'у водителя проблема', true]);
+      h += '<div class="box"><h3>Ход</h3><div class="tl">' + T.map(function (t) {
+        return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[3] && t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
+      }).join('') + '</div></div>';
+      // кнопка действия — по шагу и по праву (📦 Отправить · 🚛 Везти · 📥 Принять)
+      if ((x.step === 'new' || x.step === 'ready') && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал (водитель)</button>';
+      if (x.step === 'road' && can('drive')) h += '<button class="main act-came" data-act="done">🏁 Привёз (водитель)</button>';
+      if ((x.step === 'road' || x.step === 'ready') && can('drive')) h += '<button style="margin-top:8px" data-act="prob">❗ Проблема</button>';
+      if (r.admin && x.status === 1 && !x.drv) h += '<button class="drv" style="margin-top:8px" id="mvdrv">🚛 Назначить водителя</button>';
+      h += '<div class="row" style="margin-top:8px">' +
+        (x.from_wh && can('send') ? '<button data-go="' + x.from_wh + '">➡ Склад «откуда»' + (x.step === 'new' ? ' · собрать' : '') + '</button>' : '') +
+        (x.to_wh && can('accept') ? '<button data-go="' + x.to_wh + '">➡ Склад «куда»' + (x.step === 'came' ? ' · принять' : '') + '</button>' : '') + '</div>' +
+        '<div class="note">Собрать и принять — в окне склада (как в группе). Кнопки видит тот, у кого есть право в «👥 Доступ».</div>';
+      view.innerHTML = h;
+      bindTabs();
+      Array.prototype.forEach.call(view.querySelectorAll('[data-act]'), function (b) {
+        b.onclick = function () {
+          var act = b.getAttribute('data-act'); b.disabled = true;
+          call('/api/mv_act', { id: x.id, act: act }, 30000).then(function (q) {
+            haptic(q.ok ? 'success' : 'warning'); say(q.text); delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; showMove(id);
+          }).catch(function (e) { b.disabled = false; fail(e); });
+        };
+      });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
+        b.onclick = function () {
+          var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
+          if (it) go(function () { showWh(it, w); });
+        };
+      });
+      if ($('mvdrv')) $('mvdrv').onclick = function () {
+        var ds = (r.drivers || []).slice(0, 2), b = this;
+        function send(dn) {
+          b.disabled = true;
+          call('/api/driver_send', { id: x.id, driver: dn }, 30000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; showMove(id); })
+            .catch(function (e) { b.disabled = false; fail(e); });
+        }
+        if (tg && tg.showPopup && ds.length) tg.showPopup({ title: '🚛 Кому везти №' + x.id + '?', message: x.src + ' → ' + x.dst,
+          buttons: ds.map(function (dn) { return { id: dn, type: 'default', text: dn }; }).concat([{ id: '', type: 'cancel' }]) }, function (q) { if (q) send(q); });
+        else if (ds.length) send(ds[0]);
+      };
+    });
+  }
   function showFlow(kind, box) {
+    if (kind === 'mv') return showMoves(box);
     load2('/api/flow', { kind: kind }, function (r) {
       if (!document.body.contains(box)) return;
       var rows = r.rows || [], h = '';
@@ -1442,7 +1590,7 @@
   // ---------- 👥 Доступ (только руководитель) ----------
   // 22.11.2026 (руководитель «Подходит, делай»): роли-шаблоны + свои исключения сотрудника; ⛔ не видит · 👁 смотрит · ✋ работает
   var ACC = null;
-  var ACTNAME = { task: '✅ Задачи', swap: '🔀 Переставить', label: '🖨 Наклейки' };
+  var ACTNAME = { task: '✅ Задачи', swap: '🔀 Переставить', label: '🖨 Наклейки', send: '📦 Отправить', drive: '🚛 Везти', accept: '📥 Принять' };
   var LVNAME = ['⛔ Не видит', '👁 Смотрит', '✋ Работает'];
   function accLoad(render) {
     var c0 = cur;   // ушли на другой экран — не перерисовывать
@@ -1486,7 +1634,10 @@
   // склады по разделам, как в меню; уровень и кнопки — нажатием
   function whEditor(get, set) {
     var h = '', lab = ACC.label_ok || [];
-    function actsOf(k) { return k === 'inv' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; }); }
+    function actsOf(k) {
+      if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
+      return k === 'inv' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
+    }
     function row(it) {
       var x = get(it.key) || { lv: 0, acts: [] };
       h += '<div class="whr"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
@@ -1505,6 +1656,9 @@
     });
     h += '<div class="agrp">ИНВЕНТАРИЗАЦИЯ</div>';
     row({ key: 'inv', emoji: '📋', name: 'Инвентаризация (агент Темур)' });
+    h += '<div class="agrp">ПЕРЕМЕЩЕНИЯ</div>';
+    row({ key: 'mv', emoji: '🚚', name: 'Перемещения' });
+    h += '<div class="note">📦 Отправить — собрать и отдать (кладовщик «откуда») · 🚛 Везти — Забрал / Привёз (водитель) · 📥 Принять — поставить на место (кладовщик «куда»)</div>';
     return { html: h, bind: function () {
       Array.prototype.forEach.call(view.querySelectorAll('.lv span'), function (el) {
         el.onclick = function () {
