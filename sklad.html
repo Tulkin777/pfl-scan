@@ -206,6 +206,28 @@
   .fchip[data-f].on { opacity: 1; filter: none; transform: translateY(-3px);
                       box-shadow: 0 7px 0 rgba(0,0,0,.28), 0 10px 18px rgba(0,0,0,.22), inset 0 0 0 3px rgba(255,255,255,.9); }
   .fchip[data-f]:active { transform: translateY(3px); box-shadow: none; }
+  /* 22.11.2026 (руководитель): задачи — цвет и значок по форме, по плитке пробегает блик (привлекает внимание) */
+  /* блик — второй фон, который движется (не влияет на ширину текста и его ужатие) */
+  .tb.fm { color: #fff; border-color: transparent; box-shadow: 0 3px 0 var(--fd);
+           background-image: linear-gradient(100deg, rgba(255,255,255,0) 40%, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 60%), var(--fg);
+           background-size: 260% 100%, 100% 100%; background-repeat: no-repeat; animation: shine 4.5s ease-in-out infinite; }
+  @keyframes shine { 0%, 60% { background-position: 130% 0, 0 0; } 100% { background-position: -30% 0, 0 0; } }
+  .tb.fm b, .tb.fm span, .tb.fm u, .tb.fm i { color: #fff; }
+  .tb.fm em { font-style: normal; margin-right: 3px; }
+  .tb.fm.sel { box-shadow: 0 0 0 3px var(--btn), 0 3px 0 var(--fd); }
+  .fm-syr  { --fd: #a85600; --fg: linear-gradient(150deg, #ffbe55, #e07b00); }
+  .fm-kaps { --fd: #9c1f4b; --fg: linear-gradient(150deg, #ff86a6, #d6336c); }
+  .fm-kapl { --fd: #0f6f9c; --fg: linear-gradient(150deg, #66d8ff, #1793c9); }
+  .fm-supp { --fd: #5a2fa3; --fg: linear-gradient(150deg, #c7a2ff, #7e4bd1); }
+  .fm-tabl { --fd: #46577f; --fg: linear-gradient(150deg, #aebee0, #6378a8); }
+  .fm-rr   { --fd: #0b7a61; --fg: linear-gradient(150deg, #66e3c4, #11a383); }
+  .fm-mix  { --fd: #2b3f8f; --fg: linear-gradient(150deg, #8aa2ff, #4a5fd6); }
+  .tb.fm.fm-kaps { border-radius: 18px; }   /* капсулы — «таблеткой» */
+  .flegend { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 0; justify-content: center; }
+  .flegend span { font-size: 12px; font-weight: 800; color: #fff; border-radius: 9px; padding: 3px 8px; background-image: var(--fg); box-shadow: 0 2px 0 var(--fd); }
+  .seg button .sb { display: inline-block; min-width: 22px; border-radius: 11px; padding: 0 6px; margin-left: 6px; font-size: 13px;
+                    background: var(--orange); color: #fff; }
+  .seg button .sb.z { background: rgba(127,127,127,.25); color: inherit; }
   /* «⬅️ Назад · где вы» — вместо подписи раздела */
   .backp { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0 8px; padding: 8px 14px 8px 10px; border-radius: 22px; cursor: pointer;
            background: linear-gradient(150deg, #ffffff, #e9eef7); box-shadow: 0 3px 0 #c9d1de, 0 6px 12px rgba(0,0,0,.08); color: #1e1e1e;
@@ -226,6 +248,17 @@
             box-shadow: 0 3px 0 rgba(0,0,0,.1); }
   .fb div span { display: block; font-size: 12px; color: var(--hint); font-weight: 600; }
   .fb .w { grid-column: span 2; } .fb .m { background: #fff0d9; color: #1e1e1e; }
+  /* руководитель 22.11: листы остатка — каждый своим цветом, с бликом */
+  .fb div[class*="ok-"] { color: #fff; position: relative; overflow: hidden; }
+  .fb div[class*="ok-"] span { color: rgba(255,255,255,.9); }
+  .fb div[class*="ok-"] { background-image: linear-gradient(100deg, rgba(255,255,255,0) 40%, rgba(255,255,255,.4) 50%, rgba(255,255,255,0) 60%), var(--fg);
+    background-size: 260% 100%, 100% 100%; background-repeat: no-repeat; animation: shine 4.5s ease-in-out infinite; box-shadow: 0 3px 0 var(--fd); }
+  .fb .ok-g { --fd: #9c2418; --fg: linear-gradient(150deg, #ff8a7a, #d63a2b); }
+  .fb .ok-i { --fd: #a77306; --fg: linear-gradient(150deg, #ffc94a, #e09a10); }
+  .fb .ok-t { --fd: #5b6475; --fg: linear-gradient(150deg, #aab3c4, #7d879b); }
+  .fb .ok-p { --fd: #a02a5b; --fg: linear-gradient(150deg, #ff7eb0, #d9437f); }
+  .fb .ok-s { --fd: #154a9a; --fg: linear-gradient(150deg, #6fb2ff, #1f62c9); }
+  .fb .ok-f { --fd: #b06a05; --fg: linear-gradient(150deg, #ffd27a, #e89212); }
   .prog { background: #e6efff; color: #1e1e1e; border-radius: 14px; padding: 14px; margin: 0 0 10px; font-size: 15px; }
   .pbar { height: 10px; border-radius: 5px; background: #c9ddff; overflow: hidden; margin-top: 8px; }
   .pbar i { display: block; height: 100%; width: 40%; background: var(--btn); animation: pmove 1.6s ease-in-out infinite; }
@@ -305,7 +338,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '06ba6b56', newBuild = '';
+  var BUILD = 'e947b14d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -745,7 +778,8 @@
       var rs = p.rows || [];
       t.className = '';
       t.innerHTML = (rs.length ? '<table class="itab"><tr><th>Место</th><th>Позиция</th><th>Кол-во</th></tr>' + rs.map(function (x) {
-        return '<tr><td class="a">' + esc(x.addr) + '</td><td>' + esc(x.short) + (x.batch ? ' <i>п.' + esc(x.batch) + '</i>' : '') + '</td><td class="q">' + n(x.qty) + ' ' + esc(x.unit) + '</td></tr>';
+        var fq = formOf(x.item);
+        return '<tr><td class="a">' + esc(x.addr) + '</td><td>' + (fq ? fq[2] + ' ' : '') + esc(x.short) + (x.batch ? ' <i>п.' + esc(x.batch) + '</i>' : '') + '</td><td class="q">' + n(x.qty) + ' ' + esc(x.unit) + '</td></tr>';
       }).join('') + '</table>' : '<div class="empty">На полках пусто или схема склада ещё не заполнена</div>') +
         '<button id="wrep" style="margin-top:10px">📥 Вся таблица Excel — в личку</button>';
       $('wrep').onclick = function () { call('/api/wh_report', { wh: w }, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); }).catch(fail); };
@@ -781,7 +815,7 @@
       var ks = r.kinds || [], cn = r.counts || {};
       if (ks.length) {
         h += '<div class="fb">' + ks.map(function (k) {
-          return '<div class="' + (k === 'f' || k === 'g' ? 'w' : '') + (k === 'f' ? ' m' : '') + '" data-k="' + k + '">' + OSTBTN[k] +
+          return '<div class="' + (k === 'f' || k === 'g' ? 'w' : '') + ' ok-' + k + '" data-k="' + k + '">' + OSTBTN[k] +
             (cn[k] && 'itps'.indexOf(k) >= 0 ? '<span>' + cn[k] + ' позиций</span>' : '') + '</div>';
         }).join('') + '</div><div class="note">Файл придёт вам в личку бота</div>';
       }
@@ -906,6 +940,14 @@
     var c = m[1].replace(/["“”«»`']/g, '').replace(/\b(MCHJ|МЧЖ|XK|ХК|OOO|ООО|LLC)\b/gi, '').trim();
     return (c.split(/\s+/)[0] || '').slice(0, 12);
   }
+  // руководитель 22.11: задача — цвет и значок по форме (как в боте склада FORMS): сироп, капсулы, капли, супп., таблетки, раствор
+  var FORMS = [['СУПП', 'supp', '🧴'], ['КАПЛ', 'kapl', '💧'], ['СИРОП', 'syr', '🍯'], ['КАПС', 'kaps', '💊'], ['КАП.', 'kaps', '💊'],
+               ['ТАБЛ', 'tabl', '⚪'], ['Р-Р', 'rr', '🧪'], ['P-P', 'rr', '🧪'], ['РАСТВОР', 'rr', '🧪']];
+  function formOf(name) {
+    var u = String(name || '').toUpperCase();
+    for (var i = 0; i < FORMS.length; i++) if (u.indexOf(FORMS[i][0]) >= 0) return FORMS[i];
+    return null;
+  }
   function verbOf(t) { return t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '📤 Взять (тест)'; }
 
   // откуда пришла задача — метка на кнопке (руководитель 22.11: всё входящее — одна колонка «Поступление», различаем меткой)
@@ -934,9 +976,13 @@
     sub.textContent = it.sec.head ? it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() + ' · ' + it.sec.sub : '';
     // руководитель 22.11: вкладки до конца нажатий + «⬅️ Назад · склад» вместо заголовка
     var h = subTop(it.f || 'zav', (it.sec.head ? it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() + ' · ' : '') + it.name);
-    if (ps.length > 1) {
+    if (ps.length > 1) {   // руководитель 22.11: на «Склад 1 / Склад 2» — сколько задач
+      var MW0 = {}, mc0 = cget('/api/menu' + JSON.stringify({}));
+      ((mc0 && mc0.groups) || []).forEach(function (g) { g.whs.forEach(function (w) { MW0[w.key] = w; }); });
       h += '<div class="seg">' + ps.map(function (p) {
-        return '<button data-p="' + p + '"' + (p === part ? ' class="on"' : '') + '>' + esc(PARTNAME[p] || p) + '</button>';
+        var tn = (MW0[p] || {}).tasks;
+        return '<button data-p="' + p + '"' + (p === part ? ' class="on"' : '') + '>' + esc(PARTNAME[p] || p) +
+          (tn != null ? '<span class="sb' + (tn ? '' : ' z') + '" data-sb="' + p + '">' + tn + '</span>' : '') + '</button>';
       }).join('') + '</div>';
     }
     h += '<div class="schw"><div id="sch" class="spin" style="padding:30px 0">Рисую схему…</div></div>' +
@@ -962,27 +1008,32 @@
       curPerm = r.perm || { lv: 2, acts: ALLACTS };
       if ($('pl')) $('pl').style.display = canDo('swap') ? '' : 'none';   // кнопки без права — не видны
       tasks = r.tasks || [];
+      var sbe = view.querySelector('[data-sb="' + part + '"]');   // число задач на «Склад 1 / 2» — свежее
+      if (sbe) { sbe.textContent = tasks.length; sbe.className = 'sb' + (tasks.length ? '' : ' z'); }
       var ids = tasks.map(function (t) { return t.id; });
       $('occ').textContent = 'занято мест ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · 🔄 ' + r.at.split(' ').pop();
-      var c = '<div class="cols">', CF = colsFor(k), one = !!ONE[k];
+      var c = '<div class="cols">', CF = colsFor(k), one = !!ONE[k], usedForms = {};
       CF[0].forEach(function (col) {
         var mine = tasks.filter(function (t) { return CF[1](t) === col[0]; });
         c += '<div class="col"><h4><span>' + mine.length + '</span><br>' + col[1] + '</h4>';
         if (!mine.length) c += '<div class="none">—</div>';
         mine.forEach(function (t) {
           var x = t.lines[0], i = tasks.indexOf(t), fresh = seen && seen.indexOf(t.id) < 0;
-          var cls = 'tb' + (one ? ' one1' : '') + (t.id === st.sel ? ' sel' : '') + (fresh ? ' new' : '');
+          var fm = t.lines.length > 1 ? ['', 'mix', '🛒'] : formOf(x.item);   // руководитель 22.11: цвет и значок по форме
+          var cls = 'tb' + (one ? ' one1' : '') + (fm ? ' fm fm-' + fm[1] : '') + (t.id === st.sel ? ' sel' : '') + (fresh ? ' new' : '');
+          var ic = fm && !one ? '<em>' + fm[2] + '</em>' : '';   // в узкой колонке — только цвет (значки — в подсказке ниже)
+          if (fm) usedForms[fm[1]] = fm;
           if (one && t.lines.length > 1) {   // заказ клиента из нескольких товаров: клиент · позиций
             var cl = client(t) || ('№' + t.doc);
-            c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc(t.lines.length + 'поз') + '"><b>' + esc(cl) + '</b> <span>· ' + t.lines.length + ' поз</span></div>';
+            c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc(t.lines.length + 'поз') + '">' + ic + '<b>' + esc(cl) + '</b> <span>· ' + t.lines.length + ' поз</span></div>';
             return;
           }
           if (one) {   // одна строка: товар и партия; всё остальное — по нажатию, под схемой
-            c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc((x.batch ? x.batch + '·' : '') + n(x.qty) + esc(x.unit)) + '"><b>' + esc(x.short) +
+            c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc((x.batch ? x.batch + '·' : '') + n(x.qty) + esc(x.unit)) + '">' + ic + '<b>' + esc(x.short) +
               '</b> <span>' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) + '</span></div>';
             return;
           }
-          c += '<div class="' + cls + '" data-i="' + i + '"><u>' + tagOf(t) + '</u><b>' +
+          c += '<div class="' + cls + '" data-i="' + i + '"><u>' + ic + tagOf(t) + '</u><b>' +
             esc(x.short) + (t.lines.length > 1 ? ' +' + (t.lines.length - 1) : '') + '</b>' +
             (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) +
             '<i>' + esc(x.src || '—') + ' → ' + esc(x.dst || '—') + '</i></div>';
@@ -990,6 +1041,9 @@
         c += '</div>';
       });
       c += '</div>' + (r.tasks_ok ? '' : '<div class="msg bad">Задачи не прочитались — обновлю сам через ' + AUTO_SEC + ' с.</div>');
+      var FN = { syr: 'сироп', kaps: 'капсулы', kapl: 'капли', supp: 'супп.', tabl: 'табл.', rr: 'раствор', mix: 'заказ' };
+      var ul = Object.keys(usedForms);   // подсказка: цвет задачи = форма товара
+      if (ul.length) c += '<div class="flegend">' + ul.map(function (f) { return '<span class="fm-' + f + '">' + usedForms[f][2] + ' ' + FN[f] + '</span>'; }).join('') + '</div>';
       $('cols').innerHTML = c;
       Array.prototype.forEach.call($('cols').querySelectorAll('.tabc'), function (el) {
         el.onclick = function () { me.col = el.getAttribute('data-c'); cols(r); };
