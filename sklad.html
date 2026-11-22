@@ -286,7 +286,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f50681f5', newBuild = '';
+  var BUILD = '5fbf86bb', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -473,6 +473,31 @@
                 pick: function (it) { return it.f === 'tas' && it.sec.head === 'ПЕРЕЧИСЛЕНИЕ'; } },
               { g: 'tT', ptag: 'ТЕРМИНАЛ', emoji: '🏙', cl: 'b', title: '🏙 Ташкент · Терминал', flat: 'name',
                 pick: function (it) { return it.f === 'tas' && it.sec.head === 'ТЕРМИНАЛ'; } }];
+  // руководитель 22.11: вкладки Завод · Ташкент · Инвент. · Остаток видны и внутри (Готовая продукция, Сырьё, инвентаризация…),
+  // а большая шапка «N задач» — только на главном: экран выше, места больше
+  var lastTabs = [];
+  function tabsHtml(active) {
+    var fl = lastTabs;
+    if (fl.length < 2) return '';
+    var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
+    return '<div class="fchips' + (sq ? ' sq' : '') + '">' + fl.map(function (f) {
+      var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
+      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + lb + '</div>';
+    }).join('') + '</div>';
+  }
+  function bindTabs() {
+    Array.prototype.forEach.call(view.querySelectorAll('.fchip[data-f]'), function (el) {
+      el.onclick = function () {
+        mfilter = el.getAttribute('data-f');
+        try { localStorage.setItem('pfl:mfilter', mfilter); } catch (e) {}
+        if (cur === showMenu) showMenu(); else home();
+      };
+    });
+  }
+  function subTop(active, label) {   // внутренний экран: вкладки сверху + короткая подпись, без шапки «N задач»
+    topShow(false);
+    return tabsHtml(active) + '<div class="msec" style="margin-top:10px">' + esc(label) + '</div>';
+  }
   function catOf(g) { return CATS.filter(function (x) { return x.g === g; })[0]; }
   function catTile(c, tiles) {   // большая кнопка-раздел: задачи, склады, места, бренды
     var t = 0, n0 = 0, busy = 0, total = 0, brl = [], usl = [];
@@ -574,12 +599,14 @@
       if (cur !== me) return;
       var W = {};
       r.groups.forEach(function (q) { q.whs.forEach(function (w) { W[w.key] = w; }); });
-      var tiles = tilesOf(W).tiles;
+      var tiles = tilesOf(W).tiles, top = subTop(/^t/.test(c.g) ? 'tas' : 'zav', c.title.replace(/^\S+\s/, ''));
       if (c.sub) {   // раздел с подразделами (Ташкент → ПЕРЕЧИСЛЕНИЕ · ТЕРМИНАЛ)
-        view.innerHTML = '<div class="mgrid" style="margin-top:8px">' + c.sub.map(function (s) { return catTile(catOf(s), tiles); }).join('') + '</div>';
+        view.innerHTML = top + '<div class="mgrid" style="margin-top:8px">' + c.sub.map(function (s) { return catTile(catOf(s), tiles); }).join('') + '</div>';
+        bindTabs();
         return bindCats();
       }
-      view.innerHTML = tilesHtml(tiles, c.pick, c.flat) || '<div class="empty">Нет складов</div>';
+      view.innerHTML = top + (tilesHtml(tiles, c.pick, c.flat) || '<div class="empty">Нет складов</div>');
+      bindTabs();
       bindTiles();
     });
   }
@@ -633,7 +660,8 @@
       } else {
         return invList(s, r);
       }
-      V.innerHTML = h;
+      V.innerHTML = (box ? '' : subTop('inv', 'Инвентаризация · ' + [s.city, s.kind, s.prod].filter(Boolean).join(' · '))) + h;
+      if (!box) bindTabs();
       Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
         el.onclick = function () {
           var ns = JSON.parse(el.getAttribute('data-s'));
@@ -649,7 +677,8 @@
     var whs = (r.wh || {})[s.city + '|' + s.prod + '|' + kind] || [], can = (r.perm || {}).lv === 2 && ((r.perm || {}).acts || []).indexOf('task') >= 0;
     var tab = s.tab || 'docs', h = '<div class="seg"><button data-t="docs"' + (tab === 'docs' ? ' class="on"' : '') + '>📄 Документы · ' + rows.length +
       '</button><button data-t="where"' + (tab === 'where' ? ' class="on"' : '') + '>📍 Что где лежит</button></div><div id="invb"></div>';
-    view.innerHTML = h;
+    view.innerHTML = subTop('inv', 'Инвентаризация · ' + [s.city, kind, s.prod].join(' · ')) + h;
+    bindTabs();
     Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
       b.onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = b.getAttribute('data-t'); cur = function () { showInv(ns); }; cur(); };
     });
@@ -774,11 +803,8 @@
       if (invOn) fl.push(['inv', '📋 Инвент.']);
       if (r.ost) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
       if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost)) mf = mfilter;
-      var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
-      if (fl.length > 1) h += '<div class="fchips' + (sq ? ' sq' : '') + '">' + fl.map(function (f) {
-        var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
-        return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + lb + '</div>';
-      }).join('') + '</div>';
+      lastTabs = fl;
+      h += tabsHtml(mf);
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
       var cats = CATS.filter(function (c) { return c.tab === mf && Object.keys(tiles).some(function (k) { return c.pick(ITEM[k]); }); });
       if (mf === 'inv') {
@@ -799,13 +825,7 @@
       if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
       if (mf === 'ost') showOst($('ostbox'));
       $('ref').onclick = function () { haptic('success'); showMenu(); };
-      Array.prototype.forEach.call(view.querySelectorAll('.fchip[data-f]'), function (el) {
-        el.onclick = function () {
-          mfilter = el.getAttribute('data-f');
-          try { localStorage.setItem('pfl:mfilter', mfilter); } catch (e) {}
-          showMenu();
-        };
-      });
+      bindTabs();
       if ($('acc')) $('acc').onclick = function () { go(showAcc); };
       if ($('asx')) $('asx').onclick = function () { var n0 = asName; asName = ''; home(); go(showAcc); go(function () { showEmp(n0); }); };
       bindTiles();
