@@ -189,12 +189,31 @@
   .brs .br0 { background: rgba(255,255,255,.3); color: #fff; }
   /* 📋 Инвентаризация */
   .fchip.inv { background: linear-gradient(150deg, #7fd3ff, #2f8fd6); color: #fff; box-shadow: 0 3px 0 #1d6aa6; }
-  .fchip.inv.on { background: #1b1f2a; box-shadow: 0 3px 0 #000; }
   .fchip.ost { background: linear-gradient(150deg, #ffcf6b, #e89a12); color: #fff; box-shadow: 0 3px 0 #b87508; }
-  .fchip.ost.on { background: #1b1f2a; box-shadow: 0 3px 0 #000; }
   .fchips.sq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; overflow: visible; }
   .fchips.sq .fchip { padding: 7px 2px 6px; font-size: 12px; text-align: center; line-height: 1.2; }
   .fchips.sq .fchip i { display: block; font-style: normal; font-size: 20px; }
+  /* 22.11.2026 (руководитель): вкладки — каждая своим ярким цветом, объёмные; выбранная — светится и приподнята */
+  .fchips { padding-top: 4px; }
+  .fchip[data-f] { color: #fff; border: 0; transition: transform .12s, box-shadow .12s, filter .12s; position: relative; overflow: hidden;
+                   filter: saturate(.9); opacity: .9; }
+  .fchip[data-f]:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%; pointer-events: none;
+                          background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0)); }
+  .fchip[data-f=zav] { background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 4px 0 #0f6f36; }
+  .fchip[data-f=tas] { background: linear-gradient(150deg, #6fb2ff, #1f62c9); box-shadow: 0 4px 0 #154a9a; }
+  .fchip[data-f=inv] { background: linear-gradient(150deg, #8fe0ff, #2a93d6); box-shadow: 0 4px 0 #1d6aa6; }
+  .fchip[data-f=ost] { background: linear-gradient(150deg, #ffd27a, #e89212); box-shadow: 0 4px 0 #b06a05; }
+  .fchip[data-f].on { opacity: 1; filter: none; transform: translateY(-3px);
+                      box-shadow: 0 7px 0 rgba(0,0,0,.28), 0 10px 18px rgba(0,0,0,.22), inset 0 0 0 3px rgba(255,255,255,.9); }
+  .fchip[data-f]:active { transform: translateY(3px); box-shadow: none; }
+  /* «⬅️ Назад · где вы» — вместо подписи раздела */
+  .backp { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0 8px; padding: 8px 14px 8px 10px; border-radius: 22px; cursor: pointer;
+           background: linear-gradient(150deg, #ffffff, #e9eef7); box-shadow: 0 3px 0 #c9d1de, 0 6px 12px rgba(0,0,0,.08); color: #1e1e1e;
+           font-size: 14px; max-width: 100%; }
+  .backp b { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 14px; color: #fff;
+             background: linear-gradient(150deg, #6fb2ff, #1f62c9); box-shadow: 0 2px 0 #154a9a; font-size: 15px; flex: 0 0 28px; }
+  .backp span { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .backp:active { transform: translateY(2px); box-shadow: none; }
   /* 📦 Остаток */
   .when { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 10px; font-size: 14px; }
   .when .old { color: var(--red); font-weight: 800; }
@@ -286,7 +305,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5fbf86bb', newBuild = '';
+  var BUILD = '06ba6b56', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -494,10 +513,15 @@
       };
     });
   }
-  function subTop(active, label) {   // внутренний экран: вкладки сверху + короткая подпись, без шапки «N задач»
+  // внутренний экран: вкладки сверху до самого конца + «⬅️ Назад · где вы» (руководитель 22.11), без шапки «N задач»
+  function subTop(active, label) {
     topShow(false);
-    return tabsHtml(active) + '<div class="msec" style="margin-top:10px">' + esc(label) + '</div>';
+    return tabsHtml(active) + '<div class="backp" data-back="1"><b>⬅</b><span>Назад · ' + esc(label) + '</span></div>';
   }
+  document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
+    var b = e.target.closest && e.target.closest('[data-back]');
+    if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} goBack(); }
+  });
   function catOf(g) { return CATS.filter(function (x) { return x.g === g; })[0]; }
   function catTile(c, tiles) {   // большая кнопка-раздел: задачи, склады, места, бренды
     var t = 0, n0 = 0, busy = 0, total = 0, brl = [], usl = [];
@@ -908,7 +932,8 @@
     var st = { sel: null, box: '', place: '' }, tasks = [], seen = null, me = {};
     title.textContent = it.emoji + ' ' + it.name;
     sub.textContent = it.sec.head ? it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() + ' · ' + it.sec.sub : '';
-    var h = '';
+    // руководитель 22.11: вкладки до конца нажатий + «⬅️ Назад · склад» вместо заголовка
+    var h = subTop(it.f || 'zav', (it.sec.head ? it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() + ' · ' : '') + it.name);
     if (ps.length > 1) {
       h += '<div class="seg">' + ps.map(function (p) {
         return '<button data-p="' + p + '"' + (p === part ? ' class="on"' : '') + '>' + esc(PARTNAME[p] || p) + '</button>';
@@ -920,6 +945,7 @@
       '<div id="cols"><div class="spin">Загрузка задач…</div></div>' +
       '<div class="row" style="margin-top:12px"><button id="ref">🔄 Обновить</button><button id="pl">🔀 Переставить</button></div>';
     view.innerHTML = h;
+    bindTabs();
     Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
       b.onclick = function () { var p = b.getAttribute('data-p'); cur = function () { showWh(k, p); }; cur(); };
     });
