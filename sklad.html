@@ -278,6 +278,14 @@
   /* 22.11.2026 (руководитель): пусто — без цвета, просто серый 0 */
   .dir div.z { opacity: 1; filter: none; background: #eef0f4; color: #9aa0ab; box-shadow: 0 3px 0 #d9dde5; }
   .dir div.z.on { box-shadow: inset 0 0 0 3px #9aa0ab; }
+  .dir div.shp { position: relative; text-align: left; padding: 10px 10px 10px; display: flex; flex-direction: column; align-items: flex-start; min-height: 96px; }
+  .dir div.shp .sc { position: absolute; top: 8px; right: 8px; min-width: 28px; text-align: center; border-radius: 14px; padding: 2px 7px;
+    background: #fff; color: #1e1e1e; font-size: 16px; font-weight: 900; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .dir div.shp .cty { font-size: 16px; font-weight: 900; padding-right: 34px; line-height: 1.15; }
+  .dir div.shp .ptag { margin-top: 6px; font-size: 11px; letter-spacing: .3px; padding: 3px 7px; }
+  .dir div.shp .brs { margin-top: 7px; } .dir div.shp .brs span { font-size: 11.5px; }
+  .dir div.shp.z .sc { background: #dfe3ea; color: #9aa0ab; box-shadow: none; } .dir div.shp.z .ptag { background: #e4e7ee; color: #9aa0ab; box-shadow: none; }
+  .dir div.shp.z .brs .br0 { background: #e4e7ee; color: #9aa0ab; }
   .stp.s3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .stp.s3 .sp { font-size: 13px; padding: 9px 2px; } .stp.s3 .sp b { font-size: 21px; }
   .mvc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 7px solid #ccc; }
@@ -498,7 +506,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1f6e7c72', newBuild = '';
+  var BUILD = '972d4b21', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1143,8 +1151,21 @@
   var docFlt = { inc: '', ret: '', ship: '' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
   // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
   var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
-                 ship: [['t4', 'Ташкент · Перечисление', 'd1', [4]], ['t3', 'Ташкент · Терминал', 'd7', [3, 8]],
-                        ['g7', 'Gynomedix Ташкент', 'd2', [7]], ['zv', 'Завод', 'd6', [1, 2, 5, 6]]] };
+                 ship: [['t4', 'Ташкент · Перечисление', 'd1', [4], 'Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['t3', 'Ташкент · Терминал', 'd7', [3, 8], 'Ташкент', 'ТЕРМИНАЛ'],
+                        ['g7', 'Gynomedix Ташкент', 'd2', [7], 'Gynomedix Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['zv', 'Завод', 'd6', [1, 2, 5, 6], 'Завод', '']] };
+  // 22.11.2026 (руководитель): плитка «Откуда» отгрузки — город крупно, ниже Перечисление/Терминал, справа бренды со счётом документов
+  function shipTile(q, c, rows, on) {
+    var B = {};
+    rows.forEach(function (x) {
+      var seen = {};
+      (x.lines || []).forEach(function (l) { if (l.brand && !seen[l.brand]) { seen[l.brand] = 1; B[l.brand] = (B[l.brand] || 0) + 1; } });
+    });
+    var ks = Object.keys(B).sort(function (a, b) { return B[b] - B[a]; });
+    return '<div class="' + q[2] + ' shp' + (c ? '' : ' z') + (on ? ' on' : '') + '" data-dp="' + q[0] + '"><span class="sc">' + c + '</span>' +
+      '<span class="cty">' + esc(q[4]) + '</span>' + (q[5] ? '<span class="ptag' + (q[5] === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + q[5] + '</span>' : '') +
+      '<span class="brs">' + (ks.length ? ks.map(function (b) { return '<span class="br ' + (BRCL[b] || '') + '">' + esc(b) + ' · ' + B[b] + '</span>'; }).join('')
+        : '<span class="br0">пусто</span>') + '</span></div>';
+  }
   function docStep(kind, x) {
     if (kind === 'ship') return x.step || 'new';
     if (x.status !== 2) return 'new';
@@ -1178,7 +1199,8 @@
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
         h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
-          var c = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (!f || f[3](x)); }).length;
+          var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (!f || f[3](x)); }), c = rq.length;
+          if (kind === 'ship') return shipTile(q, c, rq, docPl[kind] === q[0]);
           return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
         }).join('') + '</div>';
         var WC = {};
