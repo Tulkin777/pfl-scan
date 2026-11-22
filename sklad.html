@@ -68,6 +68,8 @@
   .list { margin-top: 8px; }
   #pl { flex: 1.5; }
   .tb.one1 b { display: inline; font-size: 1em; }
+  .ln .no { display: inline-block; min-width: 26px; height: 26px; line-height: 26px; border-radius: 13px; background: var(--orange);
+            color: #fff; font-weight: 800; text-align: center; margin-right: 8px; font-size: 14px; }
   .todo { background: var(--bg); border-radius: 10px; padding: 8px 10px; margin: 6px 0; font-size: 15px; }
   .todo ol { margin: 4px 0 0; padding-left: 22px; }
   .todo li { margin: 2px 0; }
@@ -75,6 +77,7 @@
   .chip { background: var(--bg); border: 2px solid var(--hint); border-radius: 10px; padding: 6px 8px; font-size: 13px; cursor: pointer; }
   .chip b { color: var(--orange); }
   .chip.free b { color: var(--blue); }
+  .chip.rec { border-color: var(--orange); background: #fff6e8; color: #1e1e1e; }
   .tb.new { animation: flash 2.5s ease-out; }
   @keyframes flash { 0% { background: #ffe08a; } 100% { background: var(--bg2); } }
   .tb.sel { border-color: var(--btn); }
@@ -120,6 +123,70 @@
   .down p { color: var(--hint); margin: 0 0 18px; }
   .empty { text-align: center; color: var(--hint); padding: 26px 0; }
   .spin { text-align: center; color: var(--hint); padding: 40px 0; }
+  /* 22.11.2026 (руководитель): «👥 Доступ» — роли и права */
+  .emp { display: flex; align-items: center; gap: 10px; background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; cursor: pointer; }
+  .emp .av { width: 38px; height: 38px; border-radius: 19px; background: var(--btn); color: #fff; font-weight: 800; display: flex;
+             align-items: center; justify-content: center; font-size: 17px; flex: 0 0 38px; }
+  .emp .t { flex: 1; min-width: 0; } .emp .n { font-weight: 700; } .emp .c { font-size: 13px; color: var(--hint); }
+  .role { display: inline-block; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 2px 7px; background: #e6efff; color: var(--blue); margin-top: 2px; }
+  .role.m { background: #fff0d9; color: #a85a00; } .role.no { background: #fde8e6; color: var(--red); }
+  .ex { font-size: 12px; color: var(--orange); font-weight: 700; }
+  .agrp { margin: 16px 0 6px; font-weight: 800; font-size: 14px; color: var(--hint); letter-spacing: .3px; }
+  .whr { background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; }
+  .whr .wn { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+  .whr .wn .ex { margin-left: auto; }
+  .lv { display: flex; gap: 4px; margin: 6px 0 0; }
+  .lv span { flex: 1; text-align: center; font-size: 13px; font-weight: 700; padding: 8px 2px; border-radius: 9px; background: var(--bg); color: var(--hint); cursor: pointer; }
+  .lv span.on0 { background: #fde8e6; color: var(--red); } .lv span.on1 { background: #e6efff; color: var(--blue); }
+  .lv span.on2 { background: var(--green); color: #fff; }
+  .acts { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 0; }
+  .acts span { font-size: 13px; padding: 6px 8px; border-radius: 9px; border: 2px solid var(--hint); background: var(--bg); cursor: pointer; }
+  .acts span.y { border-color: var(--green); color: var(--green); font-weight: 700; }
+  .acts span.n { color: var(--hint); text-decoration: line-through; opacity: .7; }
+  .acts span.y.x { border-color: var(--orange); color: var(--orange); }
+  .rsel { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .rsel span { font-size: 14px; font-weight: 700; padding: 8px 10px; border-radius: 10px; background: var(--bg2); cursor: pointer; }
+  .rsel span.on { background: var(--btn); color: var(--btn-fg); }
+  .asbar { background: #fff0d9; color: #a85a00; border-radius: 12px; padding: 8px 10px; margin: 0 0 10px; font-size: 14px; font-weight: 700;
+           display: flex; align-items: center; gap: 8px; }
+  .asbar button { width: auto; padding: 6px 10px; font-size: 13px; }
+  .note { font-size: 13px; color: var(--hint); text-align: center; margin: 8px 0; }
+  /* 22.11.2026 (руководитель): главный экран — вариант 2, цветные 3D-карточки */
+  .mtop { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .logo { width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(145deg, #34c46a, #13843c); display: flex; align-items: center;
+          justify-content: center; font-size: 26px; flex: 0 0 46px; box-shadow: 0 5px 0 #0d6a2f, 0 9px 16px rgba(19,132,60,.35); }
+  .mtop .tt { font-size: 22px; font-weight: 900; line-height: 1.1; } .mtop .ts { font-size: 13px; color: var(--hint); }
+  .mtop .t { flex: 1; min-width: 0; }
+  .rb { width: 42px; height: 42px; border-radius: 21px; background: var(--bg2); display: flex; align-items: center; justify-content: center;
+        font-size: 19px; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,.12); flex: 0 0 42px; transition: transform .1s; }
+  .rb:active { transform: translateY(3px); box-shadow: none; }
+  .fchips { display: flex; gap: 8px; margin: 0 0 4px; overflow-x: auto; padding: 2px 0 8px; }
+  .fchip { padding: 9px 13px; border-radius: 20px; background: var(--bg2); font-weight: 800; font-size: 13px; white-space: nowrap; cursor: pointer;
+           box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+  .fchip.on { background: #1b1f2a; color: #fff; box-shadow: 0 3px 0 #000; }
+  .msec { margin: 16px 2px 8px; font-size: 12px; font-weight: 900; letter-spacing: 1.2px; color: var(--hint); }
+  .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 8px; }
+  .tile { position: relative; border-radius: 22px; padding: 14px 12px 12px; color: #fff; min-height: 128px; overflow: hidden; cursor: pointer;
+          transform: perspective(600px) rotateX(4deg); box-shadow: 0 8px 0 var(--d), 0 16px 24px var(--s); transition: transform .12s, box-shadow .12s; }
+  .tile:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%; border-radius: 22px 22px 0 0;
+                 background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0)); pointer-events: none; }
+  .tile:active { transform: perspective(600px) rotateX(4deg) translateY(6px); box-shadow: 0 2px 0 var(--d), 0 6px 10px var(--s); }
+  .tile .e { font-size: 34px; line-height: 1.1; filter: drop-shadow(0 4px 3px rgba(0,0,0,.3)); }
+  .tile .n { font-weight: 900; font-size: 15px; margin-top: 6px; line-height: 1.15; word-break: break-word; }
+  .tile .c { font-size: 12px; opacity: .92; margin-top: 3px; }
+  .tile .bd { position: absolute; right: 10px; top: 10px; min-width: 32px; height: 32px; padding: 0 6px; border-radius: 16px; background: #fff; color: var(--d);
+              font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 rgba(0,0,0,.2); }
+  .tile .bd.z { background: rgba(255,255,255,.35); color: #fff; box-shadow: none; }
+  .tile.wide { grid-column: span 2; min-height: 104px; }
+  .tile.g { --d: #13843c; --s: rgba(19,132,60,.35); background: linear-gradient(150deg, #3fcf75, #17964a); }
+  .tile.b { --d: #1650a8; --s: rgba(31,111,209,.35); background: linear-gradient(150deg, #4b9bff, #1f62c9); }
+  .tile.p { --d: #6a2b91; --s: rgba(142,68,173,.35); background: linear-gradient(150deg, #b46ee0, #7f39ad); }
+  .tile.y { --d: #a77306; --s: rgba(212,160,23,.35); background: linear-gradient(150deg, #ffc94a, #e09a10); }
+  .tile.k { --d: #b02d63; --s: rgba(220,60,120,.35); background: linear-gradient(150deg, #ff7eb0, #d9437f); }
+  .tile.w { --d: #6b7385; --s: rgba(100,110,130,.3); background: linear-gradient(150deg, #aab3c4, #7d879b); }
+  .tile.new { animation: pop 1.2s ease-out; }
+  @keyframes pop { 0% { filter: brightness(1.5); } 100% { filter: none; } }
+  input.txt { font: inherit; width: 100%; padding: 11px 12px; border-radius: 12px; border: 2px solid var(--btn); margin: 6px 0; background: var(--bg); color: var(--fg); }
 </style>
 </head>
 <body>
@@ -151,9 +218,13 @@
   function $(id) { return document.getElementById(id); }
 
   // ---------- навигация ----------
-  function go(fn) { if (cur) stack.push(cur); cur = fn; fn(); syncBack(); }
-  function goBack() { if (!stack.length) return; cur = stack.pop(); cur(); syncBack(); }
-  function home() { stack = []; cur = showMenu; showMenu(); syncBack(); }
+  function topShow(on) {   // главный экран — своя шапка (3D), остальные экраны — обычный заголовок
+    document.querySelector('.top').style.display = on ? '' : 'none';
+    sub.style.display = on ? '' : 'none';
+  }
+  function go(fn) { if (cur) stack.push(cur); cur = fn; topShow(fn !== showMenu); fn(); syncBack(); }
+  function goBack() { if (!stack.length) return; cur = stack.pop(); topShow(cur !== showMenu); cur(); syncBack(); }
+  function home() { stack = []; cur = showMenu; topShow(false); showMenu(); syncBack(); }
   function syncBack() {
     if (!tg || !tg.BackButton) return;
     if (stack.length) tg.BackButton.show(); else tg.BackButton.hide();
@@ -172,6 +243,7 @@
     var timer = setTimeout(function () { ctl.abort(); }, timeout || 15000);
     body = body || {};
     body.initData = tg ? tg.initData : '';
+    if (asName && path !== '/api/acc' && path !== '/api/acc_set') body.as = asName;
     return fetch(api + path, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), signal: ctl.signal })
       .then(function (r) {
         clearTimeout(timer);
@@ -192,8 +264,13 @@
   }
   // ---------- быстро: сначала сохранённое на телефоне, потом свежее с сервера ----------
   var scr = 0, mem = {};
-  function cget(k) { try { return JSON.parse(localStorage.getItem('pfl:' + k)); } catch (e) { return mem[k] || null; } }
-  function cset(k, v) { mem[k] = v; try { localStorage.setItem('pfl:' + k, JSON.stringify(v)); } catch (e) {} }
+  var asName = '';   // «👁 Как он видит»: руководитель смотрит глазами сотрудника
+  var ALLACTS = ['task', 'swap', 'label'];
+  var curPerm = { lv: 2, acts: ALLACTS };   // права на открытом складе (приходят с сервера)
+  function ck(k) { return (asName ? 'as:' + asName + ':' : '') + k; }
+  function cget(k) { k = ck(k); try { return JSON.parse(localStorage.getItem('pfl:' + k)); } catch (e) { return mem[k] || null; } }
+  function cset(k, v) { k = ck(k); mem[k] = v; try { localStorage.setItem('pfl:' + k, JSON.stringify(v)); } catch (e) {} }
+  function canDo(a) { return curPerm.lv === 2 && (curPerm.acts || []).indexOf(a) >= 0; }
   function load(path, body, render) {
     var my = ++scr, key = path + JSON.stringify(body || {}), c = cget(key);
     if (c) render(c, true);
@@ -236,20 +313,26 @@
   // ---------- 1. Склады ----------
   // 22.11.2026 (руководитель): полные названия, без кодов и сокращений; готовая продукция завода (GP1 + GP2) — одной кнопкой.
   var SECTIONS = [
+    // 22.11.2026 (руководитель): цветные 3D-карточки; cl — цвет плитки, f — фильтр; Gynomedix — значок готовой продукции (не сердце)
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Готовая продукция PERFECTFOODLAB', color: '#2e9e4f', items: [
-      { key: 'zav', parts: ['gp1', 'gp2'], name: 'Готовая продукция завода', note: 'склад 1 и склад 2 (экспорт) — на одном экране', emoji: '🟩' },
-      { key: 'per_tas', name: 'Готовая продукция Ташкент', emoji: '🟦' } ] },
+      { key: 'zav', parts: ['gp1', 'gp2'], name: 'Готовая продукция завода', note: 'склад 1 и склад 2', emoji: '🏭', cl: 'g', f: 'zav' },
+      { key: 'per_tas', name: 'Готовая продукция Ташкент', emoji: '🏙', cl: 'b', f: 'tas' } ] },
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Готовая продукция GYNOMEDIX', color: '#8e44ad', items: [
-      { key: 'per_gx', name: 'Gynomedix Ташкент — готовая продукция', emoji: '🟪' } ] },
+      { key: 'per_gx', name: 'Gynomedix Ташкент — готовая продукция', emoji: '🏭', cl: 'p', f: 'tas' } ] },   // руководитель: значок как у ГП завода
     { head: 'ТЕРМИНАЛ', sub: 'Готовая продукция', color: '#1f6fd1', items: [
-      { key: 'ter_gp', name: 'Готовая продукция завода', emoji: '🟩' },
-      { key: 'ter_tas', name: 'Готовая продукция Ташкент', note: 'BP Pharma и Gynomedix', emoji: '🟦' } ] },
+      { key: 'ter_gp', name: 'Готовая продукция завода', emoji: '🏭', cl: 'g', f: 'zav' },
+      { key: 'ter_tas', name: 'Готовая продукция Ташкент', note: 'BP Pharma и Gynomedix', emoji: '🏙', cl: 'b', f: 'tas' } ] },
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
-      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🟨' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🟨' },
-      { key: 'up', name: 'Упаковка', emoji: '🩷' }, { key: 'ta', name: 'Флаконы', emoji: '⬜' } ] },
+      { key: 'xa', name: 'Сырьё — склад 1', emoji: '🧪', cl: 'y', f: 'raw' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🧪', cl: 'y', f: 'raw' },
+      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'raw' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'raw' } ] },
     { head: 'ТЕРМИНАЛ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
-      { key: 'ter_xa', name: 'Сырьё', emoji: '🟨' }, { key: 'ter_up', name: 'Упаковка', emoji: '🩷' }, { key: 'ter_ta', name: 'Флаконы', emoji: '⬜' } ] }
+      { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'raw' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'raw' },
+      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'raw' } ] }
   ];
+  var FILTERS = [['all', 'Все'], ['zav', '🏭 Завод'], ['tas', '🏙 Ташкент'], ['raw', '🧪 Сырьё']];
+  var mfilter = 'all';
+  try { mfilter = localStorage.getItem('pfl:mfilter') || 'all'; } catch (e) {}
+  var lastBadge = {};
   var ITEM = {}, PARTNAME = { gp1: 'Склад 1', gp2: 'Склад 2' };
   SECTIONS.forEach(function (s) { s.items.forEach(function (it) { it.sec = s; ITEM[it.key] = it; }); });
   function partsOf(k) { return (ITEM[k] && ITEM[k].parts) || [k]; }
@@ -263,26 +346,66 @@
       sub.textContent = 'Выберите склад · ' + r.at + (old ? ' · обновляю…' : '');
       var W = {};
       r.groups.forEach(function (g) { g.whs.forEach(function (w) { W[w.key] = w; }); });
-      var h = '<div class="row"><button id="ref">🔄 Обновить</button><button id="qr">📷 Сканер QR</button></div>';
+      // 22.11.2026 (руководитель): вариант 2 — цветные 3D-карточки по 2 в ряд, фильтр Все · Завод · Ташкент · Сырьё
+      if (cur !== showMenu) return;
+      var total0 = 0, tiles = {};
       SECTIONS.forEach(function (s) {
-        h += '<div class="sec" style="border-color:' + s.color + '"><div class="sh">' + esc(s.head) + '</div><div class="ss">' + esc(s.sub) + '</div></div>';
         s.items.forEach(function (it) {
-          var t = 0, busy = 0, total = 0, unk = false;
+          if (!partsOf(it.key).some(function (p) { return W[p]; })) return;   // ⛔ не видит — склада нет
+          var pm = (W[partsOf(it.key)[0]] || {}).perm || {}, t = 0, busy = 0, total = 0, unk = false;
           partsOf(it.key).forEach(function (p) {
             var w = W[p] || {};
             if (w.tasks == null) unk = true; else t += w.tasks;
             busy += w.busy || 0; total += w.total || 0;
           });
-          h += '<div class="wh" data-k="' + esc(it.key) + '"><div class="em">' + it.emoji + '</div><div class="t"><div class="n">' +
-            esc(it.name) + '</div><div class="c">' + (it.note ? esc(it.note) + '<br>' : '') + 'занято мест ' + busy + (total ? ' из ' + total : '') +
-            '</div></div><div class="badge' + (t ? '' : ' zero') + '">' + (unk && !t ? '?' : t) + '</div></div>';
+          total0 += t;
+          tiles[it.key] = { t: t, unk: unk, busy: busy, total: total, ro: pm.lv === 1 };
         });
       });
+      var h = asName ? '<div class="asbar">👁 Так видит ' + esc(asName) + '<span style="flex:1"></span><button id="asx">✖️ Выйти</button></div>' : '';
+      h += '<div class="mtop"><div class="logo">📦</div><div class="t"><div class="tt">Склады PFL</div><div class="ts">' + total0 + ' задач · ' +
+        esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
+        '<div class="rb" id="ref" title="Обновить">🔄</div><div class="rb" id="qr" title="Сканер QR">📷</div>' +
+        (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') + '</div>';
+      var fl = FILTERS.filter(function (f) {
+        return f[0] === 'all' || Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
+      });
+      if (fl.length > 2) h += '<div class="fchips">' + fl.map(function (f) {
+        return '<div class="fchip' + (f[0] === mfilter ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
+      }).join('') + '</div>';
+      SECTIONS.forEach(function (s) {
+        var vis = s.items.filter(function (it) { return tiles[it.key] && (mfilter === 'all' || it.f === mfilter); });
+        if (!vis.length) return;
+        h += '<div class="msec">' + esc((s.head + ' · ' + s.sub).toUpperCase()) + '</div><div class="mgrid">';
+        vis.forEach(function (it, i) {
+          var x = tiles[it.key], wide = vis.length % 2 === 1 && i === vis.length - 1;
+          var grew = lastBadge[it.key] != null && x.t > lastBadge[it.key];
+          lastBadge[it.key] = x.t;
+          h += '<div class="tile ' + it.cl + (wide ? ' wide' : '') + (grew ? ' new' : '') + '" data-k="' + esc(it.key) + '"><div class="bd' + (x.t ? '' : ' z') + '">' +
+            (x.unk && !x.t ? '?' : x.t) + '</div><div class="e">' + it.emoji + '</div><div class="n">' + esc(it.name) + '</div><div class="c">' +
+            (x.ro ? '👁 только смотреть · ' : '') + x.busy + (x.total ? ' / ' + x.total : '') + ' мест</div></div>';
+        });
+        h += '</div>';
+      });
+      if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
-      $('ref').onclick = showMenu;
+      $('ref').onclick = function () { haptic('success'); showMenu(); };
       $('qr').onclick = freeScan;
-      Array.prototype.forEach.call(view.querySelectorAll('.wh'), function (el) {
-        el.onclick = function () { var k = el.getAttribute('data-k'); go(function () { showWh(k, 'tasks'); }); };
+      Array.prototype.forEach.call(view.querySelectorAll('.fchip'), function (el) {
+        el.onclick = function () {
+          mfilter = el.getAttribute('data-f');
+          try { localStorage.setItem('pfl:mfilter', mfilter); } catch (e) {}
+          showMenu();
+        };
+      });
+      if ($('acc')) $('acc').onclick = function () { go(showAcc); };
+      if ($('asx')) $('asx').onclick = function () { var n0 = asName; asName = ''; home(); go(showAcc); go(function () { showEmp(n0); }); };
+      Array.prototype.forEach.call(view.querySelectorAll('.tile'), function (el) {
+        el.onclick = function () {
+          var k = el.getAttribute('data-k');
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          setTimeout(function () { go(function () { showWh(k, 'tasks'); }); }, 120);   // «пружинка» успевает сыграть
+        };
       });
       if (!old && !menuTimer) menuTimer = setInterval(function () { if (!document.hidden && cur === showMenu) { var y = window.scrollY; showMenu(); window.scrollTo(0, y); } }, 30000);
       if (!old) {
@@ -325,7 +448,18 @@
     if (t.kind === 'put') return s.indexOf('выпуск') >= 0 || s.indexOf('производ') >= 0 ? 'prod' : 'in';
     return 'move';   // взять по перемещению ERP (в Ташкент и др.) и перестановки внутри склада
   }
-  function colsFor(k) { return k === 'zav' ? [COLS_ZAV, colZav] : [COLS, colOf]; }
+  // 22.11.2026: Ташкент — по образцу завода; колонки по работе склада Ташкента
+  // 22.11.2026 (руководитель): Ташкент — Приход · Отгрузка · Возврат; перестановки — в кнопке «🔀 Переставить» (⭐ рекомендую)
+  var COLS_TAS = [['in', '📥 Приход'], ['ship', '🛒 Отгрузка'], ['ret', '↩️ Возврат']];
+  function colTas(t) { return /^↩/.test(t.label || '') ? 'ret' : t.kind === 'put' ? 'in' : 'ship'; }
+  var ONE = { zav: 1, per_tas: 1 };   // склады в утверждённом виде: одна строка на задачу, окно «Что сделать»
+  function colsFor(k) { return k === 'zav' ? [COLS_ZAV, colZav] : k === 'per_tas' ? [COLS_TAS, colTas] : [COLS, colOf]; }
+  function client(t) {   // «продажа 111094 · "FERU-ZA PHARM" XK» → «FERU-ZA»
+    var m = /продажа \d+ · (.+)$/.exec(t.label || '');
+    if (!m) return '';
+    var c = m[1].replace(/["“”«»`']/g, '').replace(/\b(MCHJ|МЧЖ|XK|ХК|OOO|ООО|LLC)\b/gi, '').trim();
+    return (c.split(/\s+/)[0] || '').slice(0, 12);
+  }
   function verbOf(t) { return t.kind === 'put' ? '📥 Поставить (тест)' : t.kind === 'move' ? '🔀 Переставить (тест)' : '📤 Взять (тест)'; }
 
   // откуда пришла задача — метка на кнопке (руководитель 22.11: всё входящее — одна колонка «Поступление», различаем меткой)
@@ -377,10 +511,12 @@
     drawScheme(part, null);
 
     function cols(r) {
+      curPerm = r.perm || { lv: 2, acts: ALLACTS };
+      if ($('pl')) $('pl').style.display = canDo('swap') ? '' : 'none';   // кнопки без права — не видны
       tasks = r.tasks || [];
       var ids = tasks.map(function (t) { return t.id; });
       $('occ').textContent = 'занято мест ' + r.busy + (r.total ? ' из ' + r.total : '') + ' · 🔄 ' + r.at.split(' ').pop();
-      var c = '<div class="cols">', CF = colsFor(k), one = k === 'zav';
+      var c = '<div class="cols">', CF = colsFor(k), one = !!ONE[k];
       CF[0].forEach(function (col) {
         var mine = tasks.filter(function (t) { return CF[1](t) === col[0]; });
         c += '<div class="col"><h4><span>' + mine.length + '</span><br>' + col[1] + '</h4>';
@@ -388,6 +524,11 @@
         mine.forEach(function (t) {
           var x = t.lines[0], i = tasks.indexOf(t), fresh = seen && seen.indexOf(t.id) < 0;
           var cls = 'tb' + (one ? ' one1' : '') + (t.id === st.sel ? ' sel' : '') + (fresh ? ' new' : '');
+          if (one && t.lines.length > 1) {   // заказ клиента из нескольких товаров: клиент · позиций
+            var cl = client(t) || ('№' + t.doc);
+            c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc(t.lines.length + 'поз') + '"><b>' + esc(cl) + '</b> <span>· ' + t.lines.length + ' поз</span></div>';
+            return;
+          }
           if (one) {   // одна строка: товар и партия; всё остальное — по нажатию, под схемой
             c += '<div class="' + cls + '" data-i="' + i + '" data-c="' + esc((x.batch ? x.batch + '·' : '') + n(x.qty) + esc(x.unit)) + '"><b>' + esc(x.short) +
               '</b> <span>' + (x.batch ? 'п.' + esc(x.batch) + ' · ' : '') + n(x.qty) + ' ' + esc(x.unit) + '</span></div>';
@@ -410,6 +551,7 @@
         var f = 12;
         while (el.scrollWidth > el.clientWidth && f > 9) { f -= 0.5; el.style.fontSize = f + 'px'; }
       });
+      var fmin = 15;
       Array.prototype.forEach.call($('cols').querySelectorAll('.tb.one1'), function (el) {
         // 1) уменьшаем шрифт до 12; 2) не влезает — коротко «593·801шт»; 3) ещё мельче, но не меньше 9
         var f = 15, sp = el.querySelector('span');
@@ -417,7 +559,9 @@
         while (el.scrollWidth > el.clientWidth && f > 12) { f -= 0.5; el.style.fontSize = f + 'px'; }
         if (el.scrollWidth > el.clientWidth && sp) sp.textContent = el.getAttribute('data-c');
         while (el.scrollWidth > el.clientWidth && f > 9) { f -= 0.5; el.style.fontSize = f + 'px'; }
+        fmin = Math.min(fmin, f);
       });
+      Array.prototype.forEach.call($('cols').querySelectorAll('.tb.one1'), function (el) { el.style.fontSize = fmin + 'px'; });   // всем один размер
       if (st.sel && ids.indexOf(st.sel) < 0) {   // задачу закрыли (здесь или в группе) — убрать карточку
         st = { sel: null, box: '', place: '' };
         $('panel').className = 'panel hint';
@@ -474,7 +618,15 @@
       if (st.sel !== 'mv' || !$('panel')) return;
       var rows = r.rows || [], free = r.free || [];
       function step1() {
-        var h = '<div class="lbl">🔀 Переставить внутри склада</div><div class="name">1. Что переставить?</div><div class="chips">';
+        var h = '<div class="lbl">🔀 Переставить внутри склада</div>', recs = r.recs || [];
+        if (recs.length) {   // ⭐ рекомендации «старая партия ближе к выходу» — одним нажатием
+          h += '<div class="name" style="font-size:16px">⭐ Рекомендую — старая партия ближе к выходу</div><div class="chips">';
+          recs.forEach(function (q, i) {
+            h += '<div class="chip rec" data-r="' + i + '"><b>' + esc(q.src) + '→' + esc(q.dst) + '</b> ' + esc(q.short) + ' п.' + esc(q.batch) + '</div>';
+          });
+          h += '</div>';
+        }
+        h += '<div class="name">' + (recs.length ? 'Или выбрать самому: ' : '') + '1. Что переставить?</div><div class="chips">';
         rows.forEach(function (p, i) {
           h += '<div class="chip" data-i="' + i + '"><b>' + esc(p.addr) + '</b> ' + esc(p.short) + (p.batch ? ' п.' + esc(p.batch) : '') +
             ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div>';
@@ -482,8 +634,15 @@
         h += (rows.length ? '' : '<div class="empty">Склад пустой</div>') + '</div><button id="mvx">✖️ Отмена</button>';
         P.innerHTML = h;
         $('mvx').onclick = cancel;
-        Array.prototype.forEach.call(P.querySelectorAll('.chip'), function (el) {
+        Array.prototype.forEach.call(P.querySelectorAll('.chip[data-i]'), function (el) {
           el.onclick = function () { step2(rows[+el.getAttribute('data-i')]); };
+        });
+        Array.prototype.forEach.call(P.querySelectorAll('.chip.rec'), function (el) {
+          el.onclick = function () {
+            var q = recs[+el.getAttribute('data-r')];
+            var p = rows.filter(function (x) { return x.addr === q.src; })[0] || { addr: q.src, short: q.short, batch: q.batch, qty: q.qty, unit: q.unit };
+            step3(p, q.dst);
+          };
         });
       }
       function step2(p) {
@@ -577,15 +736,20 @@
           : ['Взять с места ' + (x.src || '—') + ': ' + what, '📷 Сканировать табличку ' + place + ' и коробку', 'Отвезти: ' + (x.dst || '—'), 'Нажать «Взять»'];
       h += '<div class="todo"><b>Что сделать:</b><ol>' + steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></div>';
     } else {
-      t.lines.forEach(function (y) {
-        h += '<div class="ln"><b>' + esc(y.short) + '</b> ' + (y.batch ? 'п.' + esc(y.batch) + ' · ' : '') + n(y.qty) + ' ' + esc(y.unit) +
+      if (client(t)) h += '<div class="name">🛒 ' + esc(client(t)) + ' · ' + t.lines.length + ' поз</div>';
+      h += '<div class="todo"><b>Что сделать:</b><ol><li>Собрать по номерам 1…' + t.lines.length + ' — те же номера в кружках на схеме</li>' +
+        '<li>📷 Сканировать табличку места и коробку</li><li>Отнести в зону отгрузки</li><li>Нажать «Взять»</li></ol></div>';
+      t.lines.forEach(function (y, j) {   // номер строки = номер на схеме: сверять спецификацию по номеру
+        h += '<div class="ln"><span class="no">' + (j + 1) + '</span><b>' + esc(y.short) + '</b> ' + (y.batch ? 'п.' + esc(y.batch) + ' · ' : '') + n(y.qty) + ' ' + esc(y.unit) +
           ' · <span class="from">' + esc(y.src || '—') + '</span> → <span class="to">' + esc(y.dst || '—') + '</span></div>';
       });
     }
+    var ct = canDo('task');   // нет «✅ Задачи» — только смотреть: сканов и кнопки нет
     h += '<div id="ext" class="meta" style="color:var(--hint)"></div>' +
-      '<div class="row3"><button id="bbox">📷 Коробка</button><button id="bplace">📷 Место</button><button id="lbl" style="display:none">🖨 Наклейки</button></div>' +
+      '<div class="row3">' + (ct ? '<button id="bbox">📷 Коробка</button><button id="bplace">📷 Место</button>' : '') +
+      '<button id="lbl" style="display:none">🖨 Наклейки</button></div>' +
       '<div class="st" id="sbox"></div><div class="st" id="splace"></div>' +
-      '<button class="main" id="go">' + verb + '</button><div id="res"></div>';
+      (ct ? '<button class="main" id="go">' + verb + '</button>' : '<div class="note">👁 Только смотреть — кнопки действий не даны</div>') + '<div id="res"></div>';
     P.innerHTML = h;
     var id = t.id;
     load2('/api/task', { id: id }, function (c) {   // наклейки, остаток ERP — догружаются
@@ -605,6 +769,7 @@
         }).catch(fail);
       });
     }
+    if (!ct) return;
     $('bbox').onclick = function () { mark('box', $('sbox'), 'Коробка'); };
     $('bplace').onclick = function () { mark('place', $('splace'), 'Место (' + where + ')'); };
     $('go').onclick = function () {
@@ -615,6 +780,182 @@
         haptic(r.ok ? 'success' : 'warning');
       }).catch(function (e) { b.disabled = false; b.textContent = verb; fail(e); });
     };
+  }
+
+  // ---------- 👥 Доступ (только руководитель) ----------
+  // 22.11.2026 (руководитель «Подходит, делай»): роли-шаблоны + свои исключения сотрудника; ⛔ не видит · 👁 смотрит · ✋ работает
+  var ACC = null;
+  var ACTNAME = { task: '✅ Задачи', swap: '🔀 Переставить', label: '🖨 Наклейки' };
+  var LVNAME = ['⛔ Не видит', '👁 Смотрит', '✋ Работает'];
+  function accLoad(render) {
+    var c0 = cur;   // ушли на другой экран — не перерисовывать
+    if (ACC) render();
+    call('/api/acc', {}).then(function (r) { ACC = r; if (cur === c0) render(); }).catch(function (e) { if (cur === c0) fail(e); });
+  }
+  function accSet(body) {
+    return call('/api/acc_set', body).then(function (r) { ACC = r.acc; haptic('success'); if (cur) cur(); }).catch(function (e) {
+      haptic('error'); if (e && e.down) fail(e); else say((e && e.text) || 'Ошибка');
+    });
+  }
+  function roleOf(k) { return (ACC.roles || []).filter(function (r) { return r.key === k; })[0]; }
+  function roleChip(k) {
+    var r = k && roleOf(k);
+    return r ? '<span class="role">' + esc(r.emoji + ' ' + r.name) + '</span>' : '<span class="role no">⛔ Нет доступа</span>';
+  }
+  function showAcc() {
+    title.textContent = '👥 Доступ';
+    sub.textContent = 'Только у вас. Кто что видит и нажимает в «📱 Склад»';
+    if (!ACC) view.innerHTML = '<div class="spin">Загрузка…</div>';
+    accLoad(function () {
+      if (cur !== showAcc) return;
+      var h = '<div class="row"><button class="main" id="aroles">🎭 Роли</button><button id="aadd">➕ Сотрудник</button><button id="alog">📜 Журнал</button></div>' +
+        '<div class="emp"><div class="av" style="background:#a85a00">👑</div><div class="t"><div class="n">Вы (руководитель)</div><span class="role m">👑 Руководитель</span>' +
+        '<div class="c">все склады · все кнопки · снять нельзя</div></div></div>';
+      ACC.users.forEach(function (u, i) {
+        var s = u.sum, c = u.role ? '✋ ' + s.work + (s.view ? ' · 👁 ' + s.view : '') + ' · ⛔ ' + s.none : 'мини-апп не откроется';
+        h += '<div class="emp" data-i="' + i + '"><div class="av"' + (u.role ? '' : ' style="background:#9aa0a6"') + '>' + esc(u.name.charAt(0)) + '</div><div class="t"><div class="n">' +
+          esc(u.name) + '</div>' + roleChip(u.role) + (s.own ? ' <span class="ex">✏️ ' + s.own + ' своё</span>' : '') + '<div class="c">' + c + '</div></div><div>›</div></div>';
+      });
+      h += '<p class="note">Новый сотрудник — сначала «⛔ Нет доступа», пока вы не дадите роль</p>';
+      view.innerHTML = h;
+      $('aroles').onclick = function () { go(function () { showRoles(null); }); };
+      $('aadd').onclick = function () { go(showAdd); };
+      $('alog').onclick = function () { go(showLog); };
+      Array.prototype.forEach.call(view.querySelectorAll('.emp[data-i]'), function (el) {
+        el.onclick = function () { var n0 = ACC.users[+el.getAttribute('data-i')].name; go(function () { showEmp(n0); }); };
+      });
+    });
+  }
+  // склады по разделам, как в меню; уровень и кнопки — нажатием
+  function whEditor(get, set) {
+    var h = '', lab = ACC.label_ok || [];
+    SECTIONS.forEach(function (s) {
+      h += '<div class="agrp">' + esc(s.head + ' · ' + s.sub).toUpperCase() + '</div>';
+      s.items.forEach(function (it) {
+        var x = get(it.key) || { lv: 0, acts: [] };
+        h += '<div class="whr"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
+          [0, 1, 2].map(function (v) { return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (x.lv === v ? ' class="on' + v + '"' : '') + '>' + LVNAME[v] + '</span>'; }).join('') + '</div>';
+        if (x.lv === 2) {
+          h += '<div class="acts">' + ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(it.key) >= 0; }).map(function (a) {
+            var on = (x.acts || []).indexOf(a) >= 0;
+            return '<span data-k="' + it.key + '" data-a="' + a + '" class="' + (on ? 'y' + (x.own ? ' x' : '') : 'n') + '">' + ACTNAME[a] + '</span>';
+          }).join('') + '</div>';
+        }
+        h += '</div>';
+      });
+    });
+    return { html: h, bind: function () {
+      Array.prototype.forEach.call(view.querySelectorAll('.lv span'), function (el) {
+        el.onclick = function () {
+          var k = el.getAttribute('data-k'), v = +el.getAttribute('data-lv'), x = get(k) || { lv: 0, acts: [] };
+          if (x.lv === v) return;
+          var acts = v === 2 ? (x.acts && x.acts.length ? x.acts : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; })) : [];
+          set(k, v, acts);
+        };
+      });
+      Array.prototype.forEach.call(view.querySelectorAll('.acts span'), function (el) {
+        el.onclick = function () {
+          var k = el.getAttribute('data-k'), a = el.getAttribute('data-a'), x = get(k), acts = (x.acts || []).slice(), i = acts.indexOf(a);
+          if (i >= 0) acts.splice(i, 1); else acts.push(a);
+          set(k, 2, acts);
+        };
+      });
+    } };
+  }
+  function showEmp(name) {
+    title.textContent = '👤 ' + name;
+    sub.textContent = 'Роль + свои исключения. Меняется сразу';
+    accLoad(function () {
+      var u = ACC.users.filter(function (x) { return x.name === name; })[0];
+      if (!u) { view.innerHTML = '<div class="empty">Сотрудник убран</div>'; return; }
+      var r = u.role && roleOf(u.role), base = r ? r.whs : {};
+      function get(k) { var e = u.ex[k]; return e ? { lv: e.lv, acts: e.acts, own: true } : (base[k] || { lv: 0, acts: [] }); }
+      var h = '<div class="lbl">🎭 Роль</div><div class="rsel">' + ACC.roles.map(function (q) {
+        return '<span data-r="' + esc(q.key) + '"' + (q.key === u.role ? ' class="on"' : '') + '>' + esc(q.emoji + ' ' + q.name) + '</span>';
+      }).join('') + '<span data-r=""' + (u.role ? '' : ' class="on"') + '>⛔ Нет доступа</span></div>' +
+        (u.linked ? '' : '<div class="msg bad">Нет Telegram в списке бота — откроет, когда руководитель бота привяжет</div>') +
+        '<div class="row"><button id="eas">👁 Как он видит</button><button id="erst">↩️ Как в роли</button></div>';
+      var ed = u.role ? whEditor(get, function (k, v, acts) { accSet({ op: 'user_wh', name: name, wh: k, lv: v, acts: acts }); }) : null;
+      h += ed ? ed.html + '<p class="note">🟢 из роли · 🟠 ✏️ своё (только у него) · зачёркнуто — кнопки не будет видно</p>'
+        : '<div class="empty">Дайте роль — тогда появятся склады</div>';
+      h += '<button id="edel" style="margin-top:10px">🗑 Убрать из доступа</button>';
+      view.innerHTML = h;
+      if (ed) ed.bind();
+      Array.prototype.forEach.call(view.querySelectorAll('.rsel span'), function (el) {
+        el.onclick = function () { accSet({ op: 'user_role', name: name, role: el.getAttribute('data-r') }); };
+      });
+      $('eas').onclick = function () { asName = name; home(); };
+      $('erst').onclick = function () { accSet({ op: 'user_reset', name: name }); };
+      $('edel').onclick = function () {
+        var run = function () { accSet({ op: 'user_del', name: name }).then(goBack); };
+        if (tg && tg.showPopup) tg.showPopup({ message: 'Убрать ' + name + ' из доступа? Мини-апп у него не откроется.',
+          buttons: [{ id: 'y', type: 'destructive', text: 'Убрать' }, { id: '', type: 'cancel' }] }, function (b) { if (b) run(); });
+        else run();
+      };
+    });
+  }
+  function showRoles(key) {
+    title.textContent = '🎭 Роли';
+    sub.textContent = 'Шаблон. Изменили роль — изменилось у всех в ней';
+    accLoad(function () {
+      var rs = ACC.roles, r = roleOf(key) || rs[0];
+      if (!r) { view.innerHTML = '<div class="empty">Ролей нет</div>'; return; }
+      key = r.key;
+      var h = '<div class="rsel">' + rs.map(function (q) {
+        return '<span data-r="' + esc(q.key) + '"' + (q.key === key ? ' class="on"' : '') + '>' + esc(q.emoji + ' ' + q.name) + '</span>';
+      }).join('') + '</div><div class="box"><h3>' + esc(r.emoji + ' ' + r.name) + ' · ' + r.members.length + ' чел.</h3>' +
+        esc(r.members.join(' · ') || 'пока никого') + '</div>';
+      var ed = whEditor(function (k) { return r.whs[k]; }, function (k, v, acts) { accSet({ op: 'role_wh', role: key, wh: k, lv: v, acts: acts }); });
+      h += ed.html + '<div id="rnew"></div><div class="row" style="margin-top:12px"><button id="radd">➕ Новая роль</button><button id="rcopy">📋 Копия роли</button>' +
+        '<button id="rdel">🗑 Удалить</button></div>';
+      view.innerHTML = h;
+      ed.bind();
+      Array.prototype.forEach.call(view.querySelectorAll('.rsel span'), function (el) {
+        el.onclick = function () { var k = el.getAttribute('data-r'); cur = function () { showRoles(k); }; cur(); };
+      });
+      function ask(copy) {
+        $('rnew').innerHTML = '<input class="txt" id="rname" placeholder="Название роли" maxlength="30" value="' + (copy ? esc(r.name + ' 2') : '') + '">' +
+          '<button class="main" id="rok">✅ Создать' + (copy ? ' копию «' + esc(r.name) + '»' : '') + '</button>';
+        $('rname').focus();
+        $('rok').onclick = function () {
+          var t = $('rname').value.trim(); if (!t) return;
+          accSet({ op: 'role_new', title: t, emoji: copy ? r.emoji : '🎭', copy: copy ? key : '' }).then(function () {
+            var nr = ACC.roles[ACC.roles.length - 1]; cur = function () { showRoles(nr && nr.key); }; cur();
+          });
+        };
+      }
+      $('radd').onclick = function () { ask(false); };
+      $('rcopy').onclick = function () { ask(true); };
+      $('rdel').onclick = function () {
+        if (r.members.length) return say('В роли есть сотрудники — сначала дайте им другую роль.');
+        accSet({ op: 'role_del', role: key }).then(function () { cur = function () { showRoles(null); }; cur(); });
+      };
+    });
+  }
+  function showAdd() {
+    title.textContent = '➕ Сотрудник';
+    sub.textContent = 'Из списка сотрудников бота · сначала без доступа';
+    accLoad(function () {
+      var h = '';
+      (ACC.cand || []).forEach(function (nm, i) {
+        h += '<div class="emp" data-i="' + i + '"><div class="av" style="background:#9aa0a6">' + esc(nm.charAt(0)) + '</div><div class="t"><div class="n">' + esc(nm) + '</div></div><div>➕</div></div>';
+      });
+      view.innerHTML = h || '<div class="empty">Все сотрудники бота уже в списке</div>';
+      Array.prototype.forEach.call(view.querySelectorAll('.emp'), function (el) {
+        el.onclick = function () {
+          var nm = ACC.cand[+el.getAttribute('data-i')];
+          accSet({ op: 'user_add', name: nm }).then(function () { stack.pop(); cur = function () { showEmp(nm); }; cur(); syncBack(); });
+        };
+      });
+    });
+  }
+  function showLog() {
+    title.textContent = '📜 Журнал доступа';
+    sub.textContent = 'Кто, кому и что дал или снял';
+    accLoad(function () {
+      view.innerHTML = (ACC.log || []).map(function (l) { return '<div class="ln"><b>' + esc(l.at) + '</b> · ' + esc(l.text) + '</div>'; }).join('') ||
+        '<div class="empty">Пока пусто</div>';
+    });
   }
 
   // без перерисовки экрана: сохранённое → свежее, только в колбэк
