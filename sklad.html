@@ -506,7 +506,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '972d4b21', newBuild = '';
+  var BUILD = '6fb724b4', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -588,13 +588,22 @@
       });
     });
   }
+  function devId() {   // номер этого браузера (случайный, хранится здесь же)
+    var d = '';
+    try { d = localStorage.getItem('pfl:dev') || ''; } catch (e) {}
+    if (!d) {
+      d = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(12)), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      try { localStorage.setItem('pfl:dev', d); } catch (e) {}
+    }
+    return d;
+  }
   function call1(path, body, timeout) {
     if (!api) return Promise.reject({ down: true, text: 'Нет адреса сервера. Откройте мини-апп кнопкой «📦 Склады» в личке бота склада.' });
     var ctl = new AbortController();
     var timer = setTimeout(function () { ctl.abort(); }, timeout || 15000);
     body = body || {};
     body.initData = tg ? tg.initData : '';
-    if (pcKey) body.pc = pcKey;
+    if (pcKey) { body.pc = pcKey; body.dev = devId(); }   // 22.11.2026: ссылка /pc — только на первом устройстве
     if (asName && path !== '/api/acc' && path !== '/api/acc_set') body.as = asName;
     return fetch(api + path, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), signal: ctl.signal })
       .then(function (r) {
