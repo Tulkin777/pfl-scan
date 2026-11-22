@@ -289,6 +289,12 @@
   .dir div.shp .ptag.ter { background: #10295c; color: #fff; }   /* руководитель 22.11: голубой сливался с синей плиткой */
   .dir div.shp.z .sc { background: #dfe3ea; color: #9aa0ab; box-shadow: none; } .dir div.shp.z .ptag { background: #e4e7ee; color: #9aa0ab; box-shadow: none; }
   .dir div.shp.z .brs .br0 { background: #e4e7ee; color: #9aa0ab; }
+  /* 22.11.2026 (руководитель): нажатое — «негатив»: тёмная заливка, белые буквы, приподнято; остальные — бледнее */
+  .stp .sp.on { background: linear-gradient(150deg, #6b5cff, #3a28b8) !important; color: #fff !important; box-shadow: 0 4px 0 #261a80 !important;
+                transform: translateY(-2px); opacity: 1 !important; }
+  .stp:has(.sp.on) .sp:not(.on) { opacity: .45; }
+  .dir:has(> .on) > div:not(.on) { opacity: .4; filter: saturate(.5); }
+  .dir > div.on { transform: translateY(-3px); box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #3a28b8, 0 6px 10px rgba(0,0,0,.25); }
   .stp.s3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .stp.s3 .sp { font-size: 13px; padding: 9px 2px; } .stp.s3 .sp b { font-size: 21px; }
   .mvc { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 7px solid #ccc; }
@@ -509,7 +515,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1f15a9ff', newBuild = '';
+  var BUILD = 'e4808c99', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
