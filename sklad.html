@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Склад (тест)</title>
+<title>Склады PFL</title>
 <!-- PFL · тестовый Mini App складов KO‘CHIRISH (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера
      компьютера PFL через туннель и только после проверки подписи Telegram (initData) — и только руководителю. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -238,7 +238,7 @@
     $('retry').onclick = function () { cur ? cur() : showMenu(); };
   }
   function call(path, body, timeout) {
-    if (!api) return Promise.reject({ down: true, text: 'Нет адреса сервера. Откройте мини-апп кнопкой «📱 Склад (тест)» в личке бота склада.' });
+    if (!api) return Promise.reject({ down: true, text: 'Нет адреса сервера. Откройте мини-апп кнопкой «📦 Склады» в личке бота склада.' });
     var ctl = new AbortController();
     var timer = setTimeout(function () { ctl.abort(); }, timeout || 15000);
     body = body || {};
@@ -329,9 +329,10 @@
       { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'raw' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'raw' },
       { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'raw' } ] }
   ];
-  var FILTERS = [['all', 'Все'], ['zav', '🏭 Завод'], ['tas', '🏙 Ташкент'], ['raw', '🧪 Сырьё']];
-  var mfilter = 'all';
-  try { mfilter = localStorage.getItem('pfl:mfilter') || 'all'; } catch (e) {}
+  // руководитель 22.11: «Все» убрать — склады по вкладкам Завод · Ташкент · Сырьё (выбранная запоминается)
+  var FILTERS = [['zav', '🏭 Завод'], ['tas', '🏙 Ташкент'], ['raw', '🧪 Сырьё']];
+  var mfilter = 'zav';
+  try { mfilter = localStorage.getItem('pfl:mfilter') || 'zav'; } catch (e) {}
   var lastBadge = {};
   var ITEM = {}, PARTNAME = { gp1: 'Склад 1', gp2: 'Склад 2' };
   SECTIONS.forEach(function (s) { s.items.forEach(function (it) { it.sec = s; ITEM[it.key] = it; }); });
@@ -368,13 +369,14 @@
         '<div class="rb" id="ref" title="Обновить">🔄</div><div class="rb" id="qr" title="Сканер QR">📷</div>' +
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') + '</div>';
       var fl = FILTERS.filter(function (f) {
-        return f[0] === 'all' || Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
+        return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
-      if (fl.length > 2) h += '<div class="fchips">' + fl.map(function (f) {
-        return '<div class="fchip' + (f[0] === mfilter ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
+      var mf = fl.length < 2 ? 'all' : fl.some(function (f) { return f[0] === mfilter; }) ? mfilter : fl[0][0];   // одна вкладка — без вкладок
+      if (fl.length > 1) h += '<div class="fchips">' + fl.map(function (f) {
+        return '<div class="fchip' + (f[0] === mf ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</div>';
       }).join('') + '</div>';
       SECTIONS.forEach(function (s) {
-        var vis = s.items.filter(function (it) { return tiles[it.key] && (mfilter === 'all' || it.f === mfilter); });
+        var vis = s.items.filter(function (it) { return tiles[it.key] && (mf === 'all' || it.f === mf); });
         if (!vis.length) return;
         h += '<div class="msec">' + esc((s.head + ' · ' + s.sub).toUpperCase()) + '</div><div class="mgrid">';
         vis.forEach(function (it, i) {
@@ -1072,7 +1074,7 @@
 
   if (tg) { tg.ready(); tg.expand(); }
   if (!tg || !tg.initData) {
-    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «📱 Склад (тест)» в личке бота склада.</p></div>';
+    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «📦 Склады» в личке бота склада.</p></div>';
   } else home();
 })();
 </script>
