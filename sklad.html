@@ -296,6 +296,22 @@
   .dir:has(> .on) > div:not(.on) { opacity: .4; filter: saturate(.5); }
   .dir > div.on { transform: translateY(-3px); box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #3a28b8, 0 6px 10px rgba(0,0,0,.25); }
   .stp.s3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  /* 22.11.2026: лист спецификации — как бумага */
+  .spec { background: #fff; color: #111; border: 1px solid #c9ced8; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.12);
+          padding: 12px 10px; margin: 12px 0; font-family: "Times New Roman", serif; font-size: 11px; line-height: 1.3; }
+  .spec .sh { text-align: center; font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+  .spec .sreq { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+  .spec .sreq table { border-collapse: collapse; } .spec .sreq th { text-align: left; white-space: nowrap; padding: 1px 4px 1px 0; vertical-align: top; }
+  .spec .sreq td { padding: 1px 0; word-break: break-word; }
+  .spec .sscroll { overflow-x: auto; }
+  .spec table.st { border-collapse: collapse; width: 100%; font-size: 10px; }
+  @media (max-width: 520px) { .spec .sreq { grid-template-columns: 1fr; } .spec .net { display: none; } }
+  .spec table.st th, .spec table.st td { border: 1px solid #222; padding: 2px 3px; }
+  .spec table.st th { font-size: 10px; text-align: center; background: #f2f2f2; }
+  .spec .c { text-align: center; } .spec .r { text-align: right; white-space: nowrap; } .spec .tt td { font-weight: 700; }
+  .spec .sw { margin: 6px 0 8px; }
+  .spec table.sb { border-collapse: collapse; width: 100%; } .spec table.sb td { border: 1px solid #222; padding: 3px 4px; }
+  .spec .sft { margin-top: 6px; font-family: inherit; font-size: 10px; color: #888; text-align: right; }
   .prodb { display: inline-block; margin: -2px 0 12px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer;
            color: #fff; background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 3px 0 #0f6f36; }
   .prodb:active { transform: translateY(2px); box-shadow: none; }
@@ -518,7 +534,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd1b6f3fb', newBuild = '';
+  var BUILD = '58ca8bf6', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1305,6 +1321,33 @@
       });
     });
   }
+  // 22.11.2026 (руководитель): лист «Спецификация № … от …» как бумажный документ (данные Smartup)
+  function specHtml(q) {
+    var H = q.h, P = q.pfl, I = q.items || [];
+    function m(v, d) { return (Number(v) || 0).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+    var ta = 0, tv = 0, tq = 0;
+    I.forEach(function (x) { ta += x.amt; tv += x.vat; tq += x.qty; });
+    var req = function (rows) { return rows.map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + esc(r[1] || '') + '</td></tr>'; }).join(''); };
+    return '<div class="spec"><div class="sh">Спецификация № ' + (H.delivery_number ? esc(H.delivery_number) : '— <span style="font-weight:400">(номер даст Smartup при отгрузке)</span>') +
+      ' от ' + esc(H.delivery_date) +
+      '<br>Приложение к договору № ' + esc(H.contract_number || '—') + '</div>' +
+      '<div class="sreq"><table>' + req([['Поставщик:', P.name], ['Адрес:', P.addr], ['Тел:', P.tel], ['ИНН:', P.inn], ['Р/с:', P.rs], ['МФО:', P.mfo]]) + '</table>' +
+      '<table>' + req([['Покупатель:', H.person_name], ['Адрес:', H.delivery_address_short], ['ИНН:', H.person_tin], ['Р/с:', ''], ['МФО:', '']]) + '</table></div>' +
+      '<div class="sscroll"><table class="st"><tr><th>№</th><th>Номенклатура</th><th>Кол-во</th><th>Цена с НДС</th><th class="net">Стоимость</th><th>НДС ' +
+      (I[0] ? I[0].vp : 12) + '%</th><th>С НДС</th></tr>' +
+      I.map(function (x, i) {
+        return '<tr><td class="c">' + (i + 1) + '</td><td>' + esc(x.name) + '</td><td class="c">' + m(x.qty, 0) + '</td><td class="r">' + m(x.price, 2) +
+          '</td><td class="r net">' + m(x.net, 2) + '</td><td class="r">' + m(x.vat, 2) + '</td><td class="r">' + m(x.amt, 2) + '</td></tr>';
+      }).join('') +
+      '<tr class="tt"><td></td><td class="r">Итого:</td><td class="c">' + m(tq, 0) + '</td><td></td><td class="r net">' + m(ta - tv, 2) + '</td><td class="r">' +
+      m(tv, 2) + '</td><td class="r">' + m(ta, 2) + '</td></tr></table></div>' +
+      '<div class="sw">Всего отпущено на сумму: ' + esc(q.words) + '</div>' +
+      '<table class="sb"><tr><td colspan="2">Юборувчи: ' + esc(P.name) + '</td></tr><tr><td colspan="2">Кабул килувчи фирма: ' + esc(H.person_name) + '</td></tr>' +
+      '<tr><td>Вилояти: ' + esc(H.room_name) + '</td><td>Килоси: ' + esc(H.total_weight_brutto || '0') + '</td></tr>' +
+      '<tr><td>МП: ' + esc(H.sales_manager_name) + '</td><td>МП тел: ' + esc(H.sales_manager_code) + '</td></tr>' +
+      '<tr><td colspan="2">Курьер учун манзил: ' + esc(H.delivery_address_short) + '</td></tr></table>' +
+      '<div class="sft">Smartup ' + esc(H.deal) + ' · ИКПУ и р/с, МФО покупателя в Smartup нет</div></div>';
+  }
   // 22.11.2026 (руководитель): «📥 Приходы → 🏭 Из производства в ГП» — выпуски цеха на склады ГП завода (чтение бота склада)
   var prodFlt = '';
   function showProd() {
@@ -1355,6 +1398,9 @@
           return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
             (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
         }).join('') + '</div>';
+        // 22.11.2026 (руководитель): спецификация Smartup — листом сразу под составом (без скачивания)
+        h += x.sys === 'SMARTUP' ? '<div id="specbox"><div class="spin" style="padding:16px 0">📄 Загружаю спецификацию…</div></div>'
+          : '<div class="note">📄 Спецификации нет — отгрузка создана не через Smartup.</div>';
         var T2 = [['🟡', x.date, 'заказ в ERP · ' + x.author, true],
                   ['🚚', x.done || null, st === 'ok' ? 'отгружено (проведено в ERP)' + (x.step === 'arch' ? ' · 🗄 в архиве' : '')
                     : 'ждём: кладовщик соберёт по номерам, потом отгрузка проводится в ERP', st === 'ok']];
@@ -1366,6 +1412,11 @@
         h += '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
         view.innerHTML = h;
         bindTabs();
+        if ($('specbox')) call('/api/spec_data', { id: x.id }, 30000).then(function (q) {
+          var sb = $('specbox');
+          if (!sb) return;
+          sb.innerHTML = q.ok ? specHtml(q) : '<div class="note">📄 ' + esc(q.text) + '</div>';
+        }).catch(function () { var sb = $('specbox'); if (sb) sb.innerHTML = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; });
         Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
           b.onclick = function () {
             var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
