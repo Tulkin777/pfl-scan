@@ -316,6 +316,9 @@
   .spec .sw { margin: 6px 0 8px; }
   .spec table.sb { border-collapse: collapse; width: 100%; } .spec table.sb td { border: 1px solid #222; padding: 3px 4px; }
   .spec.sf { border-color: #9fb7e6; } .spec.sf .sh { color: #17468f; }
+  .sgs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .sgs .sg { font-size: 11.5px; font-weight: 800; padding: 2px 7px; border-radius: 8px; background: #eceef3; color: #9aa0ab; }
+  .sgs .sg.y { background: #dff5e7; color: #17964a; }
   .btag { display: inline-block; margin-top: 3px; font-size: 13px; padding: 2px 8px; border-radius: 8px; background: #fff3cc; color: #7a4a00; }
   .btag.c1 { background: #e6efff; color: #17468f; }
   .spec .sft { margin-top: 6px; font-family: inherit; font-size: 10px; color: #888; text-align: right; }
@@ -541,7 +544,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd9cc0e1c', newBuild = '';
+  var BUILD = '134cf2a0', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1221,7 +1224,7 @@
         : '<span class="br0">пусто</span>') + '</span></div>';
   }
   function docStep(kind, x) {
-    if (kind === 'ship') return x.status === 2 ? 'ok' : 'new';
+    if (kind === 'ship') return x.step === 'new' ? 'new' : 'ok';   // 22.11.2026: по первому признаку ERP / Smartup / 1С
     if (x.status !== 2) return 'new';
     return kind === 'inc' && x.placed === true ? 'shelf' : 'ok';
   }
@@ -1233,7 +1236,7 @@
   }
   function docFilters(kind) {   // плитки-отбор: нажатие показывает только эти документы
     // 22.11.2026 (руководитель): создано · отгружено (за сутки) · 🗄 архив (отгружено 1–3 дня назад, показывается только по нажатию)
-    if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.status === 1; }],
+    if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.step === 'new'; }],
                                  ['ok', '🚚 отгружено', 'd5', function (x) { return x.step === 'ok'; }],
                                  ['arch', '🗄 архив', 'd3', function (x) { return x.step === 'arch'; }]];
     return kind === 'inc'
@@ -1295,7 +1298,8 @@
           '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' ' + esc(l0.name || '') + more + '<br><b>' +
           (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
           docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') +
-          (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') + '</div>';
+          (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') +
+          (kind === 'ship' ? sigRow(x) : '') + '</div>';
       }).join('');
       box.innerHTML = h;
       Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
@@ -1328,6 +1332,13 @@
         };
       });
     });
+  }
+  // 22.11.2026 (руководитель): признаки отгрузки — ERP проведена · Smartup номер спецификации · 1С счёт-фактура
+  function sigRow(x) {
+    var s = x.sig || {};
+    var b = function (ok, t) { return '<span class="sg' + (ok ? ' y' : '') + '">' + (ok ? '✓ ' : '· ') + t + '</span>'; };
+    return '<div class="sgs">' + b(s.erp, 'ERP') + (x.sys === 'SMARTUP' ? b(!!s.su, 'спец.' + (s.su ? ' №' + esc(s.su) : '')) : '') +
+      (s.c1need ? b(!!s.c1, 'с/ф 1С' + (s.c1 ? ' №' + esc(s.c1) : '')) : '') + '</div>';
   }
   // 22.11.2026 (руководитель): счёт-фактура 1С с партиями (снимок продаж 1С; суммы 1С без НДС, НДС 12 %)
   function sfHtml(q) {
@@ -1419,7 +1430,7 @@
         var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : '🚚 ОТГРУЖЕНО' };
         h += '<div class="dhead st-' + st + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
-          docBar(kind, st);
+          docBar(kind, st) + sigRow(x);
         h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
           var fq = formOf(y.name);
           return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
