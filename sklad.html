@@ -564,10 +564,13 @@
          background: rgba(127,127,127,.16); color: var(--hint); font-size: 12px; font-weight: 800; text-align: center; vertical-align: 1px; }
   .ivr.ch .ino { background: #e8820c; color: #fff; }
   /* 23.11.2026: «📦 Остаток» — Завод зелёный · Ташкент синий · Итого тёмный; ноль бледный */
+  .gpbig { display: block; font-size: 24px; font-weight: 900; line-height: 1.1; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+  .tile .gpsum, .tile .gptot { font-size: 13px; opacity: 1; }
+  .msec.gpsec { font-size: 15px; color: #7b3fc4; }
   .stsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 8px; max-width: 860px; }
   .stsum.one { grid-template-columns: 1fr; }
   .stsum div { border-radius: 12px; padding: 7px 8px; font-size: 12px; text-align: center; }
-  .stsum small { display: block; font-size: 12px; font-weight: 800; } .stsum b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
+  .stsum small { display: block; font-size: 12px; font-weight: 800; } .stsum b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
   .stsum .zv { background: rgba(30,130,64,.12); color: #17803c; } .stsum .tv { background: rgba(31,98,201,.12); color: #1f62c9; }
   .stsum .it { background: var(--bg2); color: var(--fg); }
   .sthd, .str { display: grid; grid-template-columns: 30px minmax(0, 1fr) 60px 60px 64px; gap: 0; align-items: stretch; max-width: 860px; }
@@ -582,7 +585,7 @@
   .str { padding: 7px 6px; border-bottom: 1px solid rgba(127,127,127,.15); font-size: 14px; }
   .str .nm { font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; } .str .u { font-size: 11px; color: var(--hint); font-weight: 400; }
   .str .br { font-size: 10px; padding: 0 4px; border-radius: 5px; vertical-align: 1px; }
-  .str .n { font-variant-numeric: tabular-nums; font-weight: 700; } .str .zv { color: #17803c; } .str .tv { color: #1f62c9; } .str .it { font-weight: 900; }
+  .str .n { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 15px; } .str .n.it { font-size: 16px; } .str .zv { color: #17803c; } .str .tv { color: #1f62c9; } .str .it { font-weight: 900; }
   .str .z { font-style: normal; color: var(--hint); opacity: .5; font-weight: 400; }
   .navb .bk { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 0 14px 0 10px; min-height: 52px; border-radius: 16px;
               cursor: pointer; color: #fff; font-weight: 900; font-size: 16px; letter-spacing: .2px;
@@ -799,9 +802,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '758049a8', newBuild = '';
+  var BUILD = '58d3fe05', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795452528' || 0;
+  var BUILD_AT = +'1795452788' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1259,8 +1262,10 @@
       if (s.gp) {
         if (s.prod) {
           // 23.11.2026 (руководитель): в конце пути — жёлтые плитки складов этой линии (завод и Ташкент) → сразу пересчёт; ниже остаток
-          V.innerHTML = subTop('inv', 'Инвентаризация · Готовая продукция · ' + s.prod) + '<div id="invdz"></div><div id="invdt"></div>' +
-            '<div class="msec">📦 ОСТАТОК · ЗАВОД · ТАШКЕНТ · ИТОГО</div><div id="gpst"></div>';
+          // 23.11.2026 (руководитель): упор — на остаток: он сверху, крупно; пересчёт (жёлтые плитки) — ниже
+          V.innerHTML = subTop('inv', 'Остаток готовой продукции · ' + s.prod) +
+            '<div class="msec gpsec">📦 ОСТАТОК ГОТОВОЙ ПРОДУКЦИИ · ' + esc(s.prod.toUpperCase()) + '</div><div id="gpst"></div>' +
+            '<div class="msec">✏️ ПЕРЕСЧИТАТЬ (ИНВЕНТАРИЗАЦИЯ)</div><div id="invdz"></div><div id="invdt"></div>';
           invdBox({ city: 'Завод', prod: s.prod }, 'Готовая продукция', 'invdz');
           invdBox({ city: 'Ташкент', prod: s.prod }, 'Готовая продукция', 'invdt');
           bindTabs();
@@ -1268,14 +1273,14 @@
         }
         h = '<div class="mgrid">' + ['Перечисление', 'Терминал'].map(function (p) {
           return '<div class="tile cat p" data-s=\'' + JSON.stringify({ gp: 1, prod: p }) + '\'><div class="e">📦</div>' +
-            '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div><div class="c gpsum" data-p="' + p + '">Завод · Ташкент · Итого</div></div>';
+            '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div><div class="c gpsum" data-p="' + p + '">остаток загружается…</div></div>';
         }).join('') + '</div>';
-        V.innerHTML = subTop('inv', 'Инвентаризация · Готовая продукция') + h;
+        V.innerHTML = subTop('inv', 'Остаток готовой продукции') + h;
         bindTabs();
         ['Перечисление', 'Терминал'].forEach(function (p) {   // итоги прямо на плитке (остаток ERP)
           load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
             var el = V.querySelector('.gpsum[data-p="' + p + '"]'), t = q && q.ok && q.tot && q.tot['шт'];
-            if (el && t) el.innerHTML = '🏭 ' + fmtq(t.zav) + ' · 🏙 ' + fmtq(t.tas) + '<br><b>Итого ' + fmtq(t.total) + ' шт</b> · ' + t.n + ' наим.';
+            if (el && t) el.innerHTML = '<span class="gpbig">' + fmtq(t.total) + ' шт</span>остаток · ' + t.n + ' наим.<br>🏭 Завод ' + fmtq(t.zav) + ' · 🏙 Ташкент ' + fmtq(t.tas);
           });
         });
         Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
@@ -1287,8 +1292,9 @@
         h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
           return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
         }).join('') +
-          '<div class="tile cat p' + (ostOk ? '' : ' wide') + ' gpt" data-s=\'' + JSON.stringify({ gp: 1 }) + '\'><div class="e">📦</div><div class="n">Готовая продукция</div>' +
-          '<div class="c">остаток · Завод · Ташкент · Итого</div></div>' +
+          // 23.11.2026 (руководитель): упор на остаток — название «Остаток готовой продукции» и итог крупно прямо на плитке
+          '<div class="tile cat p' + (ostOk ? '' : ' wide') + ' gpt" data-s=\'' + JSON.stringify({ gp: 1 }) + '\'><div class="e">📦</div><div class="n">Остаток готовой продукции</div>' +
+          '<div class="c gptot">Завод · Ташкент · Итого</div></div>' +
           // 23.11.2026 (руководитель): «⚖️ Расхождение 1С ↔ ERP» — число расхождений прямо на плитке, внутри — список
           (ostOk ? '<div class="tile cat k gpt ostt"><div class="bd' + (ostN ? '' : ' z') + '">' + (ostN == null ? '…' : ostN) + '</div><div class="e">⚖️</div>' +
             '<div class="n">Расхождение 1С ↔ ERP</div><div class="c">' + (ostN ? ostN + ' не сходится' : ostN === 0 ? 'всё сходится' : 'проверяю…') + '</div></div>' : '') + '</div>' +
@@ -1325,6 +1331,19 @@
           var n = q.gate.length;
           t.querySelector('.bd').textContent = n; t.querySelector('.bd').className = 'bd' + (n ? '' : ' z');
           t.querySelector('.c').textContent = n ? n + ' не сходится' : 'всё сходится';
+        });
+      }
+      if (V.querySelector('.gptot')) {   // 23.11.2026 (руководитель): итог остатка готовой продукции крупно на плитке
+        var gpT = {};
+        ['Перечисление', 'Терминал'].forEach(function (p) {
+          load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
+            var el = V.querySelector('.gptot'), t = q && q.ok && q.tot && q.tot['шт'];
+            if (!el || !t) return;
+            gpT[p] = t;
+            var a = gpT['Перечисление'], b = gpT['Терминал'], tot = (a ? a.total : 0) + (b ? b.total : 0);
+            el.innerHTML = '<span class="gpbig">' + fmtq(tot) + ' шт</span>' +
+              (a ? 'Перечисление ' + fmtq(a.total) : '') + (a && b ? ' · ' : '') + (b ? 'Терминал ' + fmtq(b.total) : '');
+          });
         });
       }
       if (V.querySelector('.invdraft')) load2('/api/invd_all', {}, function (q) {
