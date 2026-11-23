@@ -469,7 +469,7 @@
   .mvc .sost .ln { font-size: 13px; }
   .mvc .chk .dr { background: #efeaff; color: #4b39c9; }
   /* 🚚 5 шагов перемещения */
-  .stp { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0 0 10px; }   /* 23.11: 4 шага (без «прибыло») */
+  .stp { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0 0 10px; }   /* 23.11: 5 шагов (+ «доставил») */
   .stp .sp { text-align: center; border-radius: 12px; padding: 6px 1px; font-size: 10.5px; font-weight: 800; background: var(--bg2); color: var(--fg);
              box-shadow: 0 2px 0 rgba(0,0,0,.1); cursor: pointer; line-height: 1.2; }
   .stp .sp b { display: block; font-size: 18px; } .stp .sp.z { opacity: .5; }
@@ -672,7 +672,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '34574714', newBuild = '';
+  var BUILD = '30362f7f', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1241,7 +1241,7 @@
   var flowDir = '';
   // ---------- 🚚 Перемещения: 5 шагов, карточки-«поезда», полный экран (руководитель 22.11 «Да, делай») ----------
   // 23.11.2026 (руководитель): без «прибыло» (отметки «Привёз» пока нет): создано → готово → забрали → принято
-  var MSTEPS = [['new', '🟡', 'создано'], ['ready', '📦', 'готово'], ['road', '🚛', 'забрали'], ['ok', '🟢', 'принято']];
+  var MSTEPS = [['new', '🟡', 'создано'], ['ready', '📦', 'передано'], ['road', '🚛', 'забрали'], ['came', '🏁', 'доставил'], ['ok', '🟢', 'принято']];   // 23.11: + «доставил»
   // 23.11.2026 (руководитель): сначала Терминал / Перечисление, потом направления — мелко, в один ряд, «Склад завода / Склад Ташкента»
   var MDIR = [['Завод→Ташкент', 'Склад завода → Склад Ташкента', 'd1'], ['Ташкент→Завод', 'Склад Ташкента → Склад завода', 'd2'],
               ['Завод→Завод', 'Внутри склада завода', 'd6'], ['Ташкент→Ташкент', 'Внутри склада Ташкента', 'd7']];
@@ -1551,7 +1551,9 @@
         mvBadge(x) + '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
       // 23.11.2026 (руководитель): у каждой строки — название и место (как в отгрузке): посмотрел — нажал «Забрал»
       var anyPl = x.lines.some(function (y) { return (y.places || []).length; });
-      h += '<div class="box' + (anyPl ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (anyPl ? ' · 📍 откуда брать' : '') + '</h3>' + x.lines.map(function (y, j) {
+      // 23.11.2026 (руководитель): до «Передал» — откуда брать (склад завода); после — куда ставить (Ташкент, задача «Принять»)
+      var toPl = x.lines.some(function (y) { return (y.places || []).some(function (p) { return p.to; }); });
+      h += '<div class="box' + (anyPl ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (anyPl ? (toPl ? ' · 📥 куда ставить' : ' · 📍 откуда брать') : '') + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name), pl = y.places || [];
         return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · ' + n(y.qty) + ' шт</span>' +
           (y.boxes ? '<br><small style="color:var(--hint)">' + esc(y.boxes) + '</small>' : '') +
@@ -1565,11 +1567,13 @@
       var T = [['🟡', x.date, 'создано в ERP · ' + x.author, true],
                ['📦', rd && rd.at, rd ? (rd.handed ? 'передал · ' : 'собрано · ') + rd.by + (rd.batches ? ' · партий: ' + rd.batches : '') : (fin ? 'без отметки «Передал»' : 'ждём: «📦 Передал»'), !!rd],
                ['🚛', d.taken, d.taken ? 'забрал · ' + d.driver : (fin ? 'без отметки «Забрал»' : 'ждём: «Забрал»'), !!d.taken],
+               ['🏁', d.done, d.done ? 'доставил · ' + (d.done_by || d.driver || '') : (fin ? 'без отметки «Доставил»' : 'ждём: «Доставил»'), !!d.done],   // 23.11
                ['🟢', x.acc, fin ? 'принято' + (accBy ? ' · ' + accBy : '') : 'ждём: кладовщик «куда» примет', fin]];
       if (d.prob) T.splice(4, 0, ['❗', d.prob, 'у водителя проблема', true]);
       // 23.11.2026 (руководитель): внутри склада завода / внутри склада Ташкента — без машины: шагов и кнопок водителя нет
       var inside = String(x.dir || '').split('→')[0] === String(x.dir || '').split('→')[1];
       if (inside) T = T.filter(function (t) { return t[0] !== '🚛' && t[0] !== '🏁' && t[0] !== '❗'; });
+      T = T.map(function (t) { return t[0] === '🟢' && !fin ? ['🟢', t[1], 'ждём: «Принял» и поставил на место', false] : t; });
       h += '<div class="box"><h3>Ход</h3><div class="tl">' + T.map(function (t) {
         return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[3] && t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
       }).join('') + '</div></div>';
@@ -1582,7 +1586,9 @@
         '<button class="plbl2" data-gotask="' + x.from_wh + '">📷 Передал через скан места — склад завода</button>';
       else if (x.step === 'new' && !inside) h += '<div class="note">Ждём «📦 Передал» от склада «откуда» — потом появится «🚛 Забрал».</div>';
       if (!inside && x.step === 'ready' && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал</button>';
-      if ((x.step === 'road' || x.step === 'came' || (inside && x.step === 'ready')) && can('accept') && x.to_wh)
+      // 23.11.2026 (руководитель): после «Забрал» — «🏁 Доставил», потом «Принял и поставил на место»
+      if (!inside && x.step === 'road' && can('drive')) h += '<button class="main act-came" data-act="done">🏁 Доставил</button>';
+      if ((x.step === 'came' || (inside && x.step === 'ready')) && can('accept') && x.to_wh)
         h += '<button class="main act-acc" data-nos="acc">📥 Принял — поставить на место</button>' +
           '<button class="plbl2" data-gotask="' + x.to_wh + '">📷 Принял через скан места — склад «куда»</button>';
       h += '<div class="row" style="margin-top:8px">' +
