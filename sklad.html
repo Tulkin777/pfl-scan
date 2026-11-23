@@ -799,7 +799,10 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8ae2518d', newBuild = '';
+  var BUILD = '758049a8', newBuild = '';
+  // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
+  var BUILD_AT = +'1795452528' || 0;
+  function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -838,14 +841,14 @@
       if (done) return;
       var n = 0;
       try { n = +(sessionStorage.getItem('pfl:rl:' + j.build) || 0); } catch (e) {}
-      if (j.build && j.build !== BUILD && n < 2) { done = true; clearTimeout(tm); return reloadTo(j.build); }
+      if (newer(j) && n < 2) { done = true; clearTimeout(tm); return reloadTo(j.build); }
       clearTimeout(tm); go1();
     }).catch(function () { clearTimeout(tm); go1(); });
   }
   function checkBuild() {
     if (BUILD.indexOf('BUILD') >= 0 || document.hidden) return;   // локальная копия — без проверки
     fetch('ver.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
-      if (!j.build || j.build === BUILD) return;
+      if (!newer(j)) return;
       newBuild = j.build;
       warm(j.build);
       if (cur === showMenu) return reloadTo(j.build);   // внутри склада — ждём возврата на главный, без плашки
