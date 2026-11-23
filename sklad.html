@@ -630,7 +630,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'fd208514', newBuild = '';
+  var BUILD = '5cd08aeb', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1179,9 +1179,10 @@
   function mvIn(x, l) { return LINE_OF[x.from_id] === l || LINE_OF[x.to_id] === l; }
   function dirName(d) { var m = MDIR.filter(function (y) { return y[0] === d; })[0]; return m ? m[1] : String(d || '').replace('→', ' → '); }
   function dtf2(s) { s = String(s || ''); return s.slice(8, 10) + '.' + s.slice(5, 7) + ' ' + s.slice(11, 16); }
-  function trkBar(step) {
-    var i = MSTEPS.map(function (s) { return s[0]; }).indexOf(step);
-    return '<div class="trk">' + MSTEPS.map(function (s, j) {
+  function trkBar(step, inside) {   // inside — внутри склада: без «в дороге» и «прибыло» (машины нет)
+    var SS = inside ? MSTEPS.filter(function (s) { return s[0] !== 'road' && s[0] !== 'came'; }) : MSTEPS;
+    var i = SS.map(function (s) { return s[0]; }).indexOf(step);
+    return '<div class="trk">' + SS.map(function (s, j) {
       return '<span class="' + (i < 0 ? '' : j < i ? 'done' : j === i ? 'cur' : '') + '"><i>' + s[1] + '</i>' + s[2] + '</span>';
     }).join('') + '</div>';
   }
@@ -1195,7 +1196,7 @@
         return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
           '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
           '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
-          trkBar(x.step) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
+          trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
       };
       var openCards = function () {
         Array.prototype.forEach.call(box.querySelectorAll('[data-mv]'), function (el) {
@@ -1455,7 +1456,7 @@
       var SN = { new: '🟡 СОЗДАНО', ready: '📦 ГОТОВО К ОТПРАВКЕ', road: '🚛 В ДОРОГЕ', came: '🏁 ПРИБЫЛО', ok: '🟢 ПРИНЯТО', cancel: '⚪ ОТМЕНЕНО' };
       var h = subTop('mv', 'Перемещения · ' + dirName(x.dir));
       h += '<div class="dhead st-' + x.step + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[x.step] + '</div></div>' +
-        '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step);
+        '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
       h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name);
         return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '<br><b>' + n(y.qty) + ' шт</b>' + (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
@@ -1468,14 +1469,17 @@
                ['🏁', d.done, d.done ? 'водитель привёз' : (fin ? 'без отметки водителя' : 'ждём: водитель привезёт'), !!d.done],
                ['🟢', x.acc, fin ? 'принято' + (accBy ? ' · ' + accBy : '') : 'ждём: кладовщик «куда» примет', fin]];
       if (d.prob) T.splice(4, 0, ['❗', d.prob, 'у водителя проблема', true]);
+      // 23.11.2026 (руководитель): внутри склада завода / внутри склада Ташкента — без машины: шагов и кнопок водителя нет
+      var inside = String(x.dir || '').split('→')[0] === String(x.dir || '').split('→')[1];
+      if (inside) T = T.filter(function (t) { return t[0] !== '🚛' && t[0] !== '🏁' && t[0] !== '❗'; });
       h += '<div class="box"><h3>Ход</h3><div class="tl">' + T.map(function (t) {
         return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[3] && t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
       }).join('') + '</div></div>';
       // кнопка действия — по шагу и по праву (📦 Отправить · 🚛 Везти · 📥 Принять)
-      if ((x.step === 'new' || x.step === 'ready') && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал (водитель)</button>';
-      if (x.step === 'road' && can('drive')) h += '<button class="main act-came" data-act="done">🏁 Привёз (водитель)</button>';
-      if ((x.step === 'road' || x.step === 'ready') && can('drive')) h += '<button style="margin-top:8px" data-act="prob">❗ Проблема</button>';
-      if (r.admin && x.status === 1 && !x.drv) h += '<button class="drv" style="margin-top:8px" id="mvdrv">🚛 Назначить водителя</button>';
+      if (!inside && (x.step === 'new' || x.step === 'ready') && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал (водитель)</button>';
+      if (!inside && x.step === 'road' && can('drive')) h += '<button class="main act-came" data-act="done">🏁 Привёз (водитель)</button>';
+      if (!inside && (x.step === 'road' || x.step === 'ready') && can('drive')) h += '<button style="margin-top:8px" data-act="prob">❗ Проблема</button>';
+      if (!inside && r.admin && x.status === 1 && !x.drv) h += '<button class="drv" style="margin-top:8px" id="mvdrv">🚛 Назначить водителя</button>';
       h += '<div class="row" style="margin-top:8px">' +
         (x.from_wh && can('send') ? '<button data-go="' + x.from_wh + '">➡ Склад «откуда»' + (x.step === 'new' ? ' · собрать' : '') + '</button>' : '') +
         (x.to_wh && can('accept') ? '<button data-go="' + x.to_wh + '">➡ Склад «куда»' + (x.step === 'came' ? ' · принять' : '') + '</button>' : '') + '</div>' +
@@ -1897,7 +1901,7 @@
           if (x.placed != null) c += '<div class="chk">' + (x.placed ? '<span class="ok">✅ на полке</span>' : '<span class="no">⏳ на полку не поставлен</span>') + '</div>';
         }
         c += '<div class="row3"><button data-sost="' + i + '">📄 Состав · ' + x.lines.length + '</button>' +
-          (kind === 'mv' && x.status === 1 ? '<button class="drv" data-drv="' + i + '">🚛 Водителю</button>' : '') + '</div><div class="sost" id="sost' + i + '"></div></div>';
+          (kind === 'mv' && x.status === 1 && String(x.dir).split('→')[0] !== String(x.dir).split('→')[1] ? '<button class="drv" data-drv="' + i + '">🚛 Водителю</button>' : '') + '</div><div class="sost" id="sost' + i + '"></div></div>';
         return c;
       }).join('');
       box.innerHTML = h;
