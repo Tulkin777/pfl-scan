@@ -328,6 +328,7 @@
   .plbl { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; color: #fff !important; }
   .pscan { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .plbl2 { margin-top: 8px; font-size: 14px; }
+  .pnoscan { margin-top: 8px; font-size: 16px !important; background: linear-gradient(150deg, #8b7bff, #4b39c9) !important; color: #fff !important; }   /* 23.11: без скана */
   .latebad { margin-top: 4px; padding: 4px 9px; border-radius: 9px; background: #ffe3dc; color: #b3261e; font-weight: 900; font-size: 12.5px; }   /* 23.11: просрочено */
   .inv-ok { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
@@ -668,7 +669,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '26d2b821', newBuild = '';
+  var BUILD = 'ae5e5c71', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1658,7 +1659,7 @@
     // 22.11.2026 (руководитель): создано · отгружено (первый признак ERP/Smartup/1С, ждёт склад) · 🗄 архив (склад подтвердил, что забрал)
     if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.step === 'new'; }],
                                  ['ok', '🚚 отгружено', 'd5', function (x) { return x.step === 'ok'; }],
-                                 // 23.11.2026 (руководитель): отгружено больше 2 дней (3-й день), склад не подтвердил — для контроля
+                                 // 23.11.2026 (руководитель): отгружено больше 3 дней (4-й день), склад не подтвердил — для контроля
                                  ['late', '⏰ просрочено', 'd4', function (x) { return x.step === 'late'; }],
                                  ['arch', '🗄 архив', 'd3', function (x) { return x.step === 'arch'; }]];
     return kind === 'inc'
@@ -1723,7 +1724,7 @@
           (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
           docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') +
           (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') +
-          (kind === 'ship' && x.step === 'late' ? '<div class="latebad">⏰ ПРОСРОЧЕНО · ' + (x.late_days || 3) + '-й день · склад не подтвердил</div>' : '') +
+          (kind === 'ship' && x.step === 'late' ? '<div class="latebad">⏰ ПРОСРОЧЕНО · ' + (x.late_days || 4) + '-й день · склад не подтвердил</div>' : '') +
           (kind === 'ship' ? sigRow(x) : '') + '</div>';
       }).join('');
       box.innerHTML = h;
@@ -1871,7 +1872,7 @@
       var st = docStep(kind, x), SN = { new: '🟡 СОЗДАН — НЕ ПРОВЕДЁН', ok: '🟢 ПРОВЕДЁН', shelf: '📍 НА ПОЛКЕ' };
       var h = subTop(kind, NM + ' · №' + x.id);
       if (kind === 'ship') {   // 🛒 Отгрузка: склад → клиент; собрать — в окне склада, провести — в ERP
-        var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : x.step === 'late' ? '⏰ ПРОСРОЧЕНО · ' + (x.late_days || 3) + '-й день' : '🚚 ОТГРУЖЕНО' };
+        var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : x.step === 'late' ? '⏰ ПРОСРОЧЕНО · ' + (x.late_days || 4) + '-й день' : '🚚 ОТГРУЖЕНО' };
         h += '<div class="dhead st-' + st + '"><div class="dn">' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' + numRow(x, true) +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st) + sigRow(x);
@@ -2710,7 +2711,10 @@
         : '📥 Поставьте партию на <b>' + esc(place) + '</b> и отсканируйте QR таблички места — бот поставит её на место.') + '</div>';
     if (!canDo('task')) { P.className = 'panel'; P.innerHTML = h + '<div class="note">👁 Только смотреть — кнопки действий не даны</div>'; return; }
     P.className = 'panel';
+    // 23.11.2026 (руководитель): не все готовы к QR — кнопка «без скана»: бот получает место из задачи (как скан того же места)
+    var noscanTxt = take ? '✅ Взял с ' + place + ' — без скана' : '✅ Поставил на ' + place + ' — без скана';
     P.innerHTML = h + '<button class="main pscan" id="tqr">📷 Сканировать QR места' + (take ? ' — взял' : ' — поставить') + '</button>' +
+      (place !== '—' ? '<button class="main pnoscan" id="tnos">' + esc(noscanTxt) + '</button>' : '') +
       '<button class="plbl2" id="tlook">👀 Смотреть места' + (take ? '' : ' — не согласен с местом') + '</button>' +
       (take ? '' : '<div class="note">Другое место: отсканируйте его табличку — бот поставит туда, если место подходит.</div>') + '<div id="res"></div>';
     var id = t.id;
@@ -2723,6 +2727,20 @@
           else if (b) { b.disabled = false; b.textContent = '📷 Сканировать QR места' + (take ? ' — взял' : ' — поставить'); }
         }).catch(function (e) { if (b) { b.disabled = false; b.textContent = '📷 Сканировать QR места'; } fail(e); });
       });
+    };
+    if ($('tnos')) $('tnos').onclick = function () {
+      var b = $('tnos'), q = (take ? 'Взяли партию с места ' : 'Поставили партию на место ') + place + '?\n' + x.short + ' · ' + n(x.qty) + ' ' + x.unit +
+        '\n\nБез скана: бот запишет именно это место.';
+      var go_ = function (yes) {
+        if (!yes) return;
+        b.disabled = true; b.textContent = '⏳ Бот склада выполняет…';
+        call('/api/task_qr', { id: id, noscan: 1 }, 125000).then(function (r) {
+          haptic(r.ok ? 'success' : 'warning'); say(r.text);
+          if (r.done) { delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; P.className = 'panel hint'; P.innerHTML = esc(r.text); st.sel = null; }
+          else { b.disabled = false; b.textContent = noscanTxt; }
+        }).catch(function (e) { b.disabled = false; b.textContent = noscanTxt; fail(e); });
+      };
+      try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
     };
     $('tlook').onclick = function () {   // что где лежит и свободные места этого склада
       var it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(t.wh) >= 0; })[0];
