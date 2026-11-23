@@ -285,6 +285,8 @@
   .dir.dir4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   /* 23.11.2026 (руководитель): Перемещения — шаг 1 две плитки линий, шаг 2 четыре направления мелко в один ряд */
   .dir.dir2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .plc .pl { display: inline-block; margin-top: 3px; padding: 2px 8px; border-radius: 8px; background: #fff1dc; color: #a85a00; font-weight: 900; font-size: 15px; }
+  .plc .pl.no { background: #ffe3e3; color: #c0392b; }
   .dir.dir2 div { font-size: 16px; padding: 14px 6px; } .dir.dir2 div b { font-size: 24px; }
   .dir.dir2 div small { display: block; font-size: 11px; font-weight: 700; opacity: .85; margin-top: 2px; }
   .dir.dirr { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
@@ -576,7 +578,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f663371c', newBuild = '';
+  var BUILD = 'b3e3b1bf', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1510,12 +1512,10 @@
         h += '<div class="box"><h3>Ход</h3><div class="tl">' + T2.map(function (t) {
           return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
         }).join('') + '</div></div>';
-        if (x.to_wh) h += '<button class="main" style="background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' + x.to_wh + '">➡ Склад «откуда»' +
-          (st === 'new' ? ' · собрать по номерам' : '') + '</button>';
-        // 23.11.2026 (руководитель): отгружено в ERP, а в боте не отмечено (Терминал, Gynomedix — «⚠️ Отгружено без отметки») —
-        // кнопка сразу в окно бота склада на этот документ: кладовщик выбирает место и списывает
-        if (x.to_wh && st === 'ok' && x.step !== 'arch') h += '<button class="main" style="margin-top:8px;background:linear-gradient(150deg,#ffbf55,#e8820c)" data-bw="' +
-          x.to_wh + '">📤 Списать с места — окно склада</button>';
+        // 23.11.2026 (руководитель): места строк прямо здесь; знает место — сразу «✅ Взял», не знает — «Склад «откуда»»
+        if (x.to_wh) h += '<div id="plbox"></div>';
+        if (x.to_wh) h += '<button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' + x.to_wh + '">➡ Склад «откуда»' +
+          (st === 'new' ? ' · собрать по номерам' : ' · окно склада') + '</button>';
         h += '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
         view.innerHTML = h;
         bindTabs();
@@ -1549,16 +1549,12 @@
           b.onclick = function () {
             var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
             wantTask = 's' + x.id;   // в окне склада сразу выбрать «Собрать · продажа» этой отгрузки
+            // 23.11.2026: отгружено — задачи «Собрать» нет: окно бота склада сразу на этом документе («⚠️ Отгружено: N»)
+            if (st === 'ok') { wantTask = ''; return go(function () { showBotWin(it || w, w, 's' + x.id); }); }
             if (it) go(function () { showWh(it, w); });
           };
         });
-        Array.prototype.forEach.call(view.querySelectorAll('[data-bw]'), function (b) {
-          b.onclick = function () {   // окно бота склада: сам нажмёт кнопку этого документа (…:shd:N или …:sna:N)
-            var w = b.getAttribute('data-bw'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0] || w;
-            try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-            go(function () { showBotWin(it, w, 's' + x.id); });   // «s222014» → ищет кнопку …:222014
-          };
-        });
+        if ($('plbox')) shipPlaces(x, $('plbox'));
         return;
       }
       h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
@@ -2077,6 +2073,57 @@
     }
     load_();
     botTimer = setInterval(function () { if (cur !== me || !$('bwin')) { clearInterval(botTimer); botTimer = null; return; } load_(); }, 5000);
+  }
+  // 23.11.2026 (руководитель): карточка отгрузки — откуда брать (место у каждой строки) и «✅ Взял» без захода в склад.
+  // «Взял» = те же две кнопки бота склада, что нажимает кладовщик: «⚠️ Отгружено: N» → «✅ Взяли с этих мест — списать».
+  function shipPlaces(x, box) {
+    var me = cur;
+    call('/api/ship_places', { id: x.id }, 30000).then(function (p) {
+      if (cur !== me || !document.body.contains(box)) return;
+      if (!p || p.mode === 'none' || !(p.lines || []).length) { box.innerHTML = p && p.text ? '<div class="note">' + esc(p.text) + '</div>' : ''; return; }
+      var h = '<div class="box plc"><h3>📍 Откуда брать · ' + (p.mode === 'noted' ? 'отгружено, в боте не отмечено' : 'собрать') + '</h3>' +
+        p.lines.map(function (y, j) {
+          return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') + ' · <b>' + n(y.qty) + ' шт</b>' +
+            '<br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
+        }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '') + '</div>';
+      if (p.mode === 'noted') {
+        if (p.ready && p.can) h += '<button class="main" id="vzyal" style="background:linear-gradient(150deg,#4fd68a,#17964a)">✅ Взял — списать с этих мест</button>';
+        else if (!p.ready) h += '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» → окно склада и отметьте места.</div>';
+        else h += '<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
+      }
+      box.innerHTML = h;
+      if ($('vzyal')) $('vzyal').onclick = function () { vzyal(x, p, $('vzyal')); };
+    }).catch(function () {});
+  }
+  function vzyal(x, p, b) {
+    var wh = p.wh, re1 = new RegExp(':sna:' + x.id + '$'), re2 = new RegExp(':snok:' + x.id + '$');
+    var q = 'Списать ' + p.lines.length + ' поз. документа ' + x.id + ' с мест:\n' + p.lines.map(function (y) { return '• ' + y.item + ' ' + n(y.qty) + ' шт ← ' + (y.code || y.place); }).join('\n') + '\n\nВзяли?';
+    var ask = function (cb) { try { tg.showConfirm(q, cb); } catch (e) { cb(confirm(q)); } };
+    var btnIn = function (w, re) {   // кнопка в окне бота склада (панель и остальные окна этого склада)
+      var all = [w].concat((w && w.more) || []), hit = null;
+      all.forEach(function (m) { ((m && m.kb) || []).forEach(function (row) { row.forEach(function (k) { if (!hit && re.test(k.callback_data || k.data || '')) hit = { d: k.callback_data || k.data, key: m.key }; }); }); });
+      return hit;
+    };
+    var bad = function (t) { b.disabled = false; b.textContent = '✅ Взял — списать с этих мест'; haptic('warning'); say(t); };
+    ask(function (yes) {
+      if (!yes) return;
+      b.disabled = true; b.textContent = '⏳ Списываю у бота склада…';
+      try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+      call('/api/kc_win', { wh: wh }, 15000).then(function (w) {
+        var k1 = btnIn(w, re1);
+        if (!k1) return bad('В окне склада этого документа уже нет — возможно, его уже списали. Обновите.');
+        return call('/api/kc_press', { wh: wh, data: k1.d, key: k1.key || '' }, 125000).then(function (r) {
+          var k2 = btnIn(r.win, re2);
+          if (!k2) return bad('Бот не дал «Списать» — не всё нашлось на местах. Откройте «Склад «откуда»».');
+          return call('/api/kc_press', { wh: wh, data: k2.d, key: k2.key || '' }, 125000).then(function (r2) {
+            var tx = (r2.answers || []).map(function (a) { return a.text; }).join('\n') || r2.text || '';
+            if (!r2.ok) return bad(tx || 'Не получилось — откройте окно склада.');
+            haptic('success'); say(tx || 'Списано');
+            b.textContent = '✅ Списано';
+          });
+        });
+      }).catch(function (e) { bad((e && e.text) || 'Ошибка связи — попробуйте ещё раз.'); });
+    });
   }
   var HINT = '👇 Нажмите задачу — на схеме покажу 🟧 откуда брать и 🟦 куда ставить';
   var wantTask = '';   // id задачи окна склада, которую выбрать при открытии (из карточки отгрузки)
