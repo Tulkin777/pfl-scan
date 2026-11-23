@@ -768,7 +768,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '2af0b159', newBuild = '';
+  var BUILD = 'b1782d15', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1432,7 +1432,7 @@
       var cs = (D.chk || {}).status || 'none';
       if (D.erp_doc) {
         h += '<div class="note" style="font-size:15px">' + (D.posted ? '✅ Проведён в ERP: №' + esc(D.erp_doc) + ' — остатки = факту.'
-          : '📤 Создан в ERP №' + esc(D.erp_doc) + ' («Новый»), но не проведён — проведение по списку на первом экране.') + '</div>';
+          : '📤 Создан в ERP №' + esc(D.erp_doc) + ' («Новый»). «✅ Провести» — на первом экране «Инвентаризация» (руководитель / назначенный).') + '</div>';
       } else if (!D.n_changed) {
         h += '<div class="ivok0">✅ Расхождений нет — факт = ERP. Документ в ERP не нужен.</div>' +
           (D.can ? '<div class="note">Нашли отличие — впишите факт в строке, тогда появится «🔎 Проверить (Темур)».</div>' : '');
@@ -1440,10 +1440,10 @@
         var b1 = cs === 'queued' ? '<button id="ivchk" disabled>⏳ Темур проверяет…</button>'
           : cs === 'clean' ? '<button id="ivchk">🔎 Проверить снова</button>'
           : '<button class="go" id="ivchk">🔎 Проверить (Темур) · ' + D.n_changed + ' стр.</button>';
-        var b2 = cs === 'clean' && D.can_post ? '<button class="go" id="ivpost">✅ Создать и провести</button>' : '';
+        // руководитель 23.11: здесь после чистой проверки — только «📤 Создать в ERP»; «✅ Провести» — на первом экране
+        var b2 = cs === 'clean' && D.can ? '<button class="go" id="ivcreate">📤 Создать в ERP · ' + D.n_changed + ' стр.</button>' : '';
         h += '<div class="ivbar">' + b1 + b2 + '</div>' + '<div class="note">' +
-          (cs === 'clean' ? (D.can_post ? '«Создать и провести»: документ в ERP только из изменённых строк и сразу проводится (остатки = факту).'
-            : '✅ Проверка чистая — «Создать и провести» нажимает руководитель или назначенный подтверждающий.')
+          (cs === 'clean' ? 'Документ «Новый» только из изменённых строк, остатки пока не меняются. Провести — на первом экране «Инвентаризация» (руководитель / назначенный).'
             : cs === 'errors' ? 'Исправьте строки с замечаниями Темура и нажмите «Проверить» снова.'
             : 'Сначала проверка Темура — так в ERP не создаются ошибочные документы.') + '</div>';
       } else h += '<div class="note">👁 Только смотреть — менять факт не дано</div>';
@@ -1490,6 +1490,19 @@
           haptic(d.ok ? 'success' : 'warning'); if (d.text) say(d.text);
           if (d.ok) { D = d; lastH = ''; draw(); poll(); } else { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; }
         }).catch(function (e) { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; ivErr(e); });
+      };
+      if ($('ivcreate')) $('ivcreate').onclick = function () {
+        var b = this, q = 'Создать инвентаризацию в ERP?\n' + D.store_name + '\nИзменено строк: ' + D.n_changed +
+          '\n\nДокумент «Новый», остатки пока не меняются. Перед созданием сервер сверит остатки ERP.\nПровести — руководитель на первом экране.';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Создаю в ERP…';
+          call('/api/invd_create', { id: id }, 200000).then(function (d) {
+            haptic(d.ok ? 'success' : 'warning'); say(d.text);
+            load('/api/invd_get', { id: id }, function (x) { if (x.ok) { D = x; lastH = ''; draw(); } });
+          }).catch(function (e) { b.disabled = false; b.textContent = '📤 Создать в ERP'; ivErr(e); });
+        };
+        try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
       };
       if ($('ivpost')) $('ivpost').onclick = function () {
         var b = this, q = 'Создать и провести инвентаризацию в ERP?\n' + D.store_name + '\nИзменено строк: ' + D.n_changed +
@@ -1583,7 +1596,10 @@
       return '<div class="doc"><div class="dh"><b><span class="ino">' + (i + 1) + '</span>№' + esc(x.doc) + '</b><span class="st">' + esc(x.status_text) + '</span></div>' +
         '<div class="dm">' + esc(x.date) + ' · ' + esc(String(x.author || '').split(' ')[0]) + ' · ' + esc(x.place) + ' · разница: <b>' + esc(x.diff) + '</b></div>' +
         // Темур проверил, ошибки нет — «✅ Подтвердить» (руководитель и назначенные), после него Темур проводит в ERP
-        '<div class="row3">' + ((x.status === 'approve' || x.status === 'approve_fixed')
+        // 23.11.2026 (руководитель): создан из мини-аппа (Темур проверил до ERP) — сразу «✅ Провести» у руководителя / назначенного
+        '<div class="row3">' + (x.mini ? (x.can_post ? '<button class="b1 inv-ok" data-pp="' + i + '">✅ Провести</button>'
+            : '<div class="note" style="margin:4px 0">⏳ Ждёт проведения — руководитель / назначенный</div>')
+          : (x.status === 'approve' || x.status === 'approve_fixed')
           ? '<button class="b1 inv-ok" data-ap="' + i + '">✅ Подтвердить инвентаризацию</button>'
           : (can && !x.done ? '<button class="b1" data-c="' + i + '">🔎 Проверить (Темур)</button>' : '')) +
         (x.has_excel ? '<button data-x="' + i + '">📄 Excel</button>' : '') + '</div></div>';
@@ -1614,6 +1630,22 @@
       b.onclick = function () {
         var x = rows[+b.getAttribute('data-x')];
         call('/api/inv_excel', { doc: x.doc }, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); }).catch(ivErr);
+      };
+    });
+    Array.prototype.forEach.call(B.querySelectorAll('[data-pp]'), function (b) {
+      b.onclick = function () {
+        var x = rows[+b.getAttribute('data-pp')];
+        var q0 = 'Провести инвентаризацию №' + x.doc + '?\n' + x.place + '\nТемур проверил до ERP. Изменено строк: ' + (x.n_changed || '?') +
+          '\n\nОстатки этих строк в ERP станут равны факту. Перед этим сервер проверит, что остатки не менялись после создания.';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Провожу в ERP…';
+          call('/api/inv_post_doc', { doc: x.doc }, 200000).then(function (q) {
+            haptic(q.ok ? 'success' : 'warning'); say(q.text);
+            b.textContent = q.ok ? '✅ Проведён' : '✅ Провести'; b.disabled = !!q.ok;
+          }).catch(function (e) { b.disabled = false; b.textContent = '✅ Провести'; ivErr(e); });
+        };
+        try { tg.showConfirm(q0, go_); } catch (e) { go_(confirm(q0)); }
       };
     });
   }
