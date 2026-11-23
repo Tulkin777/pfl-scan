@@ -584,7 +584,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'eba4c131', newBuild = '';
+  var BUILD = 'e3b3b8b0', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1507,70 +1507,72 @@
         h += '<div class="dhead st-' + st + '"><div class="dn">' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' + numRow(x, true) +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st) + sigRow(x);
-        var p0 = plcOf(x.id);   // места — заранее загружены со списком: сразу рисуем с ними, без переключения
-        h += plcOk(p0) ? '<div class="box plc" id="sostav">' + sostavInner(p0) + '</div>'
-          : '<div class="box" id="sostav"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
-          var fq = formOf(y.name);
-          return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
-            (y.boxes ? ' · ' + esc(y.boxes) : '') + '<span class="bt" data-li="' + j + '"></span></div>';
-        }).join('') + '</div>';
-        // 23.11.2026 (руководитель): сразу после состава — «✅ Взял» и «Склад «откуда»» (до счёт-фактуры и спецификации)
-        if (x.to_wh) h += '<div id="plbox">' + vzHtml(p0, st) + '</div><button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' +
-          x.to_wh + '">➡ Склад «откуда»' + (st === 'new' ? ' · собрать по номерам' : ' · окно склада') + '</button>';
-        // 22.11.2026 (руководитель): счёт-фактура 1С с партиями; в составе — номер партии у каждой строки
-        h += '<div id="sfbox"></div>';
-        // 22.11.2026 (руководитель): спецификация Smartup — листом сразу под составом (без скачивания)
-        h += x.sys === 'SMARTUP' ? '<div id="specbox"><div class="spin" style="padding:16px 0">📄 Загружаю спецификацию…</div></div>'
-          : '<div class="note">📄 Спецификации нет — отгрузка создана не через Smartup.</div>';
-        var T2 = [['🟡', x.date, 'заказ в ERP · ' + x.author, true],
-                  ['🚚', x.done || null, st === 'ok' ? 'отгружено (проведено в ERP)' + (x.step === 'arch' ? ' · 🗄 в архиве' : '')
-                    : 'ждём: кладовщик соберёт по номерам, потом отгрузка проводится в ERP', st === 'ok']];
-        h += '<div class="box"><h3>Ход</h3><div class="tl">' + T2.map(function (t) {
-          return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
-        }).join('') + '</div></div>';
-        h += '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
-        view.innerHTML = h;
-        bindTabs();
-        // 22.11.2026 (руководитель «чтобы работало как будто быстро»): сначала — сохранённое (сервер грузит заранее, мини-апп
-        // забирает все документы при открытии «Отгрузки»), потом тихо — свежее с сервера, если изменилось
-        var sdAll = cget('/api/ship_docs' + JSON.stringify({})), sd = sdAll && sdAll.docs && sdAll.docs[String(x.id)];
-        var applySf = function (q) {
-          if (!q) return;
-          var bl = q.ok ? q.by_line : (q.plan_by_line || []), tag = q.ok ? '📑 1С' : q.need === false ? '📦' : '🧭 план';
-          Array.prototype.forEach.call(view.querySelectorAll('.bt[data-li]'), function (el) {
-            var b = bl[+el.getAttribute('data-li')] || [];
-            if (b.length) el.innerHTML = '<br><span class="btag' + (q.ok ? ' c1' : '') + '">' + tag + ' · ' + b.map(function (p) {
-              return 'партия <b>' + esc(p[0]) + '</b>' + (b.length > 1 ? ' — ' + n(p[1]) + ' шт' : ''); }).join(' + ') + '</span>';
+        // 23.11.2026 (руководитель): карточка собирается ЦЕЛИКОМ строкой (места, «Взял», счёт-фактура, спецификация, ход) и
+        // ставится на экран одним разом. Сначала — из сохранённого; свежее грузится всё сразу, готовится целиком и
+        // заменяет карточку одним разом, только если что-то изменилось. По кусочкам ничего не перерисовывается.
+        var head = h, sdAll = cget('/api/ship_docs' + JSON.stringify({})), sd0 = (sdAll && sdAll.docs && sdAll.docs[String(x.id)]) || {};
+        var D = { p: plcOf(x.id), sf: sd0.sf || null, spec: sd0.spec || null, specErr: false };
+        var build = function (d) {
+          var g = head, p = d.p, q = d.sf, s = d.spec;
+          var bl = q ? (q.ok ? q.by_line : (q.plan_by_line || [])) || [] : [], tag = q && q.ok ? '📑 1С' : q && q.need === false ? '📦' : '🧭 план';
+          g += plcOk(p) ? '<div class="box plc" id="sostav">' + sostavInner(p) + '</div>'
+            : '<div class="box" id="sostav"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+              var fq = formOf(y.name), b = bl[j] || [];
+              return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
+                (y.boxes ? ' · ' + esc(y.boxes) : '') + (b.length ? '<br><span class="btag' + (q.ok ? ' c1' : '') + '">' + tag + ' · ' + b.map(function (pp) {
+                  return 'партия <b>' + esc(pp[0]) + '</b>' + (b.length > 1 ? ' — ' + n(pp[1]) + ' шт' : ''); }).join(' + ') + '</span>' : '') + '</div>';
+            }).join('') + '</div>';
+          // сразу после состава — «✅ Взял» и «Склад «откуда»» (до счёт-фактуры и спецификации)
+          if (x.to_wh) g += '<div id="plbox">' + vzHtml(p, st) + '</div><button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' +
+            x.to_wh + '">➡ Склад «откуда»' + (st === 'new' ? ' · собрать по номерам' : ' · окно склада') + '</button>';
+          var sfh = '';   // у Gynomedix и Терминала счёт-фактуры нет — ничего не писать (need === false)
+          try { if (q) sfh = q.ok ? sfHtml(q) : q.need === false ? '' : '<div class="note">📑 ' + esc(q.text) +
+            (bl.some(function (b) { return b.length; }) ? ' Партии в составе — по плану сборки окна склада.' : '') + '</div>'; } catch (e) { sfh = ''; }
+          g += '<div id="sfbox">' + sfh + '</div>';
+          var sph = '<div class="spin" style="padding:16px 0">📄 Загружаю спецификацию…</div>';
+          try { if (s) sph = s.ok ? specHtml(s) : '<div class="note">📄 ' + esc(s.text) + '</div>';
+            else if (d.specErr) sph = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; } catch (e) { sph = ''; }
+          g += x.sys === 'SMARTUP' ? '<div id="specbox">' + sph + '</div>' : '<div class="note">📄 Спецификации нет — отгрузка создана не через Smartup.</div>';
+          var T2 = [['🟡', x.date, 'заказ в ERP · ' + x.author, true],
+                    ['🚚', x.done || null, st === 'ok' ? 'отгружено (проведено в ERP)' + (x.step === 'arch' ? ' · 🗄 в архиве' : '')
+                      : 'ждём: кладовщик соберёт по номерам, потом отгрузка проводится в ERP', st === 'ok']];
+          g += '<div class="box"><h3>Ход</h3><div class="tl">' + T2.map(function (t) {
+            return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
+          }).join('') + '</div></div>';
+          return g + '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
+        };
+        var bind = function (d) {
+          bindTabs();
+          Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
+            b.onclick = function () {
+              var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
+              wantTask = 's' + x.id;   // в окне склада сразу выбрать «Собрать · продажа» этой отгрузки
+              // отгружено — задачи «Собрать» нет: окно бота склада сразу на этом документе («⚠️ Отгружено: N»)
+              if (st === 'ok') { wantTask = ''; return go(function () { showBotWin(it || w, w, 's' + x.id); }); }
+              if (it) go(function () { showWh(it, w); });
+            };
           });
-          var sb = $('sfbox');
-          // руководитель 22.11: у Gynomedix и Терминала счёт-фактуры здесь нет — ничего не писать (need === false)
-          if (sb) sb.innerHTML = q.ok ? sfHtml(q) : q.need === false ? '' :
-            '<div class="note">📑 ' + esc(q.text) + (bl.some(function (b) { return b.length; }) ? ' Партии в составе — по плану сборки окна склада.' : '') + '</div>';
+          if ($('vzyal') && d.p) $('vzyal').onclick = function () { vzyal(x, d.p, $('vzyal'), vzLabel(d.p, st), st); };
         };
-        var applySpec = function (q) {
-          var sb = $('specbox');
-          if (!sb || !q) return;
-          sb.innerHTML = q.ok ? specHtml(q) : '<div class="note">📄 ' + esc(q.text) + '</div>';
-        };
-        var sig = function (v) { return JSON.stringify(v || null); };
-        // 23.11.2026: кнопки и места — первыми; ошибка в счёт-фактуре/спецификации (у Терминала и Gynomedix их нет) их не ломает
-        Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
-          b.onclick = function () {
-            var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
-            wantTask = 's' + x.id;   // в окне склада сразу выбрать «Собрать · продажа» этой отгрузки
-            // 23.11.2026: отгружено — задачи «Собрать» нет: окно бота склада сразу на этом документе («⚠️ Отгружено: N»)
-            if (st === 'ok') { wantTask = ''; return go(function () { showBotWin(it || w, w, 's' + x.id); }); }
-            if (it) go(function () { showWh(it, w); });
-          };
+        var shown = build(D);
+        view.innerHTML = shown;
+        bind(D);
+        var soft = function (pr) { return pr.then(function (v) { return { v: v }; }, function () { return { err: true }; }); };
+        Promise.all([soft(call('/api/ship_places', { id: x.id }, 30000)), soft(call('/api/sf_data', { id: x.id }, 30000)),
+                     x.sys === 'SMARTUP' ? soft(call('/api/spec_data', { id: x.id }, 30000)) : Promise.resolve({})]).then(function (a) {
+          if (cur !== me || lastSig !== sg) return;   // ушли с карточки или она уже перерисована новым списком
+          var N = { p: a[0].v || D.p, sf: a[1].v || D.sf, spec: a[2].v || D.spec, specErr: !!a[2].err && !D.spec };
+          var pa = cget(PLC_KEY);   // запомнить свежее — следующий показ сразу правильный
+          if (a[0].v && pa && pa.docs) { pa.docs[String(x.id)] = a[0].v; cset(PLC_KEY, pa); }
+          if (sdAll && sdAll.docs && (a[1].v || a[2].v)) { sdAll.docs[String(x.id)] = { sf: N.sf, spec: N.spec }; cset('/api/ship_docs' + JSON.stringify({}), sdAll); }
+          var nh = build(N);
+          if (nh === shown) return;   // ничего не изменилось — экран не трогаем
+          var y0 = window.scrollY;
+          view.innerHTML = nh;   // готовая карточка — одним разом
+          shown = nh;
+          bind(N);
+          window.scrollTo(0, y0);
         });
-        if ($('plbox')) shipPlaces(x, $('plbox'), st);
-        var applySf0 = applySf, applySpec0 = applySpec;
-        applySf = function (q) { try { applySf0(q); } catch (e) {} };
-        applySpec = function (q) { try { applySpec0(q); } catch (e) {} };
-        if (sd) { applySf(sd.sf); applySpec(sd.spec); }
-        call('/api/sf_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.sf)) applySf(q); }).catch(function () {});
-        if ($('specbox')) call('/api/spec_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.spec)) applySpec(q); })
-          .catch(function () { if (!sd || !sd.spec) { var sb = $('specbox'); if (sb) sb.innerHTML = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; } });
         return;
       }
       h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
