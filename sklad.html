@@ -576,7 +576,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '326b5aea', newBuild = '';
+  var BUILD = 'f663371c', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1119,7 +1119,7 @@
   // 23.11.2026 (руководитель): сначала Терминал / Перечисление, потом направления — мелко, в один ряд, «Склад завода / Склад Ташкента»
   var MDIR = [['Завод→Ташкент', 'Склад завода → Склад Ташкента', 'd1'], ['Ташкент→Завод', 'Склад Ташкента → Склад завода', 'd2'],
               ['Завод→Завод', 'Внутри склада завода', 'd6'], ['Ташкент→Ташкент', 'Внутри склада Ташкента', 'd7']];
-  var MLINE = [['ter', 'Терминал', '1 этаж', 'd7'], ['per', 'Перечисление', '2 этаж', 'd6']];
+  var MLINE = [['per', 'Перечисление', '2 этаж', 'd6'], ['ter', 'Терминал', '1 этаж', 'd7']];   // руководитель 23.11: слева Перечисление
   var LINE_OF = { 1: 'ter', 3: 'ter', 5: 'ter', 8: 'ter', 2: 'per', 4: 'per', 6: 'per', 7: 'per' };   // склады ERP → линия (factory_id)
   var mvStep = '', mvLine = '';
   function mvIn(x, l) { return LINE_OF[x.from_id] === l || LINE_OF[x.to_id] === l; }
@@ -1141,7 +1141,7 @@
           return '<div class="' + l[3] + (c ? '' : ' z') + '" data-line="' + l[0] + '"><b>' + c + '</b>' + l[1] + '<small>' + l[2] + '</small></div>';
         }).join('') + '</div>';
         Array.prototype.forEach.call(box.querySelectorAll('[data-line]'), function (el) {
-          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = el.getAttribute('data-line'); flowDir = ''; mvStep = ''; showMoves(box); };
+          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = el.getAttribute('data-line'); flowDir = ''; mvStep = 'new'; showMoves(box); };   // сначала — «создано»
         });
         return;
       }
@@ -1171,7 +1171,7 @@
       box.innerHTML = h;
       $('mvBack').onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = ''; flowDir = ''; mvStep = ''; showMoves(box); };
       Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
-        el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; showMoves(box); };
+        el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; mvStep = 'new'; showMoves(box); };   // направление — сначала «создано»
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-st]'), function (el) {
         el.onclick = function () { var s = el.getAttribute('data-st'); mvStep = mvStep === s ? '' : s; showMoves(box); };
