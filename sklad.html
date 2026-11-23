@@ -756,7 +756,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '694d1028', newBuild = '';
+  var BUILD = '1fc61a68', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1289,6 +1289,7 @@
           '" data-st="' + st + '" data-ty="' + ty + '" data-rm="' + rm + '"><i>' + icon + '</i><b>' + esc(title) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '') +
           ivCnt(x) + (dr && dr.n_changed ? '<em class="ivc">✏️ изменено ' + dr.n_changed + '</em>' : '') + '</div>';
       };
+      var gpT = '';
       (r.stores || []).filter(function (st) { return !st.types.length; }).forEach(function (st) {
         if ((st.rooms || []).length) {   // ГП завода: ГП1 · ГП2 (· нет на схеме)
           h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО СКЛАДУ</div><div class="ivtyp">' + st.rooms.map(function (x) {
@@ -1297,10 +1298,11 @@
           }).join('') + '</div>';
           return;
         }
-        var dr = drOf(st.id, '', '');
-        h += '<button class="ivnew" data-st="' + st.id + '" data-ty="" data-rm="">📋 Пересчитать склад' + ((r.stores || []).length > 1 ? ' · ' + esc(st.name) : '') +
-          (dr && dr.n_changed ? '<small>✏️ изменено ' + dr.n_changed + ' из ' + dr.n + ' — продолжить</small>' : '') + '</button>';
+        // 23.11.2026 (руководитель): как у сырья — плитка склада с числом наименований и количеством (до создания в ERP)
+        var nm2 = st.name.split(' · ');
+        gpT += roomTile(st.id, '', '', /Gynomedix/.test(st.name) ? '🌸' : st.name.indexOf('Ташкент') >= 0 ? '🏙' : '🏭', nm2[0], nm2.slice(1).join(' · '), st);
       });
+      if (gpT) h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО СКЛАДУ</div><div class="ivtyp">' + gpT + '</div>';
       // склад сырья — по виду (папки ERP): сырьё (по складам 1 / 2) · упаковка · тара (+ прочее)
       (r.stores || []).filter(function (st) { return st.types.length; }).forEach(function (st) {
         var g = '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО ВИДУ</div><div class="ivtyp">';
