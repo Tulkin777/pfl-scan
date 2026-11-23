@@ -283,6 +283,14 @@
   .dir div.z { opacity: 1; filter: none; background: #eef0f4; color: #9aa0ab; box-shadow: 0 3px 0 #d9dde5; }
   .dir div.z.on { box-shadow: inset 0 0 0 3px #9aa0ab; }
   .dir.dir4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  /* 23.11.2026 (руководитель): Перемещения — шаг 1 две плитки линий, шаг 2 четыре направления мелко в один ряд */
+  .dir.dir2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .dir.dir2 div { font-size: 16px; padding: 14px 6px; } .dir.dir2 div b { font-size: 24px; }
+  .dir.dir2 div small { display: block; font-size: 11px; font-weight: 700; opacity: .85; margin-top: 2px; }
+  .dir.dirr { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .dir.dirr div { font-size: 10px; padding: 6px 2px; border-radius: 10px; line-height: 1.15; letter-spacing: -.2px; }
+  .dir.dirr div b { font-size: 16px; }
+  .mvnav { margin-top: 0; } .mvnav .bk { min-height: 44px; font-size: 15px; }
   .dir div.shp { min-width: 0; position: relative; text-align: left; padding: 10px 10px 10px; display: flex; flex-direction: column; align-items: flex-start; min-height: 96px; }
   .dir div.shp .sc { position: absolute; top: 8px; right: 8px; min-width: 28px; text-align: center; border-radius: 14px; padding: 2px 7px;
     background: #fff; color: #1e1e1e; font-size: 16px; font-weight: 900; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
@@ -483,6 +491,7 @@
     #flowbox > * { grid-column: 1 / -1; }
     #flowbox > .tcard { grid-column: auto; }
     #flowbox .dir { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    #flowbox .dir.dir2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     #view:has(.schw) { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
     #view > .schw { grid-column: 1; grid-row: span 8; margin: 0; }
     #view > #occ, #view > #panel, #view > #cols, #view > .row { grid-column: 2; }
@@ -567,7 +576,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '73e6ed80', newBuild = '';
+  var BUILD = '9825b16d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1107,9 +1116,14 @@
   var flowDir = '';
   // ---------- 🚚 Перемещения: 5 шагов, карточки-«поезда», полный экран (руководитель 22.11 «Да, делай») ----------
   var MSTEPS = [['new', '🟡', 'создано'], ['ready', '📦', 'готово'], ['road', '🚛', 'в дороге'], ['came', '🏁', 'прибыло'], ['ok', '🟢', 'принято']];
-  var MDIR = [['Завод→Ташкент', 'Завод → Ташкент', 'd1'], ['Ташкент→Завод', 'Ташкент → Завод', 'd2'],
-              ['Завод→Завод', 'Внутри завода', 'd6'], ['Ташкент→Ташкент', 'Внутри Ташкента', 'd7']];
-  var mvStep = '';
+  // 23.11.2026 (руководитель): сначала Терминал / Перечисление, потом направления — мелко, в один ряд, «Склад завода / Склад Ташкента»
+  var MDIR = [['Завод→Ташкент', 'Склад завода → Склад Ташкента', 'd1'], ['Ташкент→Завод', 'Склад Ташкента → Склад завода', 'd2'],
+              ['Завод→Завод', 'Внутри склада завода', 'd6'], ['Ташкент→Ташкент', 'Внутри склада Ташкента', 'd7']];
+  var MLINE = [['ter', 'Терминал', '1 этаж', 'd7'], ['per', 'Перечисление', '2 этаж', 'd6']];
+  var LINE_OF = { 1: 'ter', 3: 'ter', 5: 'ter', 8: 'ter', 2: 'per', 4: 'per', 6: 'per', 7: 'per' };   // склады ERP → линия (factory_id)
+  var mvStep = '', mvLine = '';
+  function mvIn(x, l) { return LINE_OF[x.from_id] === l || LINE_OF[x.to_id] === l; }
+  function dirName(d) { var m = MDIR.filter(function (y) { return y[0] === d; })[0]; return m ? m[1] : String(d || '').replace('→', ' → '); }
   function dtf2(s) { s = String(s || ''); return s.slice(8, 10) + '.' + s.slice(5, 7) + ' ' + s.slice(11, 16); }
   function trkBar(step) {
     var i = MSTEPS.map(function (s) { return s[0]; }).indexOf(step);
@@ -1120,9 +1134,23 @@
   function showMoves(box) {
     load2('/api/flow', { kind: 'mv' }, function (r) {
       if (!document.body.contains(box)) return;
-      var all = (r.rows || []).filter(function (x) { return x.step !== 'cancel'; });
+      var all0 = (r.rows || []).filter(function (x) { return x.step !== 'cancel'; });
+      if (!mvLine) {   // шаг 1: Терминал или Перечисление
+        box.innerHTML = '<div class="dir dir2">' + MLINE.map(function (l) {
+          var c = all0.filter(function (x) { return mvIn(x, l[0]); }).length;
+          return '<div class="' + l[3] + (c ? '' : ' z') + '" data-line="' + l[0] + '"><b>' + c + '</b>' + l[1] + '<small>' + l[2] + '</small></div>';
+        }).join('') + '</div>';
+        Array.prototype.forEach.call(box.querySelectorAll('[data-line]'), function (el) {
+          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = el.getAttribute('data-line'); flowDir = ''; mvStep = ''; showMoves(box); };
+        });
+        return;
+      }
+      var LN = MLINE.filter(function (l) { return l[0] === mvLine; })[0];
+      var all = all0.filter(function (x) { return mvIn(x, mvLine); });
       var rows = flowDir ? all.filter(function (x) { return x.dir === flowDir; }) : all;
-      var h = '<div class="dir dir4">' + MDIR.map(function (d) {
+      var h = '<div class="navb mvnav"><div class="bk" id="mvBack"><i>⬅</i>Назад</div><div class="nt"><small>Перемещения</small><b>' +
+        LN[1] + ' · ' + LN[2] + '</b></div></div>';
+      h += '<div class="dir dirr">' + MDIR.map(function (d) {
         var c = all.filter(function (x) { return x.dir === d[0]; }).length;
         return '<div class="' + d[2] + (c ? '' : ' z') + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
       }).join('') + '</div>';
@@ -1141,6 +1169,7 @@
           trkBar(x.step) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
       }).join('');
       box.innerHTML = h;
+      $('mvBack').onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = ''; flowDir = ''; mvStep = ''; showMoves(box); };
       Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
         el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; showMoves(box); };
       });
@@ -1165,7 +1194,7 @@
       if (!x) { view.innerHTML = subTop('mv', 'Перемещения') + '<div class="empty">Перемещение уже не в списке (старше ' + r.days + ' дн.)</div>'; return bindTabs(); }
       var pm = r.perm || {}, can = function (a) { return r.admin || (pm.lv === 2 && (pm.acts || []).indexOf(a) >= 0); };
       var SN = { new: '🟡 СОЗДАНО', ready: '📦 ГОТОВО К ОТПРАВКЕ', road: '🚛 В ДОРОГЕ', came: '🏁 ПРИБЫЛО', ok: '🟢 ПРИНЯТО', cancel: '⚪ ОТМЕНЕНО' };
-      var h = subTop('mv', 'Перемещения · ' + x.dir.replace('→', ' → '));
+      var h = subTop('mv', 'Перемещения · ' + dirName(x.dir));
       h += '<div class="dhead st-' + x.step + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[x.step] + '</div></div>' +
         '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step);
       h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
