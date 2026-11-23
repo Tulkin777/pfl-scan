@@ -294,6 +294,8 @@
   .mvpair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; }
   .mvpair .mvs { font-size: 12px; padding: 8px 4px; }
   .mvpair1 { margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 14px; text-align: center; }
+  .mvfire { margin: 4px 0; padding: 5px 9px; border-radius: 10px; background: #ffe3dc; color: #b3261e; font-weight: 900; font-size: 13px; line-height: 1.25; }
+  .mvauto { margin: 4px 0; padding: 4px 9px; border-radius: 10px; background: #e8eefb; color: #2d3a52; font-weight: 800; font-size: 12px; line-height: 1.25; }
   .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
   .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
                   margin: 0 0 8px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #1e1e1e); }
@@ -630,7 +632,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5cd08aeb', newBuild = '';
+  var BUILD = 'd1539c90', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1179,6 +1181,13 @@
   function mvIn(x, l) { return LINE_OF[x.from_id] === l || LINE_OF[x.to_id] === l; }
   function dirName(d) { var m = MDIR.filter(function (y) { return y[0] === d; })[0]; return m ? m[1] : String(d || '').replace('→', ' → '); }
   function dtf2(s) { s = String(s || ''); return s.slice(8, 10) + '.' + s.slice(5, 7) + ' ' + s.slice(11, 16); }
+  // 23.11.2026 (руководитель): авто-перемещение — «🤖 Авто», срочное — «🔥 СРОЧНО» и почему (примечание ERP)
+  function mvBadge(x) {
+    var c = String(x.note || '');
+    if (c.indexOf('🔥') >= 0) return '<div class="mvfire">🔥 СРОЧНО · ' + esc(c.replace(/^🤖?🔥?\s*СРОЧНО:?\s*/, '')) + '</div>';
+    if (c.indexOf('🤖') === 0) return '<div class="mvauto">🤖 Авто · ' + esc(c.replace(/^🤖\s*/, '')) + '</div>';
+    return '';
+  }
   function trkBar(step, inside) {   // inside — внутри склада: без «в дороге» и «прибыло» (машины нет)
     var SS = inside ? MSTEPS.filter(function (s) { return s[0] !== 'road' && s[0] !== 'came'; }) : MSTEPS;
     var i = SS.map(function (s) { return s[0]; }).indexOf(step);
@@ -1194,6 +1203,7 @@
         var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '';
         var fq = formOf(l0.name);
         return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
+          mvBadge(x) +
           '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
           '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
           trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
@@ -1456,7 +1466,7 @@
       var SN = { new: '🟡 СОЗДАНО', ready: '📦 ГОТОВО К ОТПРАВКЕ', road: '🚛 В ДОРОГЕ', came: '🏁 ПРИБЫЛО', ok: '🟢 ПРИНЯТО', cancel: '⚪ ОТМЕНЕНО' };
       var h = subTop('mv', 'Перемещения · ' + dirName(x.dir));
       h += '<div class="dhead st-' + x.step + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[x.step] + '</div></div>' +
-        '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
+        mvBadge(x) + '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
       h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name);
         return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '<br><b>' + n(y.qty) + ' шт</b>' + (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
