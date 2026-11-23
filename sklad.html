@@ -259,6 +259,9 @@
   .fchip[data-f=ret] { background: linear-gradient(150deg, #ff8f8f, #d43c3c); box-shadow: 0 4px 0 #962424; }
   .fchip[data-f=prod] { background: linear-gradient(150deg, #4fd68a, #0f8a4a); box-shadow: 0 4px 0 #0b5e33; }   /* 23.11: Из производства */
   .fchip[data-f=wh] { background: linear-gradient(150deg, #4fd6b8, #138f86); box-shadow: 0 4px 0 #0c6660; }   /* 23.11: Склады */
+  .fchip[data-f=mvt] { background: linear-gradient(150deg, #8b7bff, #4b39c9); box-shadow: 0 4px 0 #34278f; }   /* 23.11: Движение */
+  .mvsub .cg b { display: block; font-size: 17px; font-weight: 900; } .mvsub .cg small { font-size: 11.5px; font-weight: 800; color: var(--hint); }
+  .mvsub .cg.on small, .mvsub .cg.on b { color: var(--btn); }
   .fchip[data-f=zp] { background: linear-gradient(150deg, #7fdc9a, #1f9e5a); box-shadow: 0 4px 0 #13703e; }   /* 23.11: Зарплата */
   .fchip[data-f=cert] { background: linear-gradient(150deg, #e7b96a, #a8741c); box-shadow: 0 4px 0 #7a520f; }   /* 23.11: Разрешительные документы */
   .fchip[data-f=ship] { background: linear-gradient(150deg, #c18cff, #8a3fd1); box-shadow: 0 4px 0 #5f2a96; }
@@ -551,6 +554,9 @@
   .zpt tr.ti .tt { position: sticky; left: 6px; max-width: min(820px, calc(100vw - 50px)); white-space: normal; }
   .zpt tr.ti td { position: static; }
   .zpt tr.sp td { height: 6px; padding: 0; border: 0; }
+  .crt .cd.md { grid-template-columns: 22px minmax(0, 1fr) auto; }
+  .crt .cd.md .cbt { grid-column: 2 / 4; justify-content: flex-start; }
+  .crt .mdate { height: 34px; font-size: 14px; padding: 2px 8px; border-radius: 9px; border: 1px solid rgba(127,127,127,.35); background: var(--bg); color: var(--fg); }
   .bonr { background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 8px; max-width: 860px; border-left: 4px solid #e8820c; }
   .bonr.ok { border-left-color: #17964a; }
   .bonr .b1, .bonr .b2 { display: flex; gap: 6px; align-items: center; }
@@ -845,9 +851,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '0f83a84a', newBuild = '';
+  var BUILD = 'd20ae1c3', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795457184' || 0;
+  var BUILD_AT = +'1795457564' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1077,6 +1083,15 @@
   // руководитель 22.11: вкладки Завод · Ташкент · Инвент. · Остаток видны и внутри (Готовая продукция, Сырьё, инвентаризация…),
   // а большая шапка «N задач» — только на главном: экран выше, места больше
   var lastTabs = [], lastTabs2 = [], tabCount = {};
+  var MVT = ['ship', 'mv', 'inc', 'ret'], lastMv = [];   // 23.11.2026: внутри «🚚 Движение»
+  function mvSubRow(active) {   // ряд кнопок внутри «Движения»: Отгрузка · Перемещения · Приходы · Возврат
+    if (!lastMv.length) return '';
+    var NM = { ship: ['🛒', 'Отгрузка'], mv: ['🚚', 'Перемещения'], inc: ['📥', 'Приходы'], ret: ['↩️', 'Возврат'] };
+    return '<div class="crt-g st' + Math.max(3, lastMv.length) + ' mvsub">' + MVT.filter(function (k) { return lastMv.some(function (t) { return t[0] === k; }); }).map(function (k) {
+      var c = tabCount[k];
+      return '<div class="cg mv-' + k + (k === active ? ' on' : '') + '" data-mvs="' + k + '"><b>' + NM[k][0] + ' ' + (c != null ? c : '') + '</b><small>' + NM[k][1] + '</small></div>';
+    }).join('') + '</div>';
+  }
   function tabsHtml(active) {
     var fl = lastTabs;
     if (fl.length < 2 && !lastTabs2.length) return '';
@@ -1085,8 +1100,18 @@
       // 23.11.2026 (руководитель): Отгрузка · Перемещение · Приход · Возврат · Из производства · склады · Инвентаризация · Остаток
       // 23.11.2026 (руководитель): Завод + Ташкент → одна «🏬 Склады»; последняя — «📜 Разрешительные документы»
       // 23.11.2026 (руководитель): «Инвент. и остаток» — под «Перемещениями», «Склады» сдвинуты вправо
-      var ORD = ['ship', 'mv', 'inc', 'ret', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp'], all8 = fl.concat(lastTabs2);
+      // 23.11.2026 (руководитель «слишком много кнопок»): Отгрузка · Перемещения · Приходы · Возврат → одна «🚚 Движение»,
+      // сами четыре — внутри неё (ряд кнопок под вкладками)
+      var ORD = ['mvt', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp'], all8 = fl.concat(lastTabs2);
+      var mvIn = all8.filter(function (t) { return MVT.indexOf(t[0]) >= 0; });
+      all8 = all8.filter(function (t) { return MVT.indexOf(t[0]) < 0; });
+      if (mvIn.length) {
+        all8.push(['mvt', '🚚 Движение']);
+        tabCount.mvt = mvIn.reduce(function (a, t) { return a + (tabCount[t[0]] || 0); }, 0);
+      }
+      lastMv = mvIn;
       if (active === 'zav' || active === 'tas') active = 'wh';   // внутри склада завода / Ташкента горит «Склады»
+      if (MVT.indexOf(active) >= 0) active = 'mvt';             // внутри отгрузки / перемещений / приходов / возврата — «Движение»
       all8.sort(function (a, b) { var i = ORD.indexOf(a[0]), j = ORD.indexOf(b[0]); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       var h8 = '';
       for (var i8 = 0; i8 < all8.length; i8 += 4) h8 += tabRow(all8.slice(i8, i8 + 4), true, active, i8 + 4 >= all8.length);
@@ -1111,6 +1136,11 @@
           return go(showProd);
         }
         mfilter = el.getAttribute('data-f');
+        if (mfilter === 'mvt') {   // «🚚 Движение» — открыть последний выбранный внутри (сначала Отгрузка)
+          var ms = ''; try { ms = localStorage.getItem('pfl:mvsub') || ''; } catch (e) {}
+          var av = lastMv.map(function (t) { return t[0]; });
+          mfilter = av.indexOf(ms) >= 0 ? ms : (MVT.filter(function (k) { return av.indexOf(k) >= 0; })[0] || 'ship');
+        }
         try { localStorage.setItem('pfl:mfilter', mfilter); } catch (e) {}
         // 23.11.2026 (руководитель): вкладка сверху — раздел всегда с начала (не «остаётся на месте» внутри линии/направления/отбора)
         try { mvLine = ''; flowDir = ''; mvStep = ''; mvN = null; } catch (e) {}
@@ -1126,7 +1156,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', wh: 'Склады', zp: 'Зарплата', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', wh: 'Склады', zp: 'Зарплата', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Движение › Перемещения', inc: 'Движение › Приходы', ret: 'Движение › Возврат', ship: 'Движение › Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
@@ -2893,9 +2923,124 @@
   // 23.11.2026 (руководитель): 💰 Зарплата — как инвентаризация: две кнопки рядом (📋 Посещение · ⏱ Табель), длинная внизу
   // (💵 Расчёт зарплаты завода). Внутри — файлы по месяцам: ⬇️ в личку бота склада (через час удалится); посещение —
   // 📎 загрузить отчёт iVMS-4200 через личку бота документов (агент Камол разберёт)
+  // 23.11.2026 (руководитель): «📜 Разрешения» — три кнопки: 📜 Сертификаты · 🔬 Контроль качества ГП (рядом), 🩺 Медосмотры
+  // и обучение (длинная внизу). Каждая — по своему доступу.
+  var CTOP = { cert: ['p', '📜', 'Сертификаты', 'СЭЗ · Минздрав · соответствие'], qc: ['b', '🔬', 'Контроль качества ГП', 'протоколы лаборатории · 6 мес.'],
+               med: ['g', '🩺', 'Медосмотры и обучение', 'медосмотр · санминимум · техника безопасности'] };
+  function showCertTop(box, cp) {
+    var ks = ['cert', 'qc', 'med'].filter(function (k) { return cp[k]; });
+    if (!ks.length) { box.innerHTML = '<div class="empty">Разделы вам пока не даны</div>'; return; }
+    var odd = ks.length % 2 === 1;
+    box.innerHTML = '<div class="mgrid">' + ks.map(function (k, i) {
+      var t = CTOP[k];
+      return '<div class="tile cat ' + t[0] + (odd && i === ks.length - 1 ? ' wide' : '') + '" data-ct="' + k + '"><div class="bd z" style="display:none"></div><div class="e">' + t[1] + '</div>' +
+        '<div class="n">' + t[2] + '</div><div class="c">' + t[3] + '</div></div>';
+    }).join('') + '</div>';
+    Array.prototype.forEach.call(box.querySelectorAll('[data-ct]'), function (el) {
+      el.onclick = function () {
+        var k = el.getAttribute('data-ct'); try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        go(function () {
+          if (k === 'qc') return showQc();
+          if (k === 'med') return showMed();
+          view.innerHTML = subTop('cert', 'Сертификаты') + '<div id="certbox2" style="margin-top:4px"><div class="spin">Загрузка…</div></div>';
+          bindTabs(); showCert($('certbox2'));
+        });
+      };
+    });
+    // числа «не хватает» на плитках
+    function badge(k, n) {
+      var el = box.querySelector('[data-ct="' + k + '"] .bd'); if (!el) return;
+      el.style.display = ''; el.textContent = n; el.className = 'bd' + (n ? '' : ' z');
+    }
+    if (cp.cert) load2('/api/cert', {}, function (D) { if (D && D.ok) badge('cert', D.groups.reduce(function (a, g) { return a + g.n - g.full; }, 0)); });
+    if (cp.qc) load2('/api/qc', {}, function (D) { if (D && D.ok) badge('qc', D.cnt.missing + D.cnt.expired); });
+    if (cp.med) load2('/api/med', {}, function (D) { if (D && D.ok) badge('med', D.cnt.missing + D.cnt.expired); });
+  }
+  var QST = { ok: ['✅', 'ok', 'действует'], soon: ['⚠️', 'sn', 'скоро истекает'], expired: ['⛔', 'bad', 'истёк'], missing: ['❌', 'bad', 'нет'],
+              pending: ['⏳', 'sn', 'на проверке у Азиза'], checked: ['☑️', 'sn', 'проверен, ждёт подтверждения'], rejected: ['⛔', 'bad', 'отклонён'], none: ['➖', 'no', 'не требуется'] };
+  var qcF = '0';
+  function showQc() {
+    var me = cur;
+    view.innerHTML = subTop('cert', 'Контроль качества ГП') + '<div id="qcb"><div class="spin">Загрузка…</div></div>';
+    bindTabs();
+    load('/api/qc', {}, function (D) {
+      if (cur !== me) return;
+      var B = $('qcb'); if (!B) return;
+      if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      function draw() {
+        var c = D.cnt, F = [['0', '', 'Все', '', D.rows.length], ['ok', '✅', 'Действует', 'eq', c.ok + c.soon], ['missing', '❌', 'Нет', 'ne', c.missing], ['expired', '⛔', 'Истёк', 'ex', c.expired]];
+        var h = '<div class="note" style="text-align:left;margin:0 0 8px">Контрольная проверка готовой продукции — протокол лаборатории по каждому товару, действует 6 месяцев. ' +
+          'За 60 дней до конца — ⚠️, после — ⛔. ' + (D.up ? '📎 — загрузить новый протокол через бот документов, Азиз проверит.' : '') + '</div>' +
+          '<div class="crt-g st4">' + F.map(function (o) {
+            return '<div class="cb ' + o[3] + (qcF === o[0] ? ' on' : '') + '" data-qf="' + o[0] + '"><b>' + (o[1] ? '<i>' + o[1] + '</i>' : '') + o[4] + '</b><span>' + o[2] + '</span></div>';
+          }).join('') + '</div>';
+        var rows = D.rows.filter(function (r) { return qcF === '0' || (qcF === 'ok' ? (r.state === 'ok' || r.state === 'soon') : r.state === qcF); });
+        var g0 = '';
+        rows.forEach(function (r, i) {
+          if (r.group !== g0) { g0 = r.group; h += '<div class="ivsec">' + esc(g0) + '</div>'; }
+          var s = QST[r.state] || ['•', 'no', r.state];
+          var tail = r.num ? '№ ' + esc(r.num) + (r.issued ? ' · выдан ' + esc(r.issued) : '') + (r.until ? ' · до ' + esc(r.until) : '') + (r.left != null && r.state !== 'expired' ? ' · ' + r.left + ' дн.' : '') : s[2];
+          h += '<div class="crt"><div class="ch"><span class="nn">' + (i + 1) + '</span><b>' + esc(r.name) + '</b></div>' +
+            '<div class="cd ' + s[1] + '"><span class="ci">' + s[0] + '</span><span class="ct">Протокол</span><span class="cv">' + tail + '</span>' +
+            '<span class="cbt">' + (D.up && r.pid && ['missing', 'expired', 'soon', 'rejected'].indexOf(r.state) >= 0 ? '<button class="cdl cup" data-qu="' + esc(r.pid) + '">📎</button>' : '') + '</span></div></div>';
+        });
+        if (!rows.length) h += '<div class="empty">Нет товаров с таким состоянием</div>';
+        h += '<div class="note">Обновлено ' + esc(D.at) + '.</div>';
+        B.innerHTML = h;
+        Array.prototype.forEach.call(B.querySelectorAll('[data-qf]'), function (el) { el.onclick = function () { qcF = el.getAttribute('data-qf'); draw(); }; });
+        Array.prototype.forEach.call(B.querySelectorAll('[data-qu]'), function (b) {
+          b.onclick = function () {
+            b.disabled = true; b.textContent = '⏳';
+            call('/api/qc_up', { pid: b.getAttribute('data-qu') }, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = q.ok ? '✅' : '📎'; })
+              .catch(function (e) { b.disabled = false; b.textContent = '📎'; ivErr(e); });
+          };
+        });
+      }
+      draw();
+    });
+  }
+  var medF = '0';
+  function showMed() {
+    var me = cur;
+    view.innerHTML = subTop('cert', 'Медосмотры и обучение') + '<div id="medb"><div class="spin">Загрузка…</div></div>';
+    bindTabs();
+    function draw(D) {
+      if (cur !== me) return;
+      var B = $('medb'); if (!B) return;
+      if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var c = D.cnt, y0 = window.scrollY;
+      var F = [['0', '', 'Все', '', D.rows.length], ['bad', '❌', 'Нет / истёк', 'ne', D.rows.filter(function (r) { return r.bad; }).length],
+               ['soon', '⚠️', 'Скоро', 'ex', D.rows.filter(function (r) { return r.items.some(function (i) { return i.state === 'soon'; }); }).length]];
+      var h = '<div class="note" style="text-align:left;margin:0 0 8px">По каждому сотруднику: 🩺 медосмотр (на 12 мес.), 🧼 санминимум / гигиена GMP (12 мес.), ' +
+        '🦺 инструктаж по технике безопасности (6 мес.). ' + (D.edit ? 'Впишите дату, когда прошёл — срок посчитается сам. ' : '') + 'За 30 дней до конца — ⚠️.</div>' +
+        '<div class="crt-g st3">' + F.map(function (o) {
+          return '<div class="cb ' + o[3] + (medF === o[0] ? ' on' : '') + '" data-mf="' + o[0] + '"><b>' + (o[1] ? '<i>' + o[1] + '</i>' : '') + o[4] + '</b><span>' + o[2] + '</span></div>';
+        }).join('') + '</div>';
+      var rows = D.rows.filter(function (r) { return medF === '0' || (medF === 'bad' ? r.bad : r.items.some(function (i) { return i.state === 'soon'; })); });
+      h += rows.map(function (r, n) {
+        return '<div class="crt"><div class="ch"><span class="nn">' + (n + 1) + '</span><b>' + esc(r.name) + '</b></div>' + r.items.map(function (it) {
+          var s = QST[it.state] || QST.missing;
+          var u = it.until ? 'до ' + dmy(it.until) + (it.state !== 'expired' && it.left != null ? ' · ' + it.left + ' дн.' : '') : s[2];
+          return '<div class="cd md ' + s[1] + '"><span class="ci">' + s[0] + '</span><span class="ct">' + esc(it.title) + '</span><span class="cv">' + u + '</span>' +
+            '<span class="cbt">' + (D.edit ? '<input type="date" class="mdate" data-n="' + esc(r.name) + '" data-k="' + it.k + '" value="' + esc(it.done) + '">' : (it.done ? dmy(it.done) : '')) + '</span></div>';
+        }).join('') + '</div>';
+      }).join('') || '<div class="empty">Нет сотрудников с таким состоянием</div>';
+      B.innerHTML = h; window.scrollTo(0, y0);
+      Array.prototype.forEach.call(B.querySelectorAll('[data-mf]'), function (el) { el.onclick = function () { medF = el.getAttribute('data-mf'); draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('.mdate'), function (inp) {
+        inp.onchange = function () {
+          call('/api/med_set', { name: inp.getAttribute('data-n'), k: inp.getAttribute('data-k'), date: inp.value }, 30000).then(function (q) {
+            if (!q.ok) return say(q.text);
+            haptic('success'); D = q; draw(q);
+          }).catch(ivErr);
+        };
+      });
+    }
+    load('/api/med', {}, draw);
+  }
   // 23.11.2026 (руководитель): все вкладки главного экрана для «👥 Доступ» — в порядке экрана. Новая вкладка — добавить сюда,
   // тогда она сразу появится в «ВКЛАДКИ ГЛАВНОГО ЭКРАНА» (✅ Показать / ⛔ Скрыть). «Склады» — это две строки (завод и Ташкент).
-  var TAB_ACC = [['tab_ship', '🛒', 'Отгрузка'], ['tab_mv', '🚚', 'Перемещения'], ['tab_inc', '📥', 'Приходы'], ['tab_ret', '↩️', 'Возврат'],
+  var TAB_ACC = [['tab_ship', '🛒', 'Движение · Отгрузка'], ['tab_mv', '🚚', 'Движение · Перемещения'], ['tab_inc', '📥', 'Движение · Приходы'], ['tab_ret', '↩️', 'Движение · Возврат'],
                  ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
                  ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
                  ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата']];
@@ -3141,7 +3286,7 @@
       } else if (mf === 'ost') {
         h += '<div id="ostbox" style="margin-top:12px"><div class="spin">Загрузка листа остатков…</div></div>';
       } else if (/^(mv|inc|ret|ship)$/.test(mf)) {
-        h += '<div id="flowbox" style="margin-top:12px"><div class="spin">Загрузка из ERP…</div></div>';
+        h += mvSubRow(mf) + '<div id="flowbox" style="margin-top:4px"><div class="spin">Загрузка из ERP…</div></div>';
       } else if (mf === 'cert') {
         h += '<div id="certbox" style="margin-top:12px"><div class="spin">Загрузка документов…</div></div>';
       } else if (mf === 'zp') {
@@ -3179,7 +3324,17 @@
       }
       if (mf === 'ost') showOst($('ostbox'));
       if ($('flowbox')) showFlow(mf, $('flowbox'));
-      if ($('certbox')) showCert($('certbox'));
+      Array.prototype.forEach.call(view.querySelectorAll('[data-mvs]'), function (el) {   // кнопки внутри «🚚 Движение»
+        el.onclick = function () {
+          mfilter = el.getAttribute('data-mvs');
+          try { localStorage.setItem('pfl:mfilter', mfilter); localStorage.setItem('pfl:mvsub', mfilter); } catch (e) {}
+          try { mvLine = ''; flowDir = ''; mvStep = ''; mvN = null; } catch (e) {}
+          try { docFlt = { inc: '', ret: '', ship: 'ok' }; docPl = { inc: '', ship: '' }; docWho = { inc: '', ship: '' }; } catch (e) {}
+          try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+          showMenu();
+        };
+      });
+      if ($('certbox')) showCertTop($('certbox'), r.certp || { cert: true });
       if ($('zpbox')) showZp($('zpbox'));
       Array.prototype.forEach.call(view.querySelectorAll('[data-wf]'), function (el) {
         el.onclick = function () {
@@ -3958,13 +4113,13 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
-      var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
+      var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
       h += '<div class="whr' + (isTab ? ' tabr' : '') + '"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
         LV.map(function (p) { var v = p[0], on = isTab ? ((x.lv >= 1) === (v === 2)) : x.lv === v; return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (on ? ' class="on' + v + '"' : '') + '>' + p[1] + '</span>'; }).join('') + '</div>';
@@ -4003,7 +4158,9 @@
     // 23.11.2026 (руководитель): каждый вид документа — отдельно дать / не дать
     [['cert_sez', '🧾', 'СЭЗ'], ['cert_mz', '🏛', 'Разрешение Минздрава'], ['cert_ss', '✅', 'Сертификат соответствия'],
      ['cert_int', '🌍', 'Международный сертификат (экспорт)'], ['cert_exp', '⛔', 'Просроченные документы (конфиденциально)'],
-     ['cert_up', '📎', 'Загружать недостающие (через бот документов)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+     ['cert_up', '📎', 'Загружать недостающие (через бот документов)'],
+     ['cert_qc', '🔬', 'Контроль качества ГП'], ['med', '🩺', 'Медосмотры и обучение · смотреть'], ['med_edit', '✏️', 'Медосмотры и обучение · вписывать даты']]
+      .forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">📜 Вкладка «Разрешения» (вверху) ⛔ — её нет совсем. Показана — человек видит только виды документов с ✅ Дать (например, только СЭЗ). ' +
       '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
     h += '<div class="agrp">ЗАРПЛАТА</div>';   // 23.11.2026 (руководитель): вкладка «💰 Зарплата» — по умолчанию всем скрыта
