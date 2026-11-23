@@ -260,8 +260,10 @@
   .fchip[data-f=prod] { background: linear-gradient(150deg, #4fd68a, #0f8a4a); box-shadow: 0 4px 0 #0b5e33; }   /* 23.11: Из производства */
   .fchip[data-f=wh] { background: linear-gradient(150deg, #4fd6b8, #138f86); box-shadow: 0 4px 0 #0c6660; }   /* 23.11: Склады */
   .fchip[data-f=mvt] { background: linear-gradient(150deg, #8b7bff, #4b39c9); box-shadow: 0 4px 0 #34278f; }   /* 23.11: Движение */
-  .mvsub .cg b { display: block; font-size: 17px; font-weight: 900; } .mvsub .cg small { font-size: 11.5px; font-weight: 800; color: var(--hint); }
-  .mvsub .cg.on small, .mvsub .cg.on b { color: var(--btn); }
+  /* 23.11.2026: черта между вкладками и кнопками «Движения» */
+  .mvsep { display: flex; align-items: center; gap: 8px; margin: 6px 2px 8px; color: var(--hint); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
+  .mvsep:before, .mvsep:after { content: ""; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #6b5cf0, transparent); }
+  .fchips.mvrow { margin-bottom: 6px; }
   .fchip[data-f=zp] { background: linear-gradient(150deg, #7fdc9a, #1f9e5a); box-shadow: 0 4px 0 #13703e; }   /* 23.11: Зарплата */
   .fchip[data-f=cert] { background: linear-gradient(150deg, #e7b96a, #a8741c); box-shadow: 0 4px 0 #7a520f; }   /* 23.11: Разрешительные документы */
   .fchip[data-f=ship] { background: linear-gradient(150deg, #c18cff, #8a3fd1); box-shadow: 0 4px 0 #5f2a96; }
@@ -851,9 +853,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd20ae1c3', newBuild = '';
+  var BUILD = 'cd54159e', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795457564' || 0;
+  var BUILD_AT = +'1795458108' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1086,11 +1088,9 @@
   var MVT = ['ship', 'mv', 'inc', 'ret'], lastMv = [];   // 23.11.2026: внутри «🚚 Движение»
   function mvSubRow(active) {   // ряд кнопок внутри «Движения»: Отгрузка · Перемещения · Приходы · Возврат
     if (!lastMv.length) return '';
-    var NM = { ship: ['🛒', 'Отгрузка'], mv: ['🚚', 'Перемещения'], inc: ['📥', 'Приходы'], ret: ['↩️', 'Возврат'] };
-    return '<div class="crt-g st' + Math.max(3, lastMv.length) + ' mvsub">' + MVT.filter(function (k) { return lastMv.some(function (t) { return t[0] === k; }); }).map(function (k) {
-      var c = tabCount[k];
-      return '<div class="cg mv-' + k + (k === active ? ' on' : '') + '" data-mvs="' + k + '"><b>' + NM[k][0] + ' ' + (c != null ? c : '') + '</b><small>' + NM[k][1] + '</small></div>';
-    }).join('') + '</div>';
+    // 23.11.2026 (руководитель): кнопки внутри «Движения» — прежние цветные объёмные (важные), отделены чертой от вкладок
+    var fl = MVT.map(function (k) { return lastMv.filter(function (t) { return t[0] === k; })[0]; }).filter(Boolean);
+    return '<div class="mvsep"><span>🚚 Движение</span></div>' + tabRow(fl, true, active, false).replace('class="fchips sq"', 'class="fchips sq mvrow"');
   }
   function tabsHtml(active) {
     var fl = lastTabs;
@@ -1141,7 +1141,7 @@
           var av = lastMv.map(function (t) { return t[0]; });
           mfilter = av.indexOf(ms) >= 0 ? ms : (MVT.filter(function (k) { return av.indexOf(k) >= 0; })[0] || 'ship');
         }
-        try { localStorage.setItem('pfl:mfilter', mfilter); } catch (e) {}
+        try { localStorage.setItem('pfl:mfilter', mfilter); if (MVT.indexOf(mfilter) >= 0) localStorage.setItem('pfl:mvsub', mfilter); } catch (e) {}
         // 23.11.2026 (руководитель): вкладка сверху — раздел всегда с начала (не «остаётся на месте» внутри линии/направления/отбора)
         try { mvLine = ''; flowDir = ''; mvStep = ''; mvN = null; } catch (e) {}
         try { docFlt = { inc: '', ret: '', ship: 'ok' }; docPl = { inc: '', ship: '' }; docWho = { inc: '', ship: '' }; } catch (e) {}
