@@ -311,6 +311,9 @@
   .pcard .pcw { font-size: 14px; margin: 4px 0; color: var(--tg-theme-text-color, #1e1e1e); }
   .pcard .pcp .pl { display: inline-block; padding: 3px 10px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 15px; }
   .pcard .pcp small { color: var(--hint); font-weight: 700; }
+  .pcard { cursor: pointer; } .pcard:active { transform: translateY(2px); }
+  .pcard .pcgo { margin-top: 8px; padding: 10px; border-radius: 12px; text-align: center; font-weight: 900; font-size: 15px; color: #fff;
+                 background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 3px 0 #0f6f36; }
   .pcard .mvn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 11px;
                 background: #e8820c; color: #fff; font-size: 12px; font-weight: 900; }
   .mvlist { margin: 6px 0 4px; }
@@ -656,7 +659,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b9fd9f7c', newBuild = '';
+  var BUILD = 'dba87085', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1808,15 +1811,26 @@
       if (!rows.length) h += '<div class="empty">✅ Всё из производства уже на местах</div>';
       h += rows.map(function (x, j) {
         var fq = formOf(x.item);
-        return '<div class="pcard"><div class="pch"><span class="mvn">' + (j + 1) + '</span><b>№' + esc(x.id) + '</b><span>' +
+        return '<div class="pcard" data-pi="' + j + '"><div class="pch"><span class="mvn">' + (j + 1) + '</span><b>№' + esc(x.id) + '</b><span>' +
           esc(x.date ? x.date.slice(8, 10) + '.' + x.date.slice(5, 7) : '') + '</span></div>' +
           '<div class="pci">' + (fq ? fq[2] + ' ' : '') + esc(x.item) + (x.brand ? ' <small>· ' + esc(x.brand) + '</small>' : '') + '</div>' +
           '<div class="pcq"><b>' + n(x.qty) + ' шт</b>' + (x.boxes ? ' · ' + esc(x.boxes) : '') + '</div>' +
           '<div class="pcw">🏭 Производство → <b>' + esc(x.part) + '</b></div>' +
           (x.place ? '<div class="pcp"><span class="pl">📍 ' + esc(x.place) + '</span> <small>предложено</small></div>' : '<div class="pcp"><small>место ещё не предложено</small></div>') +
-          '</div>';
+          '<div class="pcgo">🖨 Наклейки и 📦 Поставить на место ›</div></div>';
       }).join('');
       box.innerHTML = h;
+      // 23.11.2026 (руководитель): карточка — кнопка: окно склада сразу с этой задачей «📦 Поставить · выпуск N»
+      // (там 🖨 Наклейки, 📷 скан коробки и места, «Поставить» — как раньше)
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pi]'), function (el) {
+        el.onclick = function () {
+          var x = rows[+el.getAttribute('data-pi')], it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(x.wh) >= 0; })[0];
+          if (!it) return say('Склад этого выпуска вам не открыт.');
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          wantTask = x.tkey;
+          go(function () { showWh(it, x.wh); });
+        };
+      });
     });
   }
   function showDoc(kind, id) {
