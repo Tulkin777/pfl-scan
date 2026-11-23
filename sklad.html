@@ -180,6 +180,7 @@
               font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 rgba(0,0,0,.2); }
   .tile .bd.z { background: rgba(255,255,255,.35); color: #fff; box-shadow: none; }
   .tile.wide { grid-column: span 2; min-height: 104px; }
+  .tile.cat.gpt { min-height: 110px; padding-top: 12px; } .tile.cat.gpt .e { font-size: 34px; }
   .ptag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 900; letter-spacing: 1px;
           background: #ffe39a; color: #7a4a00; box-shadow: 0 3px 0 rgba(0,0,0,.15); }   /* руководитель 22.11: не чёрно-белое, спокойные цвета */
   .ptag.ter { background: #c9ddff; color: #17468f; }
@@ -753,7 +754,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1f62b4a6', newBuild = '';
+  var BUILD = '5dd1e3f0', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1188,10 +1189,37 @@
           '</div>' + label + '<div class="c">' + docs(n0) + '</div>' + (extra || '') + '</div>';
       }
       var h = '', isT = s.city === 'Ташкент';
+      // 23.11.2026 (руководитель): «📦 Готовая продукция» — отдельная плитка первого экрана: Перечисление / Терминал →
+      // остаток по алфавиту, Завод · Ташкент · Итого (не внутри Завода и Ташкента)
+      if (s.gp) {
+        if (s.prod) {
+          V.innerHTML = subTop('inv', 'Инвентаризация · Готовая продукция · ' + s.prod) + '<div id="gpst"></div>';
+          bindTabs();
+          return invStock('Готовая продукция', s.prod, $('gpst'));
+        }
+        h = '<div class="mgrid">' + ['Перечисление', 'Терминал'].map(function (p) {
+          return '<div class="tile cat p" data-s=\'' + JSON.stringify({ gp: 1, prod: p }) + '\'><div class="e">📦</div>' +
+            '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div><div class="c gpsum" data-p="' + p + '">Завод · Ташкент · Итого</div></div>';
+        }).join('') + '</div>';
+        V.innerHTML = subTop('inv', 'Инвентаризация · Готовая продукция') + h;
+        bindTabs();
+        ['Перечисление', 'Терминал'].forEach(function (p) {   // итоги прямо на плитке (остаток ERP)
+          load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
+            var el = V.querySelector('.gpsum[data-p="' + p + '"]'), t = q && q.ok && q.tot && q.tot['шт'];
+            if (el && t) el.innerHTML = '🏭 ' + fmtq(t.zav) + ' · 🏙 ' + fmtq(t.tas) + '<br><b>Итого ' + fmtq(t.total) + ' шт</b> · ' + t.n + ' наим.';
+          });
+        });
+        Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
+          el.onclick = function () { var ns = JSON.parse(el.getAttribute('data-s')); try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(function () { showInv(ns); }); };
+        });
+        return;
+      }
       if (!s.city) {
         h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
           return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
-        }).join('') + '</div>' +
+        }).join('') +
+          '<div class="tile cat p wide gpt" data-s=\'' + JSON.stringify({ gp: 1 }) + '\'><div class="e">📦</div><div class="n">Готовая продукция</div>' +
+          '<div class="c">остаток по алфавиту · Завод · Ташкент · Итого</div></div></div>' +
           // 23.11.2026 (руководитель): созданные инвентаризации и проверка — сразу здесь, на первом экране
           '<div class="msec">📄 СОЗДАННЫЕ ИНВЕНТАРИЗАЦИИ · ' + rows.length + '</div><div class="invall"></div>';
       } else if (!s.kind) {   // всегда слева готовая продукция, справа сырьё (в Ташкенте — только готовая продукция)
