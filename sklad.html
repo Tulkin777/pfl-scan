@@ -802,9 +802,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '33ed416b', newBuild = '';
+  var BUILD = '8b990142', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795452987' || 0;
+  var BUILD_AT = +'1795453244' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1229,11 +1229,13 @@
   function whName(k) { return PARTNAME[k] || (ITEM[k] || {}).name || k; }
   // руководитель 22.11: шаги как на заводе — Завод/Ташкент → Готовая продукция/Сырьё → ПЕРЕЧИСЛЕНИЕ/ТЕРМИНАЛ → документы.
   // box — первый шаг прямо под вкладками главного экрана (шапка и вкладки не пропадают)
+  var invFull = true;   // 23.11.2026: false — дан только «📦 Остаток готовой продукции» (без документов и пересчёта)
   function showInv(s, box) {
     var me = cur, V = box || view;
     if (!box) title.textContent = '📋 ' + ([s.city, s.kind, s.prod].filter(Boolean).join(' · ') || 'Инвентаризация');
     if (!box) V.innerHTML = '<div class="spin">Загрузка документов ERP…</div>';
-    (box ? load2 : load)('/api/inv', {}, function (r) {
+    var src = s.gp && !invFull ? function (p, b, cb) { cb({ rows: [] }); } : (box ? load2 : load);   // только остаток — документы не нужны
+    src('/api/inv', {}, function (r) {
       if (cur !== me || (box && !document.body.contains(box))) return;
       if (!box) sub.textContent = 'Документы ERP на ' + (r.updated || '—') + ' · проверяет агент Темур';
       var rows = r.rows || [];
@@ -1265,9 +1267,11 @@
           // 23.11.2026 (руководитель): упор — на остаток: он сверху, крупно; пересчёт (жёлтые плитки) — ниже
           V.innerHTML = subTop('inv', 'Остаток готовой продукции · ' + s.prod) +
             '<div class="msec gpsec">📦 ОСТАТОК ГОТОВОЙ ПРОДУКЦИИ · ' + esc(s.prod.toUpperCase()) + '</div><div id="gpst"></div>' +
-            '<div class="msec">✏️ ПЕРЕСЧИТАТЬ (ИНВЕНТАРИЗАЦИЯ)</div><div id="invdz"></div><div id="invdt"></div>';
-          invdBox({ city: 'Завод', prod: s.prod }, 'Готовая продукция', 'invdz');
-          invdBox({ city: 'Ташкент', prod: s.prod }, 'Готовая продукция', 'invdt');
+            (invFull ? '<div class="msec">✏️ ПЕРЕСЧИТАТЬ (ИНВЕНТАРИЗАЦИЯ)</div><div id="invdz"></div><div id="invdt"></div>' : '');
+          if (invFull) {   // только остаток — без пересчёта
+            invdBox({ city: 'Завод', prod: s.prod }, 'Готовая продукция', 'invdz');
+            invdBox({ city: 'Ташкент', prod: s.prod }, 'Готовая продукция', 'invdt');
+          }
           bindTabs();
           return invStock('Готовая продукция', s.prod, $('gpst'));
         }
@@ -1275,7 +1279,7 @@
           return '<div class="tile cat p" data-s=\'' + JSON.stringify({ gp: 1, prod: p }) + '\'><div class="e">📦</div>' +
             '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div><div class="c gpsum" data-p="' + p + '">остаток загружается…</div></div>';
         }).join('') + '</div>';
-        V.innerHTML = subTop('inv', 'Остаток готовой продукции') + h;
+        V.innerHTML = (box ? '<div class="msec gpsec" style="margin-top:12px">📦 ОСТАТОК ГОТОВОЙ ПРОДУКЦИИ</div>' : subTop('inv', 'Остаток готовой продукции')) + h;
         bindTabs();
         ['Перечисление', 'Терминал'].forEach(function (p) {   // итоги прямо на плитке (остаток ERP)
           load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
@@ -2843,7 +2847,9 @@
       if (mf === 'wh' && whF.length === 1) mf = whF[0][0];   // один склад — сразу он
       var certOn = (r.cert || 0) >= 1;
       // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
-      var invOn = r.inv && r.inv.lv >= 1 && tabOn('inv'), ostOn = r.ost && tabOn('ost');
+      // 23.11.2026 (руководитель): «📦 Остаток готовой продукции» — отдельный доступ: без инвентаризации вкладка показывает только его
+      invFull = !!(r.inv && r.inv.lv >= 1);
+      var invOn = (invFull || !!r.gpost) && tabOn('inv'), ostOn = r.ost && tabOn('ost');
       if (invOn) fl.push(['inv', '📋 Инвент. и остаток']);   // 23.11.2026 (руководитель): название — «Инвентаризация и остаток»
       // 23.11.2026 (руководитель): вкладка «📦 Остаток» убрана — расхождение 1С ↔ ERP теперь в «📋 Инвент. и остаток»
       ostOn = false;
@@ -2882,7 +2888,7 @@
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
       bindCats();
-      if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
+      if (mf === 'inv') showInv(invFull ? {} : { gp: 1 }, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
       if (mf === 'ost') showOst($('ostbox'));
       if ($('flowbox')) showFlow(mf, $('flowbox'));
       if ($('certbox')) showCert($('certbox'));
@@ -3663,11 +3669,11 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k.indexOf('cert') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k === 'gpost' || k.indexOf('cert') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0 || it.key === 'gpost';
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
       var LV = it.key.indexOf('cert_') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
@@ -3697,7 +3703,9 @@
     row({ key: 'prod', emoji: '🏭', name: 'Из производства (выпуски цеха)' });
     h += '<div class="note">🏭 👁 — видит вкладку и выпуски · ✋ + «🖨 Наклейка и место» — печатает наклейку и ставит на место (QR). Окно склада завода — по правам «Готовая продукция завода».</div>';
     h += '<div class="agrp">ИНВЕНТАРИЗАЦИЯ</div>';
+    row({ key: 'gpost', emoji: '📦', name: 'Остаток готовой продукции' });   // 23.11.2026 (руководитель): отдельно от инвентаризации
     row({ key: 'inv', emoji: '📋', name: 'Инвентаризация (агент Темур)' });
+    h += '<div class="note">📦 Остаток готовой продукции — только он: вкладка «Инвент. и остаток» покажет лишь остаток ГП (Завод · Ташкент · Итого), без документов и пересчёта. 📋 Инвентаризация — всё (4 кнопки).</div>';
     h += '<div class="agrp">ПЕРЕМЕЩЕНИЯ</div>';
     row({ key: 'mv', emoji: '🚚', name: 'Перемещения' });
     h += '<div class="note">📦 Передал — склад «откуда» отдал (и «➕ Создать перемещение») · 🚛 Забрал — забрал после «Передал» · 📥 Принять — поставить на место (склад «куда»)</div>';
