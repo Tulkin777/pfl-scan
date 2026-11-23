@@ -513,6 +513,11 @@
   .backp:active { transform: translateY(2px); box-shadow: none; }
   /* 22.11.2026 (руководитель): «Назад» — отдельная крупная кнопка; рядом — где вы (просто надпись, не кнопка) */
   .navb { display: flex; align-items: stretch; gap: 10px; margin: 14px 0 10px; }
+  .navb .nrb { display: none; align-items: center; gap: 6px; margin-left: auto; }
+  .navb .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
+  body.fs .navb .nrb { display: flex; } body.fs .navb .nrb .rb { width: 32px; height: 32px; flex-basis: 32px; font-size: 14px; }
+  @media (min-width: 600px) { .navb .nrb { display: flex; } }
+  .ivw { max-width: 860px; }
   .navb .bk { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 0 14px 0 10px; min-height: 52px; border-radius: 16px;
               cursor: pointer; color: #fff; font-weight: 900; font-size: 16px; letter-spacing: .2px;
               background: linear-gradient(150deg, #4a5a7a, #26324a); box-shadow: 0 4px 0 #141c2c, 0 8px 14px rgba(20,28,44,.25); }
@@ -622,7 +627,8 @@
     #view > .seg { grid-column: 1 / -1; }
     #view:has(.dhead) > .box { grid-column: auto; }
     .backp { max-width: 640px; }
-    .navb { max-width: 760px; }
+    .navb { max-width: none; }
+    .ivhd, .ivr { grid-template-columns: minmax(0, 1fr) 96px 96px 120px; }
   }
 </style>
 </head>
@@ -700,7 +706,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1d135f77', newBuild = '';
+  var BUILD = '3d57f110', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -962,12 +968,22 @@
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
     var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
+    // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
+    var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
+      '<div class="rb" data-rf="1" title="Обновить">🔄</div>' + (isAdmin ? '<div class="rb" data-ac="1" title="Доступ">👥</div>' : '') + '</div>';
     return tabsHtml(active) + '<div class="navb c-' + esc(active) + '"><div class="bk" data-back="1"><i>⬅</i>Назад</div>' +
-      '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div></div>';
+      '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div>' + rbs + '</div>';
   }
+  var isAdmin = false;
   document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
     var b = e.target.closest && e.target.closest('[data-back]');
-    if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} goBack(); }
+    if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} goBack(); return; }
+    var c = e.target.closest && e.target.closest('[data-fs],[data-rf],[data-ac]');
+    if (!c) return;
+    try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {}
+    if (c.hasAttribute('data-fs')) { try { if (tg.isFullscreen) tg.exitFullscreen(); else tg.requestFullscreen(); } catch (x) {} }
+    else if (c.hasAttribute('data-rf')) { if (cur) cur(); }
+    else go(showAcc);
   });
   function catOf(g) { return CATS.filter(function (x) { return x.g === g; })[0]; }
   function catTile(c, tiles) {   // большая кнопка-раздел: задачи, склады, места, бренды
@@ -1200,7 +1216,7 @@
     var D = null;
     function draw() {
       var q = find.toLowerCase(), hit = function (r) { return !q || r.name.toLowerCase().indexOf(q) >= 0; };
-      var h = subTop('inv', 'Инвентаризация · ' + D.store_name) +
+      var h = subTop('inv', 'Инвентаризация · ' + D.store_name) + '<div class="ivw">' +
         '<div class="dhead st-iv"><div class="dn">' + (D.erp_doc ? '№' + esc(D.erp_doc) : '✏️ Черновик') + '</div><div class="ds">' +
         (D.erp_doc ? '📤 в ERP · «Новый»' : 'не в ERP') + '</div></div>' +
         '<div class="note" style="text-align:left;margin:0 0 8px">' + esc(D.store_name) + ' · начал ' + esc(D.by) + ' ' + esc(D.at.slice(8, 10) + '.' + D.at.slice(5, 7) + ' ' + D.at.slice(11)) +
@@ -1225,6 +1241,7 @@
         h += '<div class="ivbar"><button id="ivdel">🗑 Удалить</button><button class="go" id="iverp">📤 Создать в ERP · ' + D.n + ' поз.</button></div>' +
           '<div class="note">Сначала посчитайте и исправьте факт. В ERP документ создаётся один раз — изменить его потом нельзя.</div>';
       } else h += '<div class="note">👁 Только смотреть — менять факт не дано</div>';
+      h += '</div>';
       if (h === lastH) return;
       var y0 = window.scrollY, fo = document.activeElement && document.activeElement.id === 'ivfind';
       lastH = h; view.innerHTML = h; bindTabs(); window.scrollTo(0, y0);
@@ -2293,6 +2310,7 @@
         (canFull() ? '<div class="rb" id="fsb" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
         '<div class="rb" id="ref" title="Обновить">🔄</div>' +
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') + '</div>';
+      isAdmin = !!r.admin;
       tabCount = { zav: 0, tas: 0 };
       Object.keys(tiles).forEach(function (k2) { if (tabCount[ITEM[k2].f] != null) tabCount[ITEM[k2].f] += tiles[k2].t; });
       if (r.inv_n != null) tabCount.inv = r.inv_n;
@@ -3421,7 +3439,12 @@
   }
   if (canFull()) {
     try {
-      tg.onEvent('fullscreenChanged', function () { var b = $('fsb'); if (b) b.textContent = tg.isFullscreen ? '🗗' : '⛶'; });
+      document.body.classList.toggle('fs', !!tg.isFullscreen);
+      tg.onEvent('fullscreenChanged', function () {
+        document.body.classList.toggle('fs', !!tg.isFullscreen);   // во весь экран — кнопки и на внутренних экранах телефона
+        var b = $('fsb'); if (b) b.textContent = tg.isFullscreen ? '🗗' : '⛶';
+        Array.prototype.forEach.call(document.querySelectorAll('[data-fs]'), function (x) { x.textContent = tg.isFullscreen ? '🗗' : '⛶'; });
+      });
       tg.onEvent('fullscreenFailed', function () { say('Этот Telegram не умеет «во весь экран» — обновите Telegram.'); });
     } catch (e) {}
   }
