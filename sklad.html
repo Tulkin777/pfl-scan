@@ -756,7 +756,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b0580298', newBuild = '';
+  var BUILD = '6a02f14e', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1017,7 +1017,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация и остаток', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
@@ -1191,6 +1191,7 @@
           '</div>' + label + '<div class="c">' + docs(n0) + '</div>' + (extra || '') + '</div>';
       }
       var h = '', isT = s.city === 'Ташкент';
+      var ostOk = !!(mc && mc.ost), ostN = mc && mc.ost_n != null ? mc.ost_n : null;   // лист остатков 1С ↔ ERP (право как у «📦 Остаток»)
       // 23.11.2026 (руководитель): «📦 Готовая продукция» — отдельная плитка первого экрана: Перечисление / Терминал →
       // остаток по алфавиту, Завод · Ташкент · Итого (не внутри Завода и Ташкента)
       if (s.gp) {
@@ -1220,8 +1221,11 @@
         h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
           return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
         }).join('') +
-          '<div class="tile cat p wide gpt" data-s=\'' + JSON.stringify({ gp: 1 }) + '\'><div class="e">📦</div><div class="n">Готовая продукция</div>' +
-          '<div class="c">остаток по алфавиту · Завод · Ташкент · Итого</div></div></div>' +
+          '<div class="tile cat p' + (ostOk ? '' : ' wide') + ' gpt" data-s=\'' + JSON.stringify({ gp: 1 }) + '\'><div class="e">📦</div><div class="n">Готовая продукция</div>' +
+          '<div class="c">остаток · Завод · Ташкент · Итого</div></div>' +
+          // 23.11.2026 (руководитель): «⚖️ Расхождение 1С ↔ ERP» — число расхождений прямо на плитке, внутри — список
+          (ostOk ? '<div class="tile cat k gpt ostt"><div class="bd' + (ostN ? '' : ' z') + '">' + (ostN == null ? '…' : ostN) + '</div><div class="e">⚖️</div>' +
+            '<div class="n">Расхождение 1С ↔ ERP</div><div class="c">' + (ostN ? ostN + ' не сходится' : ostN === 0 ? 'всё сходится' : 'проверяю…') + '</div></div>' : '') + '</div>' +
           // 23.11.2026 (руководитель): созданные инвентаризации и проверка — сразу здесь, на первом экране
           '<div class="msec">📄 СОЗДАННЫЕ ИНВЕНТАРИЗАЦИИ · ' + rows.length + '</div><div class="invall"></div>';
       } else if (!s.kind) {   // всегда слева готовая продукция, справа сырьё (в Ташкенте — только готовая продукция)
@@ -1240,6 +1244,21 @@
       }
       V.innerHTML = (box ? '' : subTop('inv', 'Инвентаризация · ' + [s.city, s.kind, s.prod].filter(Boolean).join(' · '))) + h;
       if (!box) bindTabs();
+      if (V.querySelector('.ostt')) {   // ⚖️ расхождение: открыть список; число на плитке — свежее
+        V.querySelector('.ostt').onclick = function () {
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          go(function () {
+            view.innerHTML = subTop('inv', 'Инвентаризация · Расхождение 1С ↔ ERP') + '<div id="ostbox2"><div class="spin">Загрузка…</div></div>';
+            bindTabs(); showOst($('ostbox2'));
+          });
+        };
+        load2('/api/ost', {}, function (q) {
+          var t = V.querySelector('.ostt'); if (!t || !q || !q.gate) return;
+          var n = q.gate.length;
+          t.querySelector('.bd').textContent = n; t.querySelector('.bd').className = 'bd' + (n ? '' : ' z');
+          t.querySelector('.c').textContent = n ? n + ' не сходится' : 'всё сходится';
+        });
+      }
       if (V.querySelector('.invall')) invDocs(rows, (r.perm || {}).lv === 2 && ((r.perm || {}).acts || []).indexOf('task') >= 0, V.querySelector('.invall'));
       Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
         el.onclick = function () {
@@ -2499,7 +2518,7 @@
       var mf = fl.length < 2 ? 'all' : fl.some(function (f) { return f[0] === mfilter; }) ? mfilter : fl[0][0];   // одна вкладка — без вкладок
       // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
       var invOn = r.inv && r.inv.lv >= 1 && tabOn('inv'), ostOn = r.ost && tabOn('ost');
-      if (invOn) fl.push(['inv', '📋 Инвент.']);   // 23.11.2026 (руководитель): остаток — отдельной вкладкой «📦 Остаток»
+      if (invOn) fl.push(['inv', '📋 Инвент. и остаток']);   // 23.11.2026 (руководитель): название — «Инвентаризация и остаток»
       if (ostOn) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
       if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       lastTabs = fl;
@@ -3316,7 +3335,7 @@
     // 23.11.2026 (руководитель): вкладки главного экрана — показать / скрыть каждому (даже если склад дан)
     h += '<div class="agrp">ВКЛАДКИ ГЛАВНОГО ЭКРАНА</div>';
     [['ship', '🛒', 'Отгрузка'], ['mv', '🚚', 'Перемещения'], ['inc', '📥', 'Приходы'], ['ret', '↩️', 'Возврат'], ['prod', '🏭', 'Из производства'],
-     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация'], ['ost', '📦', 'Остаток (лист)']].forEach(function (t) {
+     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация и остаток'], ['ost', '📦', 'Остаток (лист)']].forEach(function (t) {
       row({ key: 'tab_' + t[0], emoji: t[1], name: t[2] });
     });
     h += '<div class="note">⛔ Скрыть — вкладки у человека нет на главном экране, данные по ней сервер не даёт. Склады и кнопки — по правам ниже.</div>';
