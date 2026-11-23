@@ -543,6 +543,15 @@
   .cst.q { background: rgba(31,98,201,.14); color: #1f62c9; } .cst.ok { background: rgba(23,150,74,.15); color: #17803c; }
   .cst.bad { background: rgba(214,59,59,.14); color: #c0392b; } .cst.st, .cst.none { background: rgba(255,170,40,.2); color: #a85f00; }
   /* 23.11.2026: Разрешения — ровная сетка: состояние (3–4 одинаковые) и группа (по 4 в ряд) */
+  .zpt { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; border-radius: 10px; border: 1px solid rgba(127,127,127,.25); margin: 0 0 8px; }
+  .zpt table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+  .zpt td { padding: 4px 6px; border-bottom: 1px solid rgba(127,127,127,.18); border-right: 1px solid rgba(127,127,127,.12); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+  .zpt td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .zpt tr.ti td { font-weight: 800; white-space: normal; background: var(--bg2); max-width: none; position: sticky; left: 0; }
+  .zpt tr.ti .tt { position: sticky; left: 6px; max-width: min(820px, calc(100vw - 50px)); white-space: normal; }
+  .zpt tr.ti td { position: static; }
+  .zpt tr.sp td { height: 6px; padding: 0; border: 0; }
+  .zpf { cursor: pointer; } .zpf.on { outline: 2px solid var(--btn); }
   .zpf { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; }
   .zpf .nn { min-width: 20px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; }
   .zpf .t { flex: 1; min-width: 0; } .zpf .t b { display: block; font-size: 15px; text-transform: capitalize; } .zpf .t small { color: var(--hint); font-size: 12px; }
@@ -826,9 +835,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6e7b6d08', newBuild = '';
+  var BUILD = 'db2ad1b3', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795456209' || 0;
+  var BUILD_AT = +'1795456932' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2874,6 +2883,12 @@
   // 23.11.2026 (руководитель): 💰 Зарплата — как инвентаризация: две кнопки рядом (📋 Посещение · ⏱ Табель), длинная внизу
   // (💵 Расчёт зарплаты завода). Внутри — файлы по месяцам: ⬇️ в личку бота склада (через час удалится); посещение —
   // 📎 загрузить отчёт iVMS-4200 через личку бота документов (агент Камол разберёт)
+  // 23.11.2026 (руководитель): все вкладки главного экрана для «👥 Доступ» — в порядке экрана. Новая вкладка — добавить сюда,
+  // тогда она сразу появится в «ВКЛАДКИ ГЛАВНОГО ЭКРАНА» (✅ Показать / ⛔ Скрыть). «Склады» — это две строки (завод и Ташкент).
+  var TAB_ACC = [['tab_ship', '🛒', 'Отгрузка'], ['tab_mv', '🚚', 'Перемещения'], ['tab_inc', '📥', 'Приходы'], ['tab_ret', '↩️', 'Возврат'],
+                 ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
+                 ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
+                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'] };
   function showZp(box) {
@@ -2910,12 +2925,23 @@
         var fs = P2.files || [];
         h += '<div class="msec">' + esc(P2.title.toUpperCase()) + ' · ' + fs.length + '</div>';
         h += fs.length ? fs.map(function (f, i) {
-          return '<div class="zpf"><span class="nn">' + (i + 1) + '</span><div class="t"><b>' + esc(f.month || f.id) + '</b><small>' + esc(f.at) + ' · ' + f.kb + ' КБ</small></div>' +
+          return '<div class="zpf" data-zv="' + p + '" data-id="' + esc(f.id) + '"><span class="nn">' + (i + 1) + '</span><div class="t"><b>' + esc(f.month || f.id) + '</b><small>' + esc(f.at) + ' · ' + f.kb + ' КБ · 👁 смотреть ниже</small></div>' +
             '<button class="cdl" data-zg="' + p + '" data-id="' + esc(f.id) + '" title="Скачать — в личку бота">⬇️</button></div>';
         }).join('') : '<div class="empty" style="padding:14px">Файлов пока нет</div>';
       });
-      h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните).</div>';
+      h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). Нажмите строку — таблица этого месяца ниже.</div>' +
+        '<div id="zpv"></div>';
       B.innerHTML = h;
+      // 23.11.2026 (руководитель): таблица сразу ниже — смотреть, что начислено и что удержано, не скачивая
+      var first = B.querySelector('[data-zv]');
+      if (first) zpView(first.getAttribute('data-zv'), first.getAttribute('data-id'));
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zv]'), function (el) {
+        el.onclick = function (ev) {
+          if (ev.target.closest('button')) return;
+          try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+          zpView(el.getAttribute('data-zv'), el.getAttribute('data-id'), true);
+        };
+      });
       if ($('zpup')) $('zpup').onclick = function () {
         var b = this; b.disabled = true; b.textContent = '⏳';
         call('/api/zp_dav_up', {}, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = '📎 Загрузить отчёт посещения'; })
@@ -2930,6 +2956,39 @@
           }).catch(function (e) { b.disabled = false; b.textContent = '⬇️'; ivErr(e); });
         };
       });
+    });
+  }
+  // таблица файла зарплаты на экране: листы — кнопками, таблица прокручивается вбок, числа — вправо
+  var zpSheet = {};
+  function zpView(kind, id, scroll) {
+    var V = $('zpv'); if (!V) return;
+    Array.prototype.forEach.call(document.querySelectorAll('.zpf'), function (el) { el.classList.toggle('on', el.getAttribute('data-id') === id); });
+    V.innerHTML = '<div class="spin">Загрузка таблицы…</div>';
+    load2('/api/zp_view', { kind: kind, id: id }, function (D) {
+      var V2 = $('zpv'); if (!V2) return;
+      if (!D || !D.ok) { V2.innerHTML = '<div class="empty">' + esc((D && D.text) || 'Таблица не открылась') + '</div>'; return; }
+      var si = Math.min(zpSheet[kind] || 0, D.sheets.length - 1);
+      function draw() {
+        var S = D.sheets[si] || { rows: [] };
+        var isN = function (v) { return /^-?[\d ]+([.,]\d+)?$/.test(v); };
+        var h = '<div class="msec">👁 ' + esc(D.title) + (D.month ? ' · ' + esc(D.month) : '') + '</div>' +
+          (D.sheets.length > 1 ? '<div class="crt-g st' + Math.min(D.sheets.length, 4) + '">' + D.sheets.map(function (s, i) {
+            return '<div class="cg' + (i === si ? ' on' : '') + '" data-zs="' + i + '">' + esc(s.name) + '<small>' + s.rows.length + ' строк</small></div>';
+          }).join('') + '</div>' : '') +
+          '<div class="zpt"><table>' + S.rows.map(function (r, ri) {
+            if (!r.some(Boolean)) return '<tr class="sp"><td colspan="' + r.length + '"></td></tr>';
+            // заголовок / пояснение (одна клетка или длинный текст в первой) — строкой во всю ширину, остальное — через «·»
+            if (r[0] && (r.filter(Boolean).length === 1 || r[0].length > 24)) return '<tr class="ti"><td colspan="' + Math.max(r.length, 1) + '"><div class="tt">' +
+              esc(r.filter(Boolean).join(' · ')) + '</div></td></tr>';
+            return '<tr>' + r.map(function (v) { return '<td' + (isN(v) ? ' class="n"' + (/^-/.test(v) ? ' style="color:#d63b3b"' : '') : '') + '>' + esc(v) + '</td>'; }).join('') + '</tr>';
+          }).join('') + '</table></div>' + (S.cut ? '<div class="note">Показаны первые 400 строк — весь файл: ⬇️</div>' : '');
+        V2.innerHTML = h;
+        Array.prototype.forEach.call(V2.querySelectorAll('[data-zs]'), function (el) {
+          el.onclick = function () { si = +el.getAttribute('data-zs'); zpSheet[kind] = si; draw(); };
+        });
+      }
+      draw();
+      if (scroll) V2.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
   var menuTimer = null;
@@ -3836,10 +3895,8 @@
     }
     // 23.11.2026 (руководитель): вкладки главного экрана — показать / скрыть каждому (даже если склад дан)
     h += '<div class="agrp">ВКЛАДКИ ГЛАВНОГО ЭКРАНА</div>';
-    [['ship', '🛒', 'Отгрузка'], ['mv', '🚚', 'Перемещения'], ['inc', '📥', 'Приходы'], ['ret', '↩️', 'Возврат'], ['prod', '🏭', 'Из производства'],
-     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация']].forEach(function (t) {   // «Остаток» — убран (23.11)
-      row({ key: 'tab_' + t[0], emoji: t[1], name: t[2] });
-    });
+    // 23.11.2026 (руководитель): ВСЕ вкладки главного экрана — здесь, в том же порядке; новая вкладка — сразу сюда (TAB_ACC)
+    TAB_ACC.forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">⛔ Скрыть — вкладки у человека нет на главном экране, данные по ней сервер не даёт. Склады и кнопки — по правам ниже.</div>';
     SECTIONS.forEach(function (s) {
       h += '<div class="agrp">' + esc(s.head + ' · ' + s.sub).toUpperCase() + '</div>';
@@ -3858,17 +3915,17 @@
     row({ key: 'mv', emoji: '🚚', name: 'Перемещения' });
     h += '<div class="note">📦 Передал — склад «откуда» отдал (и «➕ Создать перемещение») · 🚛 Забрал — забрал после «Передал» · 📥 Принять — поставить на место (склад «куда»)</div>';
     h += '<div class="agrp">РАЗРЕШИТЕЛЬНЫЕ ДОКУМЕНТЫ</div>';   // 23.11.2026 (руководитель): последняя вкладка «📜»
-    row({ key: 'cert', emoji: '📜', name: 'Вкладка «Разрешения»' });
+    // вкладка «📜 Разрешения» — вверху, в «Вкладках главного экрана»; здесь — что внутри
     // 23.11.2026 (руководитель): каждый вид документа — отдельно дать / не дать
     [['cert_sez', '🧾', 'СЭЗ'], ['cert_mz', '🏛', 'Разрешение Минздрава'], ['cert_ss', '✅', 'Сертификат соответствия'],
      ['cert_int', '🌍', 'Международный сертификат (экспорт)'], ['cert_exp', '⛔', 'Просроченные документы (конфиденциально)'],
      ['cert_up', '📎', 'Загружать недостающие (через бот документов)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
-    h += '<div class="note">📜 Вкладка ⛔ — её нет совсем. Показана — человек видит только виды документов с ✅ Дать (например, только СЭЗ). ' +
+    h += '<div class="note">📜 Вкладка «Разрешения» (вверху) ⛔ — её нет совсем. Показана — человек видит только виды документов с ✅ Дать (например, только СЭЗ). ' +
       '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
     h += '<div class="agrp">ЗАРПЛАТА</div>';   // 23.11.2026 (руководитель): вкладка «💰 Зарплата» — по умолчанию всем скрыта
-    [['zp', '💰', 'Вкладка «Зарплата»'], ['zp_dav', '📋', 'Посещение (смотреть и загружать)'], ['zp_tab', '⏱', 'Табель в минутах'],
+    [['zp_dav', '📋', 'Посещение (смотреть и загружать)'], ['zp_tab', '⏱', 'Табель в минутах'],
      ['zp_pay', '💵', 'Расчёт зарплаты и ведомость']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
-    h += '<div class="note">💰 Вкладка ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
+    h += '<div class="note">💰 Вкладка «Зарплата» (вверху) ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
     h += '<div class="note">💻 👁 или ✋ — можно: /pc в боте даёт ссылку, работает 08:50–18:00. ⛔ — нельзя, ссылка сразу перестаёт работать. Склады — те же права.</div>';
