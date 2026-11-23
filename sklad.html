@@ -459,6 +459,7 @@
   .dhead .dn { font-size: 26px; font-weight: 900; } .dhead .ds { margin-left: auto; font-weight: 900; font-size: 14px; background: rgba(255,255,255,.22); border-radius: 10px; padding: 4px 10px; }
   .rt2.big { font-size: 14px; }
   .tl div { font-size: 14px; padding: 5px 0; border-top: 1px solid rgba(127,127,127,.15); } .tl .nx { color: var(--hint); }
+  .act-give { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; box-shadow: 0 4px 0 #a85f00; margin-top: 8px; }
   .act-road { background: linear-gradient(150deg, #8b7bff, #4b39c9) !important; box-shadow: 0 4px 0 #34278f; margin-top: 8px; }
   .act-came { background: linear-gradient(150deg, #6fb2ff, #1f62c9) !important; box-shadow: 0 4px 0 #154a9a; margin-top: 8px; }
   button.drv { background: linear-gradient(150deg, #8b7bff, #4b39c9); color: #fff; box-shadow: 0 3px 0 #34278f; }
@@ -633,7 +634,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f09d3d5b', newBuild = '';
+  var BUILD = '4768ddfa', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1213,7 +1214,7 @@
           mvBadge(x) +
           '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
           '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
-          trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
+          trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv && x.drv.taken ? '<div class="tdrv">🚛 забрал · ' + esc(x.drv.driver) + '</div>' : x.drv && x.drv.handed ? '<div class="tdrv">📦 передал · ' + esc(x.drv.handed_by || '') + '</div>' : '') + '</div>';
       };
       var openCards = function () {
         Array.prototype.forEach.call(box.querySelectorAll('[data-mv]'), function (el) {
@@ -1488,7 +1489,7 @@
       var d = x.drv || {}, rd = x.ready, fin = x.status === 2;   // принято без отметок водителя — не «ждём», а «без отметки»
       var accBy = x.acc_by === 'claude' ? 'бот (по «Принять» в группе)' : x.acc_by;
       var T = [['🟡', x.date, 'создано в ERP · ' + x.author, true],
-               ['📦', rd && rd.at, rd ? 'собрано · ' + rd.by + (rd.batches ? ' · партий: ' + rd.batches : '') : (fin ? 'собрано — без отметки бота' : 'ждём: кладовщик соберёт и отдаст'), !!rd],
+               ['📦', rd && rd.at, rd ? (rd.handed ? 'передал · ' : 'собрано · ') + rd.by + (rd.batches ? ' · партий: ' + rd.batches : '') : (fin ? 'без отметки «Передал»' : 'ждём: «📦 Передал»'), !!rd],
                ['🚛', d.taken, d.taken ? 'забрал · ' + d.driver : (fin ? 'без отметки «Забрал»' : 'ждём: «Забрал»'), !!d.taken],
                ['🟢', x.acc, fin ? 'принято' + (accBy ? ' · ' + accBy : '') : 'ждём: кладовщик «куда» примет', fin]];
       if (d.prob) T.splice(4, 0, ['❗', d.prob, 'у водителя проблема', true]);
@@ -1499,8 +1500,11 @@
         return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[3] && t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
       }).join('') + '</div></div>';
       // кнопка действия — по шагу и по праву (📦 Отправить · 🚛 Везти · 📥 Принять)
-      // 23.11.2026 (руководитель): только «Забрал», без водителя (никого не информируем; «Привёз», «Проблема», «Назначить водителя» — позже)
-      if (!inside && (x.step === 'new' || x.step === 'ready') && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал</button>';
+      // 23.11.2026 (руководитель): два шага против случайных нажатий — сначала «📦 Передал» (склад «откуда», право «Передал»),
+      // только потом «🚛 Забрал» (право «Забрал»). Без водителя, никого не информируем.
+      if (x.step === 'new' && can('send')) h += '<button class="main act-give" data-act="give">📦 Передал</button>';
+      else if (x.step === 'new' && !inside) h += '<div class="note">Ждём «📦 Передал» от склада «откуда» — потом появится «🚛 Забрал».</div>';
+      if (!inside && x.step === 'ready' && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал</button>';
       h += '<div class="row" style="margin-top:8px">' +
         (x.from_wh && can('send') ? '<button data-go="' + x.from_wh + '">➡ Склад «откуда»' + (x.step === 'new' ? ' · собрать' : '') + '</button>' : '') +
         (x.to_wh && can('accept') ? '<button data-go="' + x.to_wh + '">➡ Склад «куда»' + (x.step === 'came' ? ' · принять' : '') + '</button>' : '') + '</div>' +
@@ -2615,7 +2619,7 @@
   // ---------- 👥 Доступ (только руководитель) ----------
   // 22.11.2026 (руководитель «Подходит, делай»): роли-шаблоны + свои исключения сотрудника; ⛔ не видит · 👁 смотрит · ✋ работает
   var ACC = null;
-  var ACTNAME = { task: '✅ Задачи', swap: '🔀 Переставить', label: '🖨 Наклейки', send: '📦 Отправить', drive: '🚛 Везти', accept: '📥 Принять' };
+  var ACTNAME = { task: '✅ Задачи', swap: '🔀 Переставить', label: '🖨 Наклейки', send: '📦 Передал', drive: '🚛 Забрал', accept: '📥 Принять' };   // 23.11: Передал → Забрал
   var LVNAME = ['⛔ Не видит', '👁 Смотрит', '✋ Работает'];
   function accLoad(render) {
     var c0 = cur;   // ушли на другой экран — не перерисовывать
@@ -2684,7 +2688,7 @@
     row({ key: 'inv', emoji: '📋', name: 'Инвентаризация (агент Темур)' });
     h += '<div class="agrp">ПЕРЕМЕЩЕНИЯ</div>';
     row({ key: 'mv', emoji: '🚚', name: 'Перемещения' });
-    h += '<div class="note">📦 Отправить — собрать и отдать (кладовщик «откуда») · 🚛 Везти — Забрал / Привёз (водитель) · 📥 Принять — поставить на место (кладовщик «куда»)</div>';
+    h += '<div class="note">📦 Передал — склад «откуда» отдал (и «➕ Создать перемещение») · 🚛 Забрал — забрал после «Передал» · 📥 Принять — поставить на место (склад «куда»)</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
     h += '<div class="note">💻 👁 или ✋ — можно: /pc в боте даёт ссылку, работает 08:50–18:00. ⛔ — нельзя, ссылка сразу перестаёт работать. Склады — те же права.</div>';
