@@ -863,9 +863,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '0e9f94e4', newBuild = '';
+  var BUILD = 'd7a36aeb', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795465034' || 0;
+  var BUILD_AT = +'1795465372' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1883,16 +1883,16 @@
     var whs = (r.wh || {})[s.city + '|' + s.prod + '|' + kind] || [];
     // 23.11.2026 (руководитель): внутри — только «➕ Пересчёт» (создать) и «📍 Где лежит»; проверка — на первом экране,
     // остаток — отдельной вкладкой главного экрана
-    var tab = s.tab === 'where' ? 'where' : 'docs', h = '<div class="seg"><button data-t="docs"' + (tab === 'docs' ? ' class="on"' : '') + '>➕ Пересчёт</button>' +
-      '<button data-t="where"' + (tab === 'where' ? ' class="on"' : '') + '>📍 Где лежит</button></div><div id="invb"></div>';
-    view.innerHTML = subTop('inv', 'Инвентаризация · ' + [s.city, kind, s.prod].join(' · ')) + h;
+    // 24.11.2026 (руководитель «зачем кнопка ➕ Пересчёт»): переключатель «Пересчёт / Где лежит» убран — экран сразу пересчёт
+    // (жёлтые плитки), «📍 Где что лежит» — кнопкой внизу, отдельным экраном (назад — «⬅ Назад»)
+    var tab = s.tab === 'where' ? 'where' : 'docs', h = '<div id="invb"></div>';
+    view.innerHTML = subTop('inv', 'Инвентаризация · ' + [s.city, kind, s.prod].join(' · ') + (tab === 'where' ? ' · Где что лежит' : '')) + h;
     bindTabs();
-    Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
-      b.onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = b.getAttribute('data-t'); cur = function () { showInv(ns); }; cur(); };
-    });
     var B = $('invb');
     if (tab === 'docs') {
-      B.innerHTML = '<div id="invdbox"></div><div class="note">Созданные инвентаризации, «🔎 Проверить» и «✅ Подтвердить» — на первом экране «Инвентаризация».</div>';
+      B.innerHTML = '<div id="invdbox"></div><button id="invwhere" style="margin-top:4px">📍 Где что лежит — места и партии</button>' +
+        '<div class="note">Созданные инвентаризации, «🔎 Проверить» и «✅ Провести» — на первом экране «Инвентаризация».</div>';
+      $('invwhere').onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = 'where'; go(function () { showInv(ns); }); };
       invdBox(s, kind);
       return;
     }
