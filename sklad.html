@@ -805,9 +805,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5c6bff7c', newBuild = '';
+  var BUILD = '7e8d4224', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795454541' || 0;
+  var BUILD_AT = +'1795455354' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2772,9 +2772,10 @@
       if (cur !== me || !box.isConnected) return;
       if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       var gs = D.groups, nAll = 0, nFull = 0;
-      function gcnt(g) { return certBad === '2' ? g.full : certBad === '1' ? g.n - g.full : g.n; }
+      function gcnt(g) { return certBad === '2' ? g.full : certBad === '1' ? g.n - g.full : certBad === '3' ? (g.nexp || 0) : g.n; }
       gs.forEach(function (g) { nAll += g.n; nFull += g.full; });
       if (certG && !gs.some(function (g) { return g.group === certG; })) certG = '';
+      if (certBad === '3' && !D.exp) certBad = '0';   // нет доступа к просроченным — фильтра нет
       var h = '<div class="ivsum" style="grid-template-columns:repeat(3,1fr)"><div><b>' + nAll + '</b>товаров</div><div class="eq"><b>' + nFull + '</b>всё есть</div>' +
         '<div class="ne"><b>' + (nAll - nFull) + '</b>не хватает</div></div>' +
         // 23.11.2026 (руководитель «пропал список»): группа и «всё есть / не хватает» действуют вместе — числа на кнопках
@@ -2784,20 +2785,25 @@
           return '<span data-cg="' + esc(g.group) + '"' + (certG === g.group ? ' class="on"' : '') + (c ? '' : ' style="opacity:.5"') + '>' +
             esc(g.group.charAt(0) + g.group.slice(1).toLowerCase()) + ' · ' + c + '</span>';
         }).join('') + '</div>' +
-        '<div class="crt-f">' + [['0', 'Все товары'], ['2', '✅ Только где всё есть'], ['1', '❌ Только где не хватает']].map(function (o) {
-          var c = gs.filter(function (g) { return !certG || g.group === certG; }).reduce(function (a, g) { return a + (o[0] === '2' ? g.full : o[0] === '1' ? g.n - g.full : g.n); }, 0);
+        // 23.11.2026 (руководитель): «⛔ Только просроченные» — по отдельному доступу (конфиденциально)
+        '<div class="crt-f">' + [['0', 'Все товары'], ['2', '✅ Только где всё есть'], ['1', '❌ Только где не хватает']].concat(D.exp ? [['3', '⛔ Только просроченные']] : []).map(function (o) {
+          var c = gs.filter(function (g) { return !certG || g.group === certG; }).reduce(function (a, g) { return a + (o[0] === '2' ? g.full : o[0] === '1' ? g.n - g.full : o[0] === '3' ? (g.nexp || 0) : g.n); }, 0);
           return '<span data-cb="' + o[0] + '"' + (certBad === o[0] ? ' class="on"' : '') + '>' + o[1] + ' · ' + c + '</span>';
         }).join('') + '</div>';
       var n = 0;
       gs.forEach(function (g) {
         if (certG && g.group !== certG) return;
-        var rows = g.rows.filter(function (r) { return certBad === '1' ? r.bad : certBad === '2' ? !r.bad : true; });
+        var rows = g.rows.filter(function (r) { return certBad === '1' ? r.bad : certBad === '2' ? !r.bad : certBad === '3' ? r.exp > 0 : true; });
+        if (certBad === '3') rows = rows.map(function (r) {   // в товаре — только его просроченные документы
+          return Object.assign({}, r, { docs: r.docs.filter(function (d) { return d.state === 'expired'; }) });
+        });
         if (!rows.length) return;
         h += '<div class="ivsec">' + esc(g.group) + ' · ' + rows.length + '</div>';
         rows.forEach(function (r) {
           n++;
           h += '<div class="crt"><div class="ch"><span class="nn">' + n + '</span><b>' + esc(r.name) + '</b>' +
-            '<span class="cs ' + (r.bad ? 'bad' : 'ok') + '">' + r.have + '/' + r.docs.length + '</span></div>' +
+            (certBad === '3' ? '<span class="cs bad">⛔ ' + r.docs.length + ' просроч.</span></div>'
+              : '<span class="cs ' + (r.bad ? 'bad' : 'ok') + '">' + r.have + '/' + r.docs.length + '</span></div>') +
             r.docs.map(function (d) {
               var s = CST[d.state] || ['•', 'no', d.state];
               var tail = d.state === 'ok' || d.state === 'soon' || d.state === 'checked' ?
@@ -2813,7 +2819,8 @@
         });
       });
       if (!n) h += '<div class="empty">' + (certG ? 'В группе «' + esc(certG.charAt(0) + certG.slice(1).toLowerCase()) + '» ' : '') +
-        (certBad === '1' ? 'всё есть — не хватает ни у одного товара 👍' : certBad === '2' ? 'нет товара, у которого есть все документы' : 'товаров нет') +
+        (certBad === '1' ? 'всё есть — не хватает ни у одного товара 👍' : certBad === '2' ? 'нет товара, у которого есть все документы'
+          : certBad === '3' ? 'просроченных документов нет 👍' : 'товаров нет') +
         (certG ? '.<br>Нажмите «Все», чтобы увидеть все группы.' : '') + '</div>';
       h += '<div class="note">' + (D.all ? '' : 'Вам видны: ' + esc((D.types || []).join(', ')) + '. ') + '⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). ' +
         (D.up ? '📎 — нет / истёк: бот документов @pfl_hujjat_bot попросит у вас файл в личке, Азиз проверит и добавит сюда. ' : '') +
@@ -3759,8 +3766,10 @@
     row({ key: 'cert', emoji: '📜', name: 'Вкладка «Разрешения»' });
     // 23.11.2026 (руководитель): каждый вид документа — отдельно дать / не дать
     [['cert_sez', '🧾', 'СЭЗ'], ['cert_mz', '🏛', 'Разрешение Минздрава'], ['cert_ss', '✅', 'Сертификат соответствия'],
-     ['cert_int', '🌍', 'Международный сертификат (экспорт)'], ['cert_up', '📎', 'Загружать недостающие (через бот документов)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
-    h += '<div class="note">📜 Вкладка ⛔ — её нет совсем. Показана — человек видит только виды документов с ✅ Дать (например, только СЭЗ). Вы видите всё.</div>';
+     ['cert_int', '🌍', 'Международный сертификат (экспорт)'], ['cert_exp', '⛔', 'Просроченные документы (конфиденциально)'],
+     ['cert_up', '📎', 'Загружать недостающие (через бот документов)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+    h += '<div class="note">📜 Вкладка ⛔ — её нет совсем. Показана — человек видит только виды документов с ✅ Дать (например, только СЭЗ). ' +
+      '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
     h += '<div class="note">💻 👁 или ✋ — можно: /pc в боте даёт ссылку, работает 08:50–18:00. ⛔ — нельзя, ссылка сразу перестаёт работать. Склады — те же права.</div>';
