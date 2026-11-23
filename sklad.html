@@ -719,7 +719,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8ddf4f51', newBuild = '';
+  var BUILD = '7234cdb7', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -939,7 +939,8 @@
     if (fl.length < 2 && !lastTabs2.length) return '';
     var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
     if (lastTabs2.length) {   // 22.11.2026 (руководитель): порядок — Отгрузка · Перемещ. · Возврат · Приходы / Завод · Ташкент · Инвент. · Остаток
-      var ORD = ['ship', 'mv', 'ret', 'inc', 'prod', 'zav', 'tas', 'inv', 'ost'], all8 = fl.concat(lastTabs2);
+      // 23.11.2026 (руководитель): Отгрузка · Перемещение · Приход · Возврат · Из производства · склады · Инвентаризация · Остаток
+      var ORD = ['ship', 'mv', 'inc', 'ret', 'prod', 'zav', 'tas', 'inv', 'ost'], all8 = fl.concat(lastTabs2);
       all8.sort(function (a, b) { var i = ORD.indexOf(a[0]), j = ORD.indexOf(b[0]); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       var h8 = '';
       for (var i8 = 0; i8 < all8.length; i8 += 4) h8 += tabRow(all8.slice(i8, i8 + 4), true, active, i8 + 4 >= all8.length);
@@ -990,7 +991,7 @@
   }
   var isAdmin = false;
   // 23.11.2026 (руководитель): значок «выключить» как в Windows — красный, всем знаком
-  var PWR = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7.05 6.05a8 8 0 1 0 9.9 0"/><path d="M12 3v8"/></svg>';
+  var PWR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M7.05 6.05a8 8 0 1 0 9.9 0"/><path d="M12 3v8"/></svg>';
   document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
     var b = e.target.closest && e.target.closest('[data-back]');
     if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} goBack(); return; }
