@@ -578,7 +578,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5b74f266', newBuild = '';
+  var BUILD = '676ac154', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -2084,6 +2084,7 @@
       if (cur !== me || !document.body.contains(box)) return;
       if (!p || p.mode === 'none' || !(p.lines || []).length) { box.innerHTML = p && p.text ? '<div class="note">' + esc(p.text) + '</div>' : ''; return; }
       var so = $('sostav');
+      if (so) so.classList.add('plc');
       if (so) so.innerHTML = '<h3>Состав · ' + p.lines.length + ' · 📍 откуда брать</h3>' + p.lines.map(function (y, j) {
         var fq = formOf(y.item);
         return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
