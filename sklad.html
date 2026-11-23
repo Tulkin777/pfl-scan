@@ -521,6 +521,23 @@
   body.fs .navb .nrb { display: flex; } body.fs .navb .nrb .rb { width: 32px; height: 32px; flex-basis: 32px; font-size: 14px; }
   @media (min-width: 600px) { .navb .nrb { display: flex; } }
   .ivw { max-width: 860px; }
+  /* 23.11.2026: «📦 Остаток» — Завод зелёный · Ташкент синий · Итого тёмный; ноль бледный */
+  .stsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 8px; max-width: 860px; }
+  .stsum.one { grid-template-columns: 1fr; }
+  .stsum div { border-radius: 12px; padding: 7px 8px; font-size: 12px; text-align: center; }
+  .stsum small { display: block; font-size: 12px; font-weight: 800; } .stsum b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
+  .stsum .zv { background: rgba(30,130,64,.12); color: #17803c; } .stsum .tv { background: rgba(31,98,201,.12); color: #1f62c9; }
+  .stsum .it { background: var(--bg2); color: var(--fg); }
+  .sthd, .str { display: grid; grid-template-columns: minmax(0, 1fr) 62px 62px 66px; gap: 6px; align-items: center; max-width: 860px; }
+  .sthd.one, .str.one { grid-template-columns: minmax(0, 1fr) 90px; }
+  .sthd { font-size: 12px; color: var(--hint); padding: 2px 6px 4px; position: sticky; top: 0; background: var(--bg); z-index: 2; font-weight: 800; }
+  .sthd span:not(:first-child), .str .n { text-align: right; } .sthd .zv { color: #17803c; } .sthd .tv { color: #1f62c9; }
+  .stl { max-width: 860px; font-size: 12px; font-weight: 900; color: var(--hint); margin: 8px 6px 2px; letter-spacing: .5px; }
+  .str { padding: 7px 6px; border-bottom: 1px solid rgba(127,127,127,.15); font-size: 14px; }
+  .str .nm { font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; } .str .u { font-size: 11px; color: var(--hint); font-weight: 400; }
+  .str .br { font-size: 10px; padding: 0 4px; border-radius: 5px; vertical-align: 1px; }
+  .str .n { font-variant-numeric: tabular-nums; font-weight: 700; } .str .zv { color: #17803c; } .str .tv { color: #1f62c9; } .str .it { font-weight: 900; }
+  .str .z { font-style: normal; color: var(--hint); opacity: .5; font-weight: 400; }
   .navb .bk { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 0 14px 0 10px; min-height: 52px; border-radius: 16px;
               cursor: pointer; color: #fff; font-weight: 900; font-size: 16px; letter-spacing: .2px;
               background: linear-gradient(150deg, #4a5a7a, #26324a); box-shadow: 0 4px 0 #141c2c, 0 8px 14px rgba(20,28,44,.25); }
@@ -646,6 +663,7 @@
     .backp { max-width: 640px; }
     .navb { max-width: none; }
     .ivhd, .ivr { grid-template-columns: minmax(0, 1fr) 96px 96px 120px; }
+    .sthd, .str { grid-template-columns: minmax(0, 1fr) 110px 110px 120px; }
   }
 </style>
 </head>
@@ -723,7 +741,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '4de41f44', newBuild = '';
+  var BUILD = '4372d3e7', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -984,7 +1002,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация и остаток', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
@@ -1333,18 +1351,62 @@
       D = x; draw();
     });
   }
+  // 23.11.2026 (руководитель): остаток — коротко, по алфавиту, Завод (зелёный) · Ташкент (синий) · Итого; ноль — бледная «—»
+  function invStock(kind, prod, B) {
+    var me = cur, find = '', lastH = '';
+    B.innerHTML = '<div class="spin">Загрузка остатка ERP…</div>';
+    load2('/api/inv_stock', { kind: kind, prod: prod }, function (r) {
+      if (cur !== me || !document.body.contains(B)) return;
+      if (!r.ok) { B.innerHTML = '<div class="empty">' + esc(r.text || 'Нет данных') + '</div>'; return; }
+      var T = r.has_tas;
+      var q0 = function (v) { return v ? fmtq(v) : '<i class="z">—</i>'; };
+      function draw() {
+        var q = find.toLowerCase(), rows = r.rows.filter(function (x) { return !q || x.short.toLowerCase().indexOf(q) >= 0; });
+        var h = '<div class="stsum' + (T ? '' : ' one') + '">' + Object.keys(r.tot).slice(0, 1).map(function (u) {
+          var t = r.tot[u];
+          return (T ? '<div class="zv"><small>🏭 Завод</small><b>' + fmtq(t.zav) + '</b>' + esc(u) + '</div><div class="tv"><small>🏙 Ташкент</small><b>' + fmtq(t.tas) + '</b>' + esc(u) + '</div>' : '') +
+            '<div class="it"><small>Σ Итого</small><b>' + fmtq(t.total) + '</b>' + esc(u) + ' · ' + t.n + ' наим.</div>';
+        }).join('') + '</div>' + (Object.keys(r.tot).length > 1 ? '<div class="note" style="margin:0 0 6px">ещё: ' + Object.keys(r.tot).slice(1).map(function (u) {
+          return fmtq(Math.round(r.tot[u].total)) + ' ' + esc(u); }).join(' · ') + '</div>' : '') +
+          '<input class="txt ivfind" id="stfind" placeholder="🔎 Найти товар" value="' + esc(find) + '">' +
+          '<div class="sthd' + (T ? '' : ' one') + '"><span>товар</span>' + (T ? '<span class="zv">Завод</span><span class="tv">Ташкент</span>' : '') + '<span>Итого</span></div>';
+        var L = '';
+        rows.forEach(function (x) {
+          var l0 = x.short.replace(/^[^0-9A-Za-zА-Яа-яЁё]+/, '').replace(/^(сироп|капля|раствор|капсулы?)\s+/i, '').charAt(0).toUpperCase();
+          if (/[0-9]/.test(l0)) l0 = '0–9';
+          if (l0 !== L) { L = l0; h += '<div class="stl">' + esc(L) + '</div>'; }
+          var fq = formOf(x.name);
+          h += '<div class="str' + (T ? '' : ' one') + '"><div class="nm">' + (fq ? fq[2] + ' ' : '') + esc(x.short) +
+            (x.brand ? ' <span class="br ' + (BRCL[x.brand] || '') + '">' + esc({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[x.brand] || x.brand) + '</span>' : '') +
+            ' <span class="u">' + esc(x.unit) + '</span></div>' +
+            (T ? '<div class="n zv">' + q0(x.zav) + '</div><div class="n tv">' + q0(x.tas) + '</div>' : '') + '<div class="n it">' + q0(x.total) + '</div></div>';
+        });
+        if (!rows.length) h += '<div class="empty">Не найдено</div>';
+        h += '<div class="note">Остаток ERP на ' + esc(r.at) + (T ? ' · Завод: ' + esc((r.stores.zav || []).join(', ')) + ' · Ташкент: ' + esc((r.stores.tas || []).join(', ')) : '') + '</div>';
+        if (h === lastH) return;
+        var fo = document.activeElement && document.activeElement.id === 'stfind';
+        lastH = h; B.innerHTML = h;
+        $('stfind').oninput = function () { find = this.value; draw(); };
+        if (fo) { $('stfind').focus(); $('stfind').setSelectionRange(find.length, find.length); }
+      }
+      draw();
+    });
+  }
   function invList(s, r) {
     var kind = s.kind || 'Готовая продукция';
     var rows = (r.rows || []).filter(function (x) { return x.city === s.city && x.production === s.prod && x.kind === kind; });
     var whs = (r.wh || {})[s.city + '|' + s.prod + '|' + kind] || [], can = (r.perm || {}).lv === 2 && ((r.perm || {}).acts || []).indexOf('task') >= 0;
-    var tab = s.tab || 'docs', h = '<div class="seg"><button data-t="docs"' + (tab === 'docs' ? ' class="on"' : '') + '>📄 Документы · ' + rows.length +
-      '</button><button data-t="where"' + (tab === 'where' ? ' class="on"' : '') + '>📍 Что где лежит</button></div><div id="invb"></div>';
+    // 23.11.2026 (руководитель): «Инвентаризация и остаток» — первым «📦 Остаток» (по алфавиту: Завод · Ташкент · Итого)
+    var tab = s.tab || 'stock', h = '<div class="seg"><button data-t="stock"' + (tab === 'stock' ? ' class="on"' : '') + '>📦 Остаток</button>' +
+      '<button data-t="docs"' + (tab === 'docs' ? ' class="on"' : '') + '>📄 Инвент. · ' + rows.length +
+      '</button><button data-t="where"' + (tab === 'where' ? ' class="on"' : '') + '>📍 Где</button></div><div id="invb"></div>';
     view.innerHTML = subTop('inv', 'Инвентаризация · ' + [s.city, kind, s.prod].join(' · ')) + h;
     bindTabs();
     Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
       b.onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = b.getAttribute('data-t'); cur = function () { showInv(ns); }; cur(); };
     });
     var B = $('invb');
+    if (tab === 'stock') return invStock(kind, s.prod, B);
     if (tab === 'docs') {
       // 23.11.2026: «➕ Создать инвентаризацию» и черновики — над документами ERP
       if (!rows.length) { B.innerHTML = '<div id="invdbox"></div><div class="empty">✅ Не проведённых инвентаризаций нет</div>'; invdBox(s, kind); return; }
@@ -2362,7 +2424,7 @@
       var mf = fl.length < 2 ? 'all' : fl.some(function (f) { return f[0] === mfilter; }) ? mfilter : fl[0][0];   // одна вкладка — без вкладок
       // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
       var invOn = r.inv && r.inv.lv >= 1;
-      if (invOn) fl.push(['inv', '📋 Инвент.']);
+      if (invOn) fl.push(['inv', '📋 Инвент. и остаток']);   // 23.11.2026 (руководитель): инвентаризация и остаток — вместе
       if (r.ost) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
       if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost) || (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow)) mf = mfilter;
       lastTabs = fl;
