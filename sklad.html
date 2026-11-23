@@ -633,7 +633,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '616f8c00', newBuild = '';
+  var BUILD = 'f09d3d5b', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1474,9 +1474,16 @@
       var h = subTop('mv', 'Перемещения · ' + dirName(x.dir));
       h += '<div class="dhead st-' + x.step + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[x.step] + '</div></div>' +
         mvBadge(x) + '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
-      h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
-        var fq = formOf(y.name);
-        return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '<br><b>' + n(y.qty) + ' шт</b>' + (y.boxes ? ' · ' + esc(y.boxes) : '') + '</div>';
+      // 23.11.2026 (руководитель): у каждой строки — название и место (как в отгрузке): посмотрел — нажал «Забрал»
+      var anyPl = x.lines.some(function (y) { return (y.places || []).length; });
+      h += '<div class="box' + (anyPl ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (anyPl ? ' · 📍 откуда брать' : '') + '</h3>' + x.lines.map(function (y, j) {
+        var fq = formOf(y.name), pl = y.places || [];
+        return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · ' + n(y.qty) + ' шт</span>' +
+          (y.boxes ? '<br><small style="color:var(--hint)">' + esc(y.boxes) + '</small>' : '') +
+          pl.map(function (p) {
+            return '<br><span class="pl">📍 ' + esc(p.code || p.addr) + '</span> ' + (p.batch ? '<b>п.' + esc(p.batch) + '</b> · ' : '') + n(p.qty) + ' шт' +
+              (p.hint ? ' <small style="color:var(--hint)">· по схеме</small>' : '');
+          }).join('') + '</div>';
       }).join('') + '</div>';
       var d = x.drv || {}, rd = x.ready, fin = x.status === 2;   // принято без отметок водителя — не «ждём», а «без отметки»
       var accBy = x.acc_by === 'claude' ? 'бот (по «Принять» в группе)' : x.acc_by;
