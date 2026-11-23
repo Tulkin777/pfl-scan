@@ -584,7 +584,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '28184c8c', newBuild = '';
+  var BUILD = 'eba4c131', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1387,6 +1387,7 @@
       });
       if (kind === 'inc') load2('/api/flow', { kind: 'prod' }, function () {});   // число «ждут места» — к следующему показу
       if (kind === 'ship') load2('/api/ship_docs', {}, function () {});   // 22.11.2026: счёт-фактуры и спецификации всех отгрузок — заранее
+      if (kind === 'ship') load2('/api/ship_places_all', {}, function () {});   // 23.11.2026: места всех отгрузок — заранее (карточка без перерисовки)
       Array.prototype.forEach.call(box.querySelectorAll('[data-doc]'), function (el) {
         el.onclick = function () {
           var id = el.getAttribute('data-doc');
@@ -1489,11 +1490,15 @@
     });
   }
   function showDoc(kind, id) {
-    var me = cur, NM = kind === 'inc' ? 'Приходы' : kind === 'ship' ? 'Отгрузка' : 'Возврат';
+    var me = cur, NM = kind === 'inc' ? 'Приходы' : kind === 'ship' ? 'Отгрузка' : 'Возврат', lastSig = null;
     view.innerHTML = '<div class="spin">Загрузка…</div>';
     load('/api/flow', { kind: kind }, function (r) {
       if (cur !== me) return;
       var x = (r.rows || []).filter(function (y) { return String(y.id) === String(id); })[0];
+      // 23.11.2026 (руководитель «не переключать»): свежий список с тем же документом — карточку не перерисовывать
+      var sg = JSON.stringify(x || null);
+      if (sg === lastSig) return;
+      lastSig = sg;
       if (!x) { view.innerHTML = subTop(kind, NM) + '<div class="empty">Документ уже не в списке</div>'; return bindTabs(); }
       var st = docStep(kind, x), SN = { new: '🟡 СОЗДАН — НЕ ПРОВЕДЁН', ok: '🟢 ПРОВЕДЁН', shelf: '📍 НА ПОЛКЕ' };
       var h = subTop(kind, NM + ' · №' + x.id);
@@ -1502,13 +1507,15 @@
         h += '<div class="dhead st-' + st + '"><div class="dn">' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' + numRow(x, true) +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st) + sigRow(x);
-        h += '<div class="box" id="sostav"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+        var p0 = plcOf(x.id);   // места — заранее загружены со списком: сразу рисуем с ними, без переключения
+        h += plcOk(p0) ? '<div class="box plc" id="sostav">' + sostavInner(p0) + '</div>'
+          : '<div class="box" id="sostav"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
           var fq = formOf(y.name);
           return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
             (y.boxes ? ' · ' + esc(y.boxes) : '') + '<span class="bt" data-li="' + j + '"></span></div>';
         }).join('') + '</div>';
         // 23.11.2026 (руководитель): сразу после состава — «✅ Взял» и «Склад «откуда»» (до счёт-фактуры и спецификации)
-        if (x.to_wh) h += '<div id="plbox"></div><button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' +
+        if (x.to_wh) h += '<div id="plbox">' + vzHtml(p0, st) + '</div><button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' +
           x.to_wh + '">➡ Склад «откуда»' + (st === 'new' ? ' · собрать по номерам' : ' · окно склада') + '</button>';
         // 22.11.2026 (руководитель): счёт-фактура 1С с партиями; в составе — номер партии у каждой строки
         h += '<div id="sfbox"></div>';
@@ -2088,27 +2095,39 @@
   // 23.11.2026 (руководитель): место — прямо в строках состава; «✅ Взял» — сразу под составом.
   // noted (отгружено в ERP, в боте не отмечено): «⚠️ Отгружено: N» → «✅ Взяли с этих мест — списать».
   // pick (задача «Собрать»): «Продажа: N» → «✅ Собрано» (берёт с мест) → если в ERP уже отгружено — «🚚 Отгружено».
+  // 23.11.2026 (руководитель «не переключать — сразу основу»): места всех отгрузок грузятся заранее со списком
+  // (/api/ship_places_all) — карточка сразу рисуется с местами; свежее с сервера перерисовывает, только если изменилось.
+  var PLC_KEY = '/api/ship_places_all' + JSON.stringify({});
+  function plcOf(id) { var a = cget(PLC_KEY); return a && a.docs && a.docs[String(id)]; }
+  function plcOk(p) { return p && p.mode !== 'none' && (p.lines || []).length; }
+  function sostavInner(p) {
+    return '<h3>Состав · ' + p.lines.length + ' · 📍 откуда брать</h3>' + p.lines.map(function (y, j) {
+      var fq = formOf(y.item);
+      return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
+        ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
+    }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
+  }
+  function vzLabel(p, st) { return p.mode === 'noted' || st === 'ok' ? '✅ Взял — списать с этих мест' : '✅ Взял — собрано'; }
+  function vzHtml(p, st) {
+    // 23.11.2026 (руководитель): «Взял» — только у отгруженных; у «Создано» — места видны, кнопки нет
+    if (!plcOk(p) || st !== 'ok') return '';
+    if (!p.can) return '<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
+    if (p.mode === 'noted' && !p.ready) return '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» и отметьте места.</div>';
+    return '<button class="main" id="vzyal" style="margin-top:8px;background:linear-gradient(150deg,#4fd68a,#17964a)">' + vzLabel(p, st) + '</button>';
+  }
   function shipPlaces(x, box, st) {
-    var me = cur;
+    var me = cur, p0 = plcOf(x.id);
+    var bind = function (p) { if ($('vzyal')) $('vzyal').onclick = function () { vzyal(x, p, $('vzyal'), vzLabel(p, st), st); }; };
+    if (p0) bind(p0);   // уже нарисовано сразу из заранее загруженного
     call('/api/ship_places', { id: x.id }, 30000).then(function (p) {
       if (cur !== me || !document.body.contains(box)) return;
-      if (!p || p.mode === 'none' || !(p.lines || []).length) { box.innerHTML = p && p.text ? '<div class="note">' + esc(p.text) + '</div>' : ''; return; }
+      if (p0 && JSON.stringify(p) === JSON.stringify(p0)) return;   // не изменилось — ничего не перерисовывать
+      var a = cget(PLC_KEY);
+      if (a && a.docs) { a.docs[String(x.id)] = p; cset(PLC_KEY, a); }
       var so = $('sostav');
-      if (so) so.classList.add('plc');
-      if (so) so.innerHTML = '<h3>Состав · ' + p.lines.length + ' · 📍 откуда брать</h3>' + p.lines.map(function (y, j) {
-        var fq = formOf(y.item);
-        return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
-          ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
-      }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
-      var lbl = p.mode === 'noted' || st === 'ok' ? '✅ Взял — списать с этих мест' : '✅ Взял — собрано';
-      var h = '';
-      // 23.11.2026 (руководитель): «Взял» — только у отгруженных; у «Создано» — места видны, кнопки нет
-      if (st !== 'ok') h = '';
-      else if (!p.can) h ='<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
-      else if (p.mode === 'noted' && !p.ready) h = '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» и отметьте места.</div>';
-      else h = '<button class="main" id="vzyal" style="margin-top:8px;background:linear-gradient(150deg,#4fd68a,#17964a)">' + lbl + '</button>';
-      box.innerHTML = h;
-      if ($('vzyal')) $('vzyal').onclick = function () { vzyal(x, p, $('vzyal'), lbl, st); };
+      if (so && plcOk(p)) { so.classList.add('plc'); so.innerHTML = sostavInner(p); }
+      box.innerHTML = vzHtml(p, st) || (p && p.text ? '<div class="note">' + esc(p.text) + '</div>' : '');
+      bind(p);
     }).catch(function () {});
   }
   function vzyal(x, p, b, lbl, st) {
