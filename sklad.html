@@ -288,6 +288,9 @@
   /* 23.11.2026 (руководитель): место заметно, но спокойно — тёмно-синяя плашка, белый шрифт (как кнопка «Назад») */
   .plc .pl { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 15px;
              letter-spacing: .3px; box-shadow: 0 2px 0 #18202f; }
+  /* 23.11.2026 (руководитель): заголовок состава и товар — жирно, крупнее, чёрным, без фона */
+  .plc h3 { color: var(--fg, #111); font-weight: 900; font-size: 15px; letter-spacing: .2px; }
+  .plc .ln .it { color: var(--fg, #111); font-weight: 900; font-size: 15px; }
   .plc .pl.no { background: #ffe3e3; color: #c0392b; }
   .dir.dir2 div { font-size: 16px; padding: 14px 6px; } .dir.dir2 div b { font-size: 24px; }
   .dir.dir2 div small { display: block; font-size: 11px; font-weight: 700; opacity: .85; margin-top: 2px; }
@@ -580,7 +583,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'bd7eb328', newBuild = '';
+  var BUILD = '2ef300e5', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -2089,8 +2092,8 @@
       if (so) so.classList.add('plc');
       if (so) so.innerHTML = '<h3>Состав · ' + p.lines.length + ' · 📍 откуда брать</h3>' + p.lines.map(function (y, j) {
         var fq = formOf(y.item);
-        return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
-          ' · <b>' + n(y.qty) + ' шт</b><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
+        return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
+          ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
       }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
       var lbl = p.mode === 'noted' || st === 'ok' ? '✅ Взял — списать с этих мест' : '✅ Взял — собрано';
       var h = '';
