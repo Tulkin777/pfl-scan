@@ -285,7 +285,9 @@
   .dir.dir4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   /* 23.11.2026 (руководитель): Перемещения — шаг 1 две плитки линий, шаг 2 четыре направления мелко в один ряд */
   .dir.dir2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .plc .pl { display: inline-block; margin-top: 3px; padding: 2px 8px; border-radius: 8px; background: #fff1dc; color: #a85a00; font-weight: 900; font-size: 15px; }
+  /* 23.11.2026 (руководитель): место заметно, но спокойно — тёмно-синяя плашка, белый шрифт (как кнопка «Назад») */
+  .plc .pl { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 15px;
+             letter-spacing: .3px; box-shadow: 0 2px 0 #18202f; }
   .plc .pl.no { background: #ffe3e3; color: #c0392b; }
   .dir.dir2 div { font-size: 16px; padding: 14px 6px; } .dir.dir2 div b { font-size: 24px; }
   .dir.dir2 div small { display: block; font-size: 11px; font-weight: 700; opacity: .85; margin-top: 2px; }
@@ -578,7 +580,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '676ac154', newBuild = '';
+  var BUILD = 'bd7eb328', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
