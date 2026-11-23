@@ -517,7 +517,9 @@
   .navb .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
   .rb.ext { background: linear-gradient(150deg, #ff5a4f, #d32f2f); color: #fff; box-shadow: 0 3px 0 #9a1f1f; }
   .rb.ext:active { transform: translateY(2px); box-shadow: none; }
-  .rb.ext svg { display: block; }
+  .rb.ext svg { display: block; width: 13px; height: 13px; }
+  /* руководитель 23.11: кнопка выключения — сама на 20% меньше соседних (36 → 29) */
+  .rb.ext { width: 29px !important; height: 29px !important; flex: 0 0 29px !important; margin: 0 2px; }
   /* руководитель 23.11: кнопки на ВСЕХ экранах всегда — телефон: строкой сверху справа; широкий экран: в шапке */
   .nrbrow { display: flex; justify-content: flex-end; margin: 0 0 8px; }
   .nrbrow .nrb { display: flex; align-items: center; gap: 8px; }
@@ -751,7 +753,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f4621f23', newBuild = '';
+  var BUILD = '1f62b4a6', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1012,7 +1014,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация и остаток', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
@@ -1189,7 +1191,9 @@
       if (!s.city) {
         h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
           return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
-        }).join('') + '</div>';
+        }).join('') + '</div>' +
+          // 23.11.2026 (руководитель): созданные инвентаризации и проверка — сразу здесь, на первом экране
+          '<div class="msec">📄 СОЗДАННЫЕ ИНВЕНТАРИЗАЦИИ · ' + rows.length + '</div><div class="invall"></div>';
       } else if (!s.kind) {   // всегда слева готовая продукция, справа сырьё (в Ташкенте — только готовая продукция)
         h = '<div class="mgrid">' + [['Готовая продукция', isT ? '🏙' : '🏭', isT ? 'b' : 'g'], ['Сырьё', '🧪', 'y']].filter(function (k) { return !isT || k[0] !== 'Сырьё'; }).map(function (k) {
           return tile({ city: s.city, kind: k[0] }, k[2], k[1], '<div class="n">' + k[0] + '</div>',
@@ -1206,6 +1210,7 @@
       }
       V.innerHTML = (box ? '' : subTop('inv', 'Инвентаризация · ' + [s.city, s.kind, s.prod].filter(Boolean).join(' · '))) + h;
       if (!box) bindTabs();
+      if (V.querySelector('.invall')) invDocs(rows, (r.perm || {}).lv === 2 && ((r.perm || {}).acts || []).indexOf('task') >= 0, V.querySelector('.invall'));
       Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
         el.onclick = function () {
           var ns = JSON.parse(el.getAttribute('data-s'));
@@ -1406,63 +1411,63 @@
       draw();
     });
   }
+  // 23.11.2026 (руководитель): созданные инвентаризации ERP и «Проверить / Подтвердить» — на ПЕРВОМ экране «Инвентаризации»
+  function invDocs(rows, can, B) {
+    if (!rows.length) { B.innerHTML = '<div class="empty">✅ Не проведённых инвентаризаций нет</div>'; return; }
+    B.innerHTML = rows.map(function (x, i) {
+      return '<div class="doc"><div class="dh"><b><span class="ino">' + (i + 1) + '</span>№' + esc(x.doc) + '</b><span class="st">' + esc(x.status_text) + '</span></div>' +
+        '<div class="dm">' + esc(x.date) + ' · ' + esc(String(x.author || '').split(' ')[0]) + ' · ' + esc(x.place) + ' · разница: <b>' + esc(x.diff) + '</b></div>' +
+        // Темур проверил, ошибки нет — «✅ Подтвердить» (руководитель и назначенные), после него Темур проводит в ERP
+        '<div class="row3">' + ((x.status === 'approve' || x.status === 'approve_fixed')
+          ? '<button class="b1 inv-ok" data-ap="' + i + '">✅ Подтвердить инвентаризацию</button>'
+          : (can && !x.done ? '<button class="b1" data-c="' + i + '">🔎 Проверить (Темур)</button>' : '')) +
+        (x.has_excel ? '<button data-x="' + i + '">📄 Excel</button>' : '') + '</div></div>';
+    }).join('') + (can ? '' : '<div class="note">👁 Только смотреть — «Проверить» не дано</div>');
+    Array.prototype.forEach.call(B.querySelectorAll('[data-c]'), function (b) {
+      b.onclick = function () {
+        var x = rows[+b.getAttribute('data-c')]; b.disabled = true; b.textContent = '⏳ Отправляю Темуру…';
+        call('/api/inv_check', { doc: x.doc }, 30000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; })
+          .catch(function (e) { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; ivErr(e); });
+      };
+    });
+    Array.prototype.forEach.call(B.querySelectorAll('[data-ap]'), function (b) {
+      b.onclick = function () {
+        var x = rows[+b.getAttribute('data-ap')];
+        var q0 = 'Подтвердить инвентаризацию №' + x.doc + '?\nТемур проверил: ошибки нет (разница ' + x.diff + ').\nПосле подтверждения Темур проведёт документ в ERP.';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Подтверждаю…';
+          call('/api/inv_approve', { doc: x.doc }, 60000).then(function (q) {
+            haptic(q.ok ? 'success' : 'warning'); say(q.text);
+            b.textContent = q.ok ? '✅ Подтверждено — проводится в ERP' : '✅ Подтвердить инвентаризацию'; b.disabled = !!q.ok;
+          }).catch(function (e) { b.disabled = false; b.textContent = '✅ Подтвердить инвентаризацию'; ivErr(e); });
+        };
+        try { tg.showConfirm(q0, go_); } catch (e) { go_(confirm(q0)); }
+      };
+    });
+    Array.prototype.forEach.call(B.querySelectorAll('[data-x]'), function (b) {
+      b.onclick = function () {
+        var x = rows[+b.getAttribute('data-x')];
+        call('/api/inv_excel', { doc: x.doc }, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); }).catch(ivErr);
+      };
+    });
+  }
   function invList(s, r) {
     var kind = s.kind || 'Готовая продукция';
-    var rows = (r.rows || []).filter(function (x) { return x.city === s.city && x.production === s.prod && x.kind === kind; });
-    var whs = (r.wh || {})[s.city + '|' + s.prod + '|' + kind] || [], can = (r.perm || {}).lv === 2 && ((r.perm || {}).acts || []).indexOf('task') >= 0;
-    // 23.11.2026 (руководитель): «Инвентаризация и остаток» — первым «📦 Остаток» (по алфавиту: Завод · Ташкент · Итого)
-    var tab = s.tab || 'stock', h = '<div class="seg"><button data-t="stock"' + (tab === 'stock' ? ' class="on"' : '') + '>📦 Остаток</button>' +
-      '<button data-t="docs"' + (tab === 'docs' ? ' class="on"' : '') + '>📄 Инвент. · ' + rows.length +
-      '</button><button data-t="where"' + (tab === 'where' ? ' class="on"' : '') + '>📍 Где</button></div><div id="invb"></div>';
+    var whs = (r.wh || {})[s.city + '|' + s.prod + '|' + kind] || [];
+    // 23.11.2026 (руководитель): внутри — только «➕ Пересчёт» (создать) и «📍 Где лежит»; проверка — на первом экране,
+    // остаток — отдельной вкладкой главного экрана
+    var tab = s.tab === 'where' ? 'where' : 'docs', h = '<div class="seg"><button data-t="docs"' + (tab === 'docs' ? ' class="on"' : '') + '>➕ Пересчёт</button>' +
+      '<button data-t="where"' + (tab === 'where' ? ' class="on"' : '') + '>📍 Где лежит</button></div><div id="invb"></div>';
     view.innerHTML = subTop('inv', 'Инвентаризация · ' + [s.city, kind, s.prod].join(' · ')) + h;
     bindTabs();
     Array.prototype.forEach.call(view.querySelectorAll('.seg button'), function (b) {
       b.onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = b.getAttribute('data-t'); cur = function () { showInv(ns); }; cur(); };
     });
     var B = $('invb');
-    if (tab === 'stock') return invStock(kind, s.prod, B);
     if (tab === 'docs') {
-      // 23.11.2026: «➕ Создать инвентаризацию» и черновики — над документами ERP
-      if (!rows.length) { B.innerHTML = '<div id="invdbox"></div><div class="empty">✅ Не проведённых инвентаризаций нет</div>'; invdBox(s, kind); return; }
-      setTimeout(function () { invdBox(s, kind); }, 0);
-      B.innerHTML = '<div id="invdbox"></div>' + rows.map(function (x, i) {
-        return '<div class="doc"><div class="dh"><b>№' + esc(x.doc) + '</b><span class="st">' + esc(x.status_text) + '</span></div>' +
-          '<div class="dm">' + esc(x.date) + ' · ' + esc(String(x.author || '').split(' ')[0]) + ' · ' + esc(x.place) + ' · разница: <b>' + esc(x.diff) + '</b></div>' +
-          // 23.11.2026 (руководитель): Темур проверил, ошибки нет — «✅ Подтвердить» (подтверждают руководитель и назначенные),
-          // после него Темур проводит документ в ERP; повторное «Проверить» тут не нужно
-          '<div class="row3">' + ((x.status === 'approve' || x.status === 'approve_fixed')
-            ? '<button class="b1 inv-ok" data-ap="' + i + '">✅ Подтвердить инвентаризацию</button>'
-            : (can && !x.done ? '<button class="b1" data-c="' + i + '">🔎 Проверить (Темур)</button>' : '')) +
-          (x.has_excel ? '<button data-x="' + i + '">📄 Excel</button>' : '') + '</div></div>';
-      }).join('') + (can ? '' : '<div class="note">👁 Только смотреть — «Проверить» не дано</div>');
-      Array.prototype.forEach.call(B.querySelectorAll('[data-c]'), function (b) {
-        b.onclick = function () {
-          var x = rows[+b.getAttribute('data-c')]; b.disabled = true; b.textContent = '⏳ Отправляю Темуру…';
-          call('/api/inv_check', { doc: x.doc }, 30000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; })
-            .catch(function (e) { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; fail(e); });
-        };
-      });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-ap]'), function (b) {
-        b.onclick = function () {
-          var x = rows[+b.getAttribute('data-ap')];
-          var q0 = 'Подтвердить инвентаризацию №' + x.doc + '?\nТемур проверил: ошибки нет (разница ' + x.diff + ').\nПосле подтверждения Темур проведёт документ в ERP.';
-          var go_ = function (yes) {
-            if (!yes) return;
-            b.disabled = true; b.textContent = '⏳ Подтверждаю…';
-            call('/api/inv_approve', { doc: x.doc }, 60000).then(function (q) {
-              haptic(q.ok ? 'success' : 'warning'); say(q.text);
-              b.textContent = q.ok ? '✅ Подтверждено — проводится в ERP' : '✅ Подтвердить инвентаризацию'; b.disabled = !!q.ok;
-            }).catch(function (e) { b.disabled = false; b.textContent = '✅ Подтвердить инвентаризацию'; fail(e); });
-          };
-          try { tg.showConfirm(q0, go_); } catch (e) { go_(confirm(q0)); }
-        };
-      });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-x]'), function (b) {
-        b.onclick = function () {
-          var x = rows[+b.getAttribute('data-x')];
-          call('/api/inv_excel', { doc: x.doc }, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); }).catch(fail);
-        };
-      });
+      B.innerHTML = '<div id="invdbox"></div><div class="note">Созданные инвентаризации, «🔎 Проверить» и «✅ Подтвердить» — на первом экране «Инвентаризация».</div>';
+      invdBox(s, kind);
       return;
     }
     // 📍 что где лежит — места склада (как в схеме), по складу; весь отчёт склада Excel — в личку
@@ -2442,7 +2447,7 @@
       var mf = fl.length < 2 ? 'all' : fl.some(function (f) { return f[0] === mfilter; }) ? mfilter : fl[0][0];   // одна вкладка — без вкладок
       // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
       var invOn = r.inv && r.inv.lv >= 1 && tabOn('inv'), ostOn = r.ost && tabOn('ost');
-      if (invOn) fl.push(['inv', '📋 Инвент. и остаток']);   // 23.11.2026 (руководитель): инвентаризация и остаток — вместе
+      if (invOn) fl.push(['inv', '📋 Инвент.']);   // 23.11.2026 (руководитель): остаток — отдельной вкладкой «📦 Остаток»
       if (ostOn) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
       if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       lastTabs = fl;
@@ -3259,7 +3264,7 @@
     // 23.11.2026 (руководитель): вкладки главного экрана — показать / скрыть каждому (даже если склад дан)
     h += '<div class="agrp">ВКЛАДКИ ГЛАВНОГО ЭКРАНА</div>';
     [['ship', '🛒', 'Отгрузка'], ['mv', '🚚', 'Перемещения'], ['inc', '📥', 'Приходы'], ['ret', '↩️', 'Возврат'], ['prod', '🏭', 'Из производства'],
-     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация и остаток'], ['ost', '📦', 'Остаток (лист)']].forEach(function (t) {
+     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация'], ['ost', '📦', 'Остаток (лист)']].forEach(function (t) {
       row({ key: 'tab_' + t[0], emoji: t[1], name: t[2] });
     });
     h += '<div class="note">⛔ Скрыть — вкладки у человека нет на главном экране, данные по ней сервер не даёт. Склады и кнопки — по правам ниже.</div>';
