@@ -321,6 +321,13 @@
   .mvlist .mvli { display: flex; align-items: baseline; gap: 6px; font-size: 14.5px; line-height: 1.3; padding: 2px 0; }
   .mvlist .mvli .no { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 10px;
                       background: #e8820c; color: #fff; font-size: 12px; font-weight: 900; }
+  /* 23.11.2026: выпуск производства — шаги и большие кнопки «Наклейка» → «Сканировать QR места» */
+  .pstep { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+  .pstep span { text-align: center; padding: 7px 4px; border-radius: 10px; font-size: 13px; font-weight: 800; background: #eef0f4; color: #9aa0ab; }
+  .pstep span.cur { background: #2d3a52; color: #fff; } .pstep span.done { background: #d9f5e3; color: #17964a; }
+  .plbl { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; color: #fff !important; }
+  .pscan { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
+  .plbl2 { margin-top: 8px; font-size: 14px; }
   .inv-ok { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
   .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
@@ -659,7 +666,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '24a9c08b', newBuild = '';
+  var BUILD = '3545fcf1', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -2620,7 +2627,52 @@
       .catch(function () { var e2 = $('sch'); if (e2) e2.style.opacity = '1'; });
   }
 
+  // 23.11.2026 (руководитель): выпуск производства — без «Коробка / Место / Наклейки / Поставить в окне склада»:
+  // шаг 1 «🖨 Наклейка» (бот: дата → PDF → «напечатал») → шаг 2 «📷 Сканировать QR места» (бот ставит партию, выпуск уходит)
+  function prodPanel(t, st) {
+    var x = t.lines[0], P = $('panel'), dst = x.dst_code || x.dst || '—';
+    var printed = !!(t.prod && t.prod.printed) || st.printed;
+    var head = '<div class="lbl">' + esc(t.label) + '</div><div class="name">' + esc(x.short) + '</div>' +
+      '<div class="meta"><b>п.' + esc(x.batch) + '</b> · ' + n(x.qty) + ' ' + esc(x.unit) + (x.boxes ? ' · ' + esc(x.boxes) : '') + '</div>' +
+      '<div class="pstep"><span class="' + (printed ? 'done' : 'cur') + '">1 · 🖨 Наклейка</span><span class="' + (printed ? 'cur' : '') + '">2 · 📍 ' + esc(dst) + '</span></div>';
+    var ct = canDo('task');
+    if (!ct) { P.className = 'panel'; P.innerHTML = head + '<div class="note">👁 Только смотреть — кнопки действий не даны</div>'; return; }
+    P.className = 'panel';
+    P.innerHTML = head + (printed
+      ? '<div class="todo">Наклейки на коробках · поставьте партию на <b>' + esc(dst) + '</b> и отсканируйте QR таблички места</div>' +
+        '<button class="main pscan" id="pqr">📷 Сканировать QR-код места</button><button class="plbl2" id="plbl">🖨 Наклейка ещё раз</button>'
+      : '<button class="main plbl" id="plbl">🖨 Наклейка</button>') + '<div id="res"></div>';
+    var id = t.id, busy = false;
+    var lbl = function (cf) {
+      if (busy) return; busy = true;
+      var b = $('plbl'); b.disabled = true; b.textContent = '⏳ Готовлю наклейки…';
+      call('/api/prod_label', { id: id, confirm: cf ? 1 : 0 }, 125000).then(function (r) {
+        busy = false;
+        if (r.need_date) {   // дата изготовления ещё не подтверждена — как в боте: система предлагает, человек подтверждает
+          var q = '📅 Дата изготовления (начало срока)\n' + r.made + ' → годен до ' + r.best + '\n\nВерно? Дата пойдёт на наклейки.\n(Другая дата — в окне склада, «✍️ Задать дату вручную»)';
+          var go_ = function (yes) { if (yes) lbl(true); else prodPanel(t, st); };
+          try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+          return;
+        }
+        haptic(r.ok ? 'success' : 'warning'); say(r.text);
+        if (r.ok && r.printed) { st.printed = true; }
+        if (st.sel === id && $('panel')) prodPanel(t, st);
+      }).catch(function (e) { busy = false; fail(e); if (st.sel === id && $('panel')) prodPanel(t, st); });
+    };
+    $('plbl').onclick = function () { lbl(false); };
+    if ($('pqr')) $('pqr').onclick = function () {
+      scanQr('QR таблички места ' + dst + ' · joy QR', function (code) {
+        var b = $('pqr'); if (b) { b.disabled = true; b.textContent = '⏳ Бот ставит на место…'; }
+        call('/api/place_qr', { id: id, code: code }, 125000).then(function (r) {
+          haptic(r.ok ? 'success' : 'warning'); say(r.text);
+          if (r.done) { delete mem[ck('/api/flow' + JSON.stringify({ kind: 'prod' }))]; P.className = 'panel hint'; P.innerHTML = '✅ ' + esc(r.text); st.sel = null; }
+          else if (b) { b.disabled = false; b.textContent = '📷 Сканировать QR-код места'; }
+        }).catch(function (e) { if (b) { b.disabled = false; b.textContent = '📷 Сканировать QR-код места'; } fail(e); });
+      });
+    };
+  }
   function taskPanel(t, st) {
+    if (t.prod && t.wh === 'gp1') return prodPanel(t, st);   // 23.11.2026: выпуск производства — свой путь (наклейка → QR места)
     var x = t.lines[0], where = t.scan === 'src' ? 'откуда' : 'куда', verb = verbOf(t), P = $('panel');
     P.className = 'panel';
     var h = '<div class="lbl">' + esc(t.label) + '</div>';
