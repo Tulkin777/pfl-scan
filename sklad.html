@@ -340,6 +340,11 @@
   .botw .br button:active { transform: translateY(2px); box-shadow: none; }
   .botw .br button:disabled { opacity: .55; }
   .botw .bat { margin-top: 8px; font-size: 11px; color: var(--hint); text-align: right; }
+  .botw.botx { border-left: 4px solid #1f62c9; }
+  .botw .bsay { display: flex; gap: 6px; margin-top: 10px; }
+  .botw .bsay input { flex: 1; min-width: 0; padding: 11px 10px; font-size: 16px; border-radius: 10px; border: 1px solid #c9d3e0; background: #fff; color: #111; }
+  .botw .bsay button { flex: 0 0 52px; font-size: 18px; border-radius: 10px; border: 0; background: #1f62c9; color: #fff; }
+  .botw .bsay button:disabled, .botw .bsay input:disabled { opacity: .55; }
   .prodb { display: inline-block; margin: -2px 0 12px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer;
            color: #fff; background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 3px 0 #0f6f36; }
   .prodb:active { transform: translateY(2px); box-shadow: none; }
@@ -562,7 +567,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '29401e3b', newBuild = '';
+  var BUILD = '73e6ed80', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1933,16 +1938,22 @@
     }
     return t.replace(/\n/g, '<br>');
   }
-  function botWinHtml(w) {
-    if (!w || !w.ok) return '<div class="note">' + esc((w && w.text) || 'Окно не загрузилось') + '</div>';
-    return '<div class="botw"><div class="bt">' + tgHtml(w.text, w.html) + '</div>' +
+  function botOneHtml(w, extra) {   // extra — не панель, а ещё одно сообщение бота этого склада: поле «ответить»
+    return '<div class="botw' + (extra ? ' botx' : '') + '"><div class="bt">' + tgHtml(w.text, w.html) + '</div>' +
       '<div class="bk">' + (w.kb || []).map(function (row) {
         return '<div class="br">' + row.map(function (b) {
           var bt_ = String(b.text || '').replace(/[⠀\s]+$/g, '');   // бот добивает текст кнопки пустыми знаками — убрать
-          return b.callback_data ? '<button data-cb="' + esc(b.callback_data) + '">' + esc(bt_) + '</button>'
+          return b.callback_data ? '<button data-cb="' + esc(b.callback_data) + '" data-key="' + esc(w.key || '') + '">' + esc(bt_) + '</button>'
             : b.url ? '<button data-url="' + esc(b.url) + '">' + esc(b.text) + ' ↗</button>' : '';
         }).join('') + '</div>';
-      }).join('') + '</div><div class="bat">окно бота · ' + esc(w.at || '') + '</div></div>';
+      }).join('') + '</div>' +
+      (extra && (w.fr || /ответом/i.test(w.text || '')) ? '<div class="bsay"><input type="text" maxlength="200" data-say="' + esc(w.key) +
+        '" placeholder="' + esc(w.fr ? 'Ответ: ' + w.fr : 'Ответ боту — сюда') + '"><button data-saybtn="' + esc(w.key) + '">➤</button></div>' : '') +
+      '<div class="bat">' + (extra ? 'бот · ' : 'окно бота · ') + esc(w.at || '') + '</div></div>';
+  }
+  function botWinHtml(w) {
+    if (!w || !w.ok) return '<div class="note">' + esc((w && w.text) || 'Окно не загрузилось') + '</div>';
+    return botOneHtml(w, false) + (w.more || []).map(function (x) { return botOneHtml(x, true); }).join('');
   }
   function showBotWin(k, part, auto) {   // auto — номер задачи окна мини-аппа: найти её кнопку у бота и открыть сразу
     var me = cur, it = ITEM[k] || { name: k };
@@ -1955,7 +1966,10 @@
       if (!box || cur !== me) return;
       box.innerHTML = botWinHtml(w);
       Array.prototype.forEach.call(box.querySelectorAll('[data-url]'), function (b) {
-        b.onclick = function () { try { tg.openLink(b.getAttribute('data-url')); } catch (e) { window.open(b.getAttribute('data-url')); } };
+        b.onclick = function () {
+          var u = b.getAttribute('data-url');
+          try { if (/^https:\/\/t\.me\//i.test(u) && tg.openTelegramLink) tg.openTelegramLink(u); else tg.openLink(u); } catch (e) { window.open(u); }
+        };
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-cb]'), function (b) {
         b.onclick = function () {
@@ -1970,18 +1984,37 @@
             var s = Math.round((Date.now() - t0) / 1000), mm = $('bmsg');
             if (s >= 12 && mm) mm.innerHTML = '<div class="msg" style="margin-top:8px">⏳ Бот склада занят (медленный интернет) — нажатие в очереди, ' + s + ' с… не нажимайте ещё раз</div>';
           }, 1000);
-          call('/api/kc_press', { wh: part, data: b.getAttribute('data-cb') }, 125000).then(function (r) {
+          call('/api/kc_press', { wh: part, data: b.getAttribute('data-cb'), key: b.getAttribute('data-key') || '' }, 125000).then(function (r) {
             clearInterval(tick);
-            busy = false;
-            var ans = (r.answers || []);
-            var al = ans.filter(function (a) { return a.alert; }), tx = ans.map(function (a) { return a.text; }).join('\n');
-            if (al.length) say(al.map(function (a) { return a.text; }).join('\n'));
-            var m = $('bmsg');
-            if (m) m.innerHTML = (tx || r.text) ? '<div class="msg ' + (r.ok ? 'good' : 'bad') + '" style="margin-top:8px">' + esc(tx || r.text) + '</div>' : '';
-            haptic(r.ok ? 'success' : 'warning');
-            draw(r.win);
+            done_(r);
           }).catch(function (e) { clearInterval(tick); busy = false; fail(e); });
         };
+      });
+      function done_(r) {
+        busy = false;
+        var ans = (r.answers || []);
+        var al = ans.filter(function (a) { return a.alert; }), tx = ans.map(function (a) { return a.text; }).join('\n');
+        if (al.length) say(al.map(function (a) { return a.text; }).join('\n'));
+        var m = $('bmsg');
+        if (m) m.innerHTML = (tx || r.text) ? '<div class="msg ' + (r.ok ? 'good' : 'bad') + '" style="margin-top:8px">' + esc(tx || r.text) + '</div>' : '';
+        haptic(r.ok ? 'success' : 'warning');
+        draw(r.win);
+      }
+      // ответ текстом (число, дата, название товара) на сообщение бота — как ответ в группе
+      Array.prototype.forEach.call(box.querySelectorAll('[data-saybtn]'), function (b) {
+        var inp = box.querySelector('[data-say="' + b.getAttribute('data-saybtn') + '"]');
+        function send() {
+          var v = (inp.value || '').trim();
+          if (busy || !v) return;
+          busy = true;
+          Array.prototype.forEach.call(box.querySelectorAll('button,input'), function (x) { x.disabled = true; });
+          var m0 = $('bmsg');
+          if (m0) m0.innerHTML = '<div class="msg" style="margin-top:8px">⏳ Отправляю боту склада…</div>';
+          call('/api/kc_say', { wh: part, key: b.getAttribute('data-saybtn'), text: v }, 70000).then(done_)
+            .catch(function (e) { busy = false; fail(e); });
+        }
+        b.onclick = send;
+        inp.onkeydown = function (e) { if (e.key === 'Enter') send(); };
       });
       if (auto) {   // задача из окна мини-аппа: s221748 / rR577 / W104534 → кнопка бота …:221748, …:R577, …:W104534
         var c1 = String(auto), cands = [c1, c1.slice(1)];
@@ -1993,9 +2026,14 @@
         if (hit) hit.click();
       }
     }
+    function typing() {   // человек пишет ответ — окно не перерисовывать (текст не должен пропасть)
+      var box = $('bwin');
+      if (!box) return false;
+      return Array.prototype.some.call(box.querySelectorAll('[data-say]'), function (i) { return i === document.activeElement || (i.value || '').trim(); });
+    }
     function load_() {
-      if (busy || cur !== me) return;
-      call('/api/kc_win', { wh: part }, 15000).then(draw).catch(function () {});
+      if (busy || cur !== me || typing()) return;
+      call('/api/kc_win', { wh: part }, 15000).then(function (w) { if (!busy && !typing()) draw(w); }).catch(function () {});
     }
     load_();
     botTimer = setInterval(function () { if (cur !== me || !$('bwin')) { clearInterval(botTimer); botTimer = null; return; } load_(); }, 5000);
