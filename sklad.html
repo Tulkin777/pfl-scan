@@ -524,6 +524,9 @@
   .nrbrow .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
   @media (min-width: 600px) { .navb .nrb { display: flex; } .nrbrow { display: none; } }
   .ivw { max-width: 860px; }
+  .ino { display: inline-block; min-width: 24px; height: 20px; line-height: 20px; border-radius: 10px; padding: 0 5px; margin-right: 6px;
+         background: rgba(127,127,127,.16); color: var(--hint); font-size: 12px; font-weight: 800; text-align: center; vertical-align: 1px; }
+  .ivr.ch .ino { background: #e8820c; color: #fff; }
   /* 23.11.2026: «📦 Остаток» — Завод зелёный · Ташкент синий · Итого тёмный; ноль бледный */
   .stsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 8px; max-width: 860px; }
   .stsum.one { grid-template-columns: 1fr; }
@@ -744,7 +747,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7cd61a74', newBuild = '';
+  var BUILD = '39dc5c83', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1267,10 +1270,12 @@
     var me = cur, find = '', lastH = '';
     title.textContent = '📋 Инвентаризация · черновик';
     view.innerHTML = '<div class="spin">Загрузка черновика…</div>';
+    var rn = 0;
     function rowH(r) {
       var mk = r.c1st === 'eq' ? '<span class="mk eq">= 1С</span>' : r.c1st === 'ne' ? '<span class="mk ne">≠ 1С</span>' : '';
       var dv = r.touched ? Math.round((r.fact - r.erp) * 1000) / 1000 : 0;   // изменено: насколько факт отличается от ERP
-      return '<div class="ivr' + (r.touched ? ' ch' : '') + '" data-p="' + esc(r.pid) + '"><div class="nm">' + esc(r.name.replace(/\s*\((BP Pharma|Bromedix|Gynomedix)\)\s*/, ' ')) +
+      rn++;   // 23.11.2026 (руководитель): нумерация 1, 2, 3… по порядку на экране
+      return '<div class="ivr' + (r.touched ? ' ch' : '') + '" data-p="' + esc(r.pid) + '"><div class="nm"><span class="ino">' + rn + '</span>' + esc(r.name.replace(/\s*\((BP Pharma|Bromedix|Gynomedix)\)\s*/, ' ')) +
         (dv ? '<span class="mk dv">' + (dv > 0 ? '+' : '−') + fmtq(Math.abs(dv)) + '</span>' : '') + mk +
         ' <span class="u">' + esc(String(r.unit || '').toLowerCase()) + '</span></div><div class="n">' + fmtq(r.erp) + '</div><div class="n">' + fmtq(r.c1) + '</div>' +
         (D.can && !D.erp_doc ? '<input inputmode="decimal" enterkeyhint="done" value="' + fmtq(r.fact).replace(/\s/g, '') + '" data-f="' + esc(r.pid) + '">'
@@ -1291,7 +1296,8 @@
         (D.n > 12 ? '<input class="txt ivfind" id="ivfind" placeholder="🔎 Найти товар" value="' + esc(find) + '">' : '') +
         '<div class="ivhd"><span>товар</span><span>ERP</span><span>1С</span><span>факт</span></div>';
       var ch = D.changed.filter(hit);
-      if (ch.length) h += '<div class="ivsec ch">✏️ Изменено · ' + ch.length + '</div>' + ch.map(rowH).join('');
+      rn = 0;
+      if (ch.length) h += '<div class="ivsec ch">✏️ Изменено · ' + ch.length + '</div>' + ch.map(function (r) { return rowH(r); }).join('');
       var cur_t = '';
       D.rest.filter(hit).forEach(function (r) {
         if (r.tlabel !== cur_t) { cur_t = r.tlabel; h += '<div class="ivsec">' + esc(cur_t) + '</div>'; }
@@ -1375,12 +1381,12 @@
           '<input class="txt ivfind" id="stfind" placeholder="🔎 Найти товар" value="' + esc(find) + '">' +
           '<div class="sthd' + (T ? '' : ' one') + '"><span>товар</span>' + (T ? '<span class="zv">Завод</span><span class="tv">Ташкент</span>' : '') + '<span>Итого</span></div>';
         var L = '';
-        rows.forEach(function (x) {
+        rows.forEach(function (x, i) {
           var l0 = x.short.replace(/^[^0-9A-Za-zА-Яа-яЁё]+/, '').replace(/^(сироп|капля|раствор|капсулы?)\s+/i, '').charAt(0).toUpperCase();
           if (/[0-9]/.test(l0)) l0 = '0–9';
           if (l0 !== L) { L = l0; h += '<div class="stl">' + esc(L) + '</div>'; }
           var fq = formOf(x.name);
-          h += '<div class="str' + (T ? '' : ' one') + '"><div class="nm">' + (fq ? fq[2] + ' ' : '') + esc(x.short) +
+          h += '<div class="str' + (T ? '' : ' one') + '"><div class="nm"><span class="ino">' + (i + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(x.short) +
             (x.brand ? ' <span class="br ' + (BRCL[x.brand] || '') + '">' + esc({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[x.brand] || x.brand) + '</span>' : '') +
             ' <span class="u">' + esc(x.unit) + '</span></div>' +
             (T ? '<div class="n zv">' + q0(x.zav) + '</div><div class="n tv">' + q0(x.tas) + '</div>' : '') + '<div class="n it">' + q0(x.total) + '</div></div>';
