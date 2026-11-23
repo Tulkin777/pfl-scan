@@ -553,8 +553,12 @@
   .stsum small { display: block; font-size: 12px; font-weight: 800; } .stsum b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
   .stsum .zv { background: rgba(30,130,64,.12); color: #17803c; } .stsum .tv { background: rgba(31,98,201,.12); color: #1f62c9; }
   .stsum .it { background: var(--bg2); color: var(--fg); }
-  .sthd, .str { display: grid; grid-template-columns: minmax(0, 1fr) 62px 62px 66px; gap: 6px; align-items: center; max-width: 860px; }
-  .sthd.one, .str.one { grid-template-columns: minmax(0, 1fr) 90px; }
+  .sthd, .str { display: grid; grid-template-columns: 30px minmax(0, 1fr) 60px 60px 64px; gap: 0; align-items: stretch; max-width: 860px; }
+  .sthd > *, .str > * { padding: 0 5px; display: flex; align-items: center; min-width: 0; }
+  .sthd > * + *, .str > * + * { border-left: 1px solid rgba(127,127,127,.28); }
+  .str > .nm { display: block; } .sthd > *:not(:nth-child(2)), .str > .n { justify-content: flex-end; }
+  .sthd > :first-child, .str > .nn { justify-content: center; padding: 0 2px; } .str > .nn { font-size: 13px; font-weight: 800; color: var(--hint); }
+  .sthd.one, .str.one { grid-template-columns: 30px minmax(0, 1fr) 90px !important; }
   .sthd { font-size: 12px; color: var(--hint); padding: 2px 6px 4px; position: sticky; top: 0; background: var(--bg); z-index: 2; font-weight: 800; }
   .sthd span:not(:first-child), .str .n { text-align: right; } .sthd .zv { color: #17803c; } .sthd .tv { color: #1f62c9; }
   .stl { max-width: 860px; font-size: 12px; font-weight: 900; color: var(--hint); margin: 8px 6px 2px; letter-spacing: .5px; }
@@ -651,12 +655,21 @@
   .ivsum div { background: var(--bg2); border-radius: 12px; padding: 7px 4px; text-align: center; font-size: 12px; color: var(--hint); }
   .ivsum b { display: block; font-size: 20px; color: var(--fg); }
   .ivsum .ch b { color: #d97a00; } .ivsum .eq b { color: #17964a; } .ivsum .ne b { color: #d63b3b; }
-  .ivhd, .ivr { display: grid; grid-template-columns: minmax(0, 1fr) 58px 58px 76px; gap: 6px; align-items: center; }
-  .ivhd { font-size: 12px; color: var(--hint); padding: 0 6px 4px; position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  /* 23.11.2026 (руководитель): № — отдельной колонкой, название шире, колонки разделены линиями */
+  .ivhd, .ivr { display: grid; grid-template-columns: 30px minmax(0, 1fr) 56px 56px 74px; gap: 0; align-items: stretch; }
+  .ivhd > *, .ivr > * { padding: 0 6px; display: flex; align-items: center; min-width: 0; }
+  .ivhd > * + *, .ivr > * + * { border-left: 1px solid rgba(127,127,127,.28); }
+  .ivr > .nm { display: block; padding-top: 1px; padding-bottom: 1px; }
+  .ivhd > *:not(:nth-child(2)), .ivr > .n { justify-content: flex-end; }
+  .ivhd > :first-child, .ivr > .nn { justify-content: center; padding: 0 2px; }
+  .ivr > .nn { font-size: 13px; font-weight: 800; color: var(--hint); font-variant-numeric: tabular-nums; }
+  .ivr.ch > .nn { color: #e8820c; }
+  .ivr input { height: 36px; align-self: center; }
+  .ivhd { font-size: 12px; color: var(--hint); padding: 0 0 4px; position: sticky; top: 0; background: var(--bg); z-index: 2; }
   .ivhd span:not(:first-child), .ivr .n { text-align: right; }
   .ivsec { font-size: 13px; font-weight: 800; margin: 12px 0 4px; padding: 0 6px; color: var(--hint); text-transform: uppercase; letter-spacing: .3px; }
   .ivsec.ch { color: #d97a00; }
-  .ivr { padding: 8px 6px; border-bottom: 1px solid rgba(127,127,127,.18); font-size: 14px; }
+  .ivr { padding: 8px 0; border-bottom: 1px solid rgba(127,127,127,.22); font-size: 14px; }
   .ivr .nm { font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; } .ivr .u { font-size: 12px; color: var(--hint); font-weight: 400; }
   .ivr .n { font-variant-numeric: tabular-nums; }
   .ivr.ch { background: rgba(255,170,40,.16); border-left: 4px solid #e8820c; border-bottom-color: transparent; border-radius: 0; margin-bottom: 2px; }
@@ -689,8 +702,8 @@
     #view:has(.dhead) > .box { grid-column: auto; }
     .backp { max-width: 640px; }
     .navb { max-width: none; }
-    .ivhd, .ivr { grid-template-columns: minmax(0, 1fr) 96px 96px 120px; }
-    .sthd, .str { grid-template-columns: minmax(0, 1fr) 110px 110px 120px; }
+    .ivhd, .ivr { grid-template-columns: 44px minmax(0, 1fr) 96px 96px 120px; }
+    .sthd, .str { grid-template-columns: 44px minmax(0, 1fr) 110px 110px 120px; }
   }
 </style>
 </head>
@@ -768,7 +781,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b1782d15', newBuild = '';
+  var BUILD = '5b2cf079', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1392,7 +1405,7 @@
       var mk = r.c1st === 'eq' ? '<span class="mk eq">= 1С</span>' : r.c1st === 'ne' ? '<span class="mk ne">≠ 1С</span>' : '';
       var dv = r.touched ? Math.round((r.fact - r.erp) * 1000) / 1000 : 0;   // изменено: насколько факт отличается от ERP
       rn++;   // 23.11.2026 (руководитель): нумерация 1, 2, 3… по порядку на экране
-      return '<div class="ivr' + (r.touched ? ' ch' : '') + '" data-p="' + esc(r.pid) + '"><div class="nm"><span class="ino">' + rn + '</span>' + esc(r.name.replace(/\s*\((BP Pharma|Bromedix|Gynomedix)\)\s*/, ' ')) +
+      return '<div class="ivr' + (r.touched ? ' ch' : '') + '" data-p="' + esc(r.pid) + '"><div class="nn">' + rn + '</div><div class="nm">' + esc(r.name.replace(/\s*\((BP Pharma|Bromedix|Gynomedix)\)\s*/, ' ')) +
         (dv ? '<span class="mk dv">' + (dv > 0 ? '+' : '−') + fmtq(Math.abs(dv)) + '</span>' : '') + mk +
         ' <span class="u">' + esc(String(r.unit || '').toLowerCase()) + '</span></div><div class="n">' + fmtq(r.erp) + '</div><div class="n">' + fmtq(r.c1) + '</div>' +
         (D.can && !D.erp_doc ? '<input inputmode="decimal" enterkeyhint="done" value="' + fmtq(r.fact).replace(/\s/g, '') + '" data-f="' + esc(r.pid) + '">'
@@ -1417,7 +1430,7 @@
         '<div class="ne"><b>' + (D.has_c1 ? D.n_ne : '—') + '</b>≠ 1С</div><div><b>' + D.n + '</b>всего</div></div>' +
         chkBanner(D) +
         (D.n > 12 ? '<input class="txt ivfind" id="ivfind" placeholder="🔎 Найти товар" value="' + esc(find) + '">' : '') +
-        '<div class="ivhd"><span>товар</span><span>ERP</span><span>1С</span><span>факт</span></div>';
+        '<div class="ivhd"><span>№</span><span>товар</span><span>ERP</span><span>1С</span><span>факт</span></div>';
       var ch = D.changed.filter(hit);
       rn = 0;
       if (ch.length) h += '<div class="ivsec ch">✏️ Изменено · ' + ch.length + '</div>' + ch.map(function (r) { return rowH(r); }).join('');
@@ -1566,14 +1579,14 @@
         }).join('') + '</div>' + (Object.keys(r.tot).length > 1 ? '<div class="note" style="margin:0 0 6px">ещё: ' + Object.keys(r.tot).slice(1).map(function (u) {
           return fmtq(Math.round(r.tot[u].total)) + ' ' + esc(u); }).join(' · ') + '</div>' : '') +
           '<input class="txt ivfind" id="stfind" placeholder="🔎 Найти товар" value="' + esc(find) + '">' +
-          '<div class="sthd' + (T ? '' : ' one') + '"><span>товар</span>' + (T ? '<span class="zv">Завод</span><span class="tv">Ташкент</span>' : '') + '<span>Итого</span></div>';
+          '<div class="sthd' + (T ? '' : ' one') + '"><span>№</span><span>товар</span>' + (T ? '<span class="zv">Завод</span><span class="tv">Ташкент</span>' : '') + '<span>Итого</span></div>';
         var L = '';
         rows.forEach(function (x, i) {
           var l0 = x.short.replace(/^[^0-9A-Za-zА-Яа-яЁё]+/, '').replace(/^(сироп|капля|раствор|капсулы?)\s+/i, '').charAt(0).toUpperCase();
           if (/[0-9]/.test(l0)) l0 = '0–9';
           if (l0 !== L) { L = l0; h += '<div class="stl">' + esc(L) + '</div>'; }
           var fq = formOf(x.name);
-          h += '<div class="str' + (T ? '' : ' one') + '"><div class="nm"><span class="ino">' + (i + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(x.short) +
+          h += '<div class="str' + (T ? '' : ' one') + '"><div class="nn">' + (i + 1) + '</div><div class="nm">' + (fq ? fq[2] + ' ' : '') + esc(x.short) +
             (x.brand ? ' <span class="br ' + (BRCL[x.brand] || '') + '">' + esc({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[x.brand] || x.brand) + '</span>' : '') +
             ' <span class="u">' + esc(x.unit) + '</span></div>' +
             (T ? '<div class="n zv">' + q0(x.zav) + '</div><div class="n tv">' + q0(x.tas) + '</div>' : '') + '<div class="n it">' + q0(x.total) + '</div></div>';
