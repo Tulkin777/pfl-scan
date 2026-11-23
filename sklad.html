@@ -583,7 +583,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'c27e2ca7', newBuild = '';
+  var BUILD = 'f0ee98e2', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1545,10 +1545,7 @@
           sb.innerHTML = q.ok ? specHtml(q) : '<div class="note">📄 ' + esc(q.text) + '</div>';
         };
         var sig = function (v) { return JSON.stringify(v || null); };
-        if (sd) { applySf(sd.sf); applySpec(sd.spec); }
-        call('/api/sf_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.sf)) applySf(q); }).catch(function () {});
-        if ($('specbox')) call('/api/spec_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.spec)) applySpec(q); })
-          .catch(function () { if (!sd || !sd.spec) { var sb = $('specbox'); if (sb) sb.innerHTML = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; } });
+        // 23.11.2026: кнопки и места — первыми; ошибка в счёт-фактуре/спецификации (у Терминала и Gynomedix их нет) их не ломает
         Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
           b.onclick = function () {
             var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
@@ -1559,6 +1556,13 @@
           };
         });
         if ($('plbox')) shipPlaces(x, $('plbox'), st);
+        var applySf0 = applySf, applySpec0 = applySpec;
+        applySf = function (q) { try { applySf0(q); } catch (e) {} };
+        applySpec = function (q) { try { applySpec0(q); } catch (e) {} };
+        if (sd) { applySf(sd.sf); applySpec(sd.spec); }
+        call('/api/sf_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.sf)) applySf(q); }).catch(function () {});
+        if ($('specbox')) call('/api/spec_data', { id: x.id }, 30000).then(function (q) { if (!sd || sig(q) !== sig(sd.spec)) applySpec(q); })
+          .catch(function () { if (!sd || !sd.spec) { var sb = $('specbox'); if (sb) sb.innerHTML = '<div class="note">📄 Спецификация не загрузилась — обновите позже.</div>'; } });
         return;
       }
       h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
