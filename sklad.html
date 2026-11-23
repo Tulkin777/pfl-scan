@@ -595,6 +595,9 @@
   .ivt.sm { grid-column: 1 / -1; padding: 8px; background: var(--bg2); color: var(--fg); box-shadow: none; }
   .ivt.sm b { display: inline; font-size: 14px; } .ivt.sm span { display: inline; margin-left: 6px; color: var(--hint); }
   .ivt.sm.on { background: linear-gradient(150deg, #6fb2ff, #1f62c9); color: #fff; } .ivt.sm.on span { color: #fff; }
+  .ivt .ivc { display: block; font-style: normal; font-size: 12px; margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,0,0,.15); line-height: 1.3; }
+  .ivt .ivc b { display: inline; font-size: 16px; } .ivt.sm .ivc { display: inline; border: 0; margin-left: 8px; padding: 0; }
+  .ivt.sm .ivc br { display: none; } .ivt.nil { opacity: .5; }
   .ivt.off { opacity: .55; } .ivt:active { transform: translateY(2px); box-shadow: none; }
   .ivd { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 6px solid #1f62c9; cursor: pointer; }
   .ivd .t { font-weight: 800; } .ivd .m { font-size: 13px; color: var(--hint); margin-top: 2px; }
@@ -719,7 +722,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7234cdb7', newBuild = '';
+  var BUILD = '1a43a4a1', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1206,7 +1209,8 @@
           var ic = t.name.split(' ')[0], wd = t.name.split(' ').slice(1).join(' '), sm = t.key === 'other';
           var nmh = (sm ? esc(ic) + ' ' : '<i>' + esc(ic) + '</i>') + '<b>' + esc(wd) + '</b>';
           g += dr ? '<div class="ivt on' + (sm ? ' sm' : '') + '" data-id="' + esc(dr.id) + '">' + nmh + '<span>✏️ черновик · ' + dr.n + ' поз.</span></div>'
-            : '<div class="ivt' + (sm ? ' sm' : '') + (r.can ? '' : ' off') + '" data-st="' + st.id + '" data-ty="' + t.key + '">' + nmh + '<span>' + esc(t.sub) + '</span></div>';
+            : '<div class="ivt' + (sm ? ' sm' : '') + (r.can ? '' : ' off') + (t.n === 0 ? ' nil' : '') + '" data-st="' + st.id + '" data-ty="' + t.key + '">' + nmh +
+              '<span>' + esc(t.sub) + '</span>' + ivCnt(t) + '</div>';
         });
         h = g + '</div>' + h;
       });
@@ -1235,6 +1239,13 @@
         };
       });
     });
+  }
+  // 23.11.2026 (руководитель): на плитке вида — сколько наименований и количество (по единицам), видно, стоит ли создавать
+  function ivCnt(t) {
+    if (t.n == null) return '';
+    if (!t.n) return '<em class="ivc">нет товаров</em>';
+    var q = Object.keys(t.qty || {}).slice(0, 2).map(function (u) { return fmtq(Math.round(t.qty[u])) + ' ' + esc(u); }).join(' · ');
+    return '<em class="ivc"><b>' + t.n + '</b> наим.' + (q ? (t.key === 'other' ? ' · ' : '<br>') + q : '') + '</em>';
   }
   function ivErr(e) { haptic('error'); say((e && e.text) || 'Ошибка связи — попробуйте ещё раз.'); }
   function fmtq(v) { return v == null ? '—' : (Math.round(+v * 1000) / 1000).toLocaleString('ru-RU'); }
