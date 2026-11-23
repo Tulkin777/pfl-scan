@@ -317,6 +317,8 @@
   .pcard .mvn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 11px;
                 background: #e8820c; color: #fff; font-size: 12px; font-weight: 900; }
   .mvlist { margin: 6px 0 4px; }
+  .mvlist .slpl { display: inline-block; margin-top: 2px; padding: 1px 8px; border-radius: 7px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 13px; }
+  .vzcard { margin-top: 8px; padding: 12px; font-size: 16px !important; background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .mvlist .mvbt { color: #a85a00; } .mvlist .mvhint { color: var(--hint); font-size: 11px; }   /* 23.11: партия в строке */
   .mvlist .mvlh { font-size: 12px; font-weight: 800; color: var(--hint); margin: 0 0 2px; }
   .mvlist .mvli { display: flex; align-items: baseline; gap: 6px; font-size: 14.5px; line-height: 1.3; padding: 2px 0; }
@@ -670,7 +672,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '06abf25e', newBuild = '';
+  var BUILD = '34574714', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1747,8 +1749,9 @@
             ? numRow(x) + '<div class="th2">' + dtf2(x.date) + '</div>'
             : '<div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>') +
           '<div class="rt2">' + route + '</div>' +
+          (kind === 'ship' ? shipLines(x, st) :
           '<div class="what">' + (fq ? fq[2] : (kind === 'ret' ? '↩️' : '📦')) + ' <span class="pn">' + esc(l0.name || '') + more + '</span><br><b>' +
-          (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
+          n(l0.qty) + '</b></div>') +
           docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') +
           (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') +
           (kind === 'ship' && x.step === 'late' ? '<div class="latebad">⏰ ПРОСРОЧЕНО · ' + (x.late_days || 4) + '-й день · склад не подтвердил</div>' : '') +
@@ -1777,7 +1780,19 @@
       });
       if (kind === 'inc') load2('/api/flow', { kind: 'prod' }, function () {});   // число «ждут места» — к следующему показу
       if (kind === 'ship') load2('/api/ship_docs', {}, function () {});   // 22.11.2026: счёт-фактуры и спецификации всех отгрузок — заранее
-      if (kind === 'ship') load2('/api/ship_places_all', {}, function () {});   // 23.11.2026: места всех отгрузок — заранее (карточка без перерисовки)
+      if (kind === 'ship') {   // 23.11.2026: места всех отгрузок — заранее; в первый раз пришли после списка — список один раз заново
+        var hadPl = !!cget(PLC_KEY);
+        load2('/api/ship_places_all', {}, function () { if (!hadPl && document.body.contains(box)) { hadPl = true; showDocs(kind, box); } });
+      }
+      // 23.11.2026 (руководитель): «✅ Взял» прямо на карточке списка — места и партии видны, заходить в документ не нужно
+      Array.prototype.forEach.call(box.querySelectorAll('[data-vz]'), function (b) {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          var x = rows.filter(function (y) { return String(y.id) === b.getAttribute('data-vz'); })[0], p = x && plcOf(x.id);
+          if (!x || !plcOk(p)) return say('Места этого документа не загрузились — откройте документ.');
+          vzyal(x, p, b, vzLabel(p, 'ok'), 'ok');
+        };
+      });
       Array.prototype.forEach.call(box.querySelectorAll('[data-doc]'), function (el) {
         el.onclick = function () {
           var id = el.getAttribute('data-doc');
@@ -2515,10 +2530,30 @@
         ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
     }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
   }
+  // 23.11.2026 (руководитель): строки отгрузки в списке — товар · шт · место · партия; «✅ Взял» — у отгруженных и просроченных
+  function shipLines(x, st) {
+    var p = plcOf(x.id), tot = x.lines.reduce(function (a, y) { return a + (+y.qty || 0); }, 0);
+    var ls = plcOk(p) ? p.lines.map(function (y) { return { name: y.item, qty: y.qty, place: y.code || y.place, batch: y.batch }; })
+      : x.lines.map(function (y) { return { name: y.name, qty: y.qty }; });
+    var h = '<div class="mvlist"><div class="mvlh">' + ls.length + ' поз · ' + n(tot) + ' шт' +
+      (plcOk(p) ? (p.mode === 'hint' ? ' · 📍 место по схеме (у бота задачи нет)' : ' · 📍 откуда брать') : '') + '</div>' +
+      ls.map(function (y, j) {
+        var fq = formOf(y.name);
+        return '<div class="mvli"><span class="no">' + (j + 1) + '</span><span><span class="pn">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '</span> · <b>' + n(y.qty) + ' шт</b>' +
+          (y.batch ? ' · <b class="mvbt">п.' + esc(y.batch) + '</b>' : '') +
+          (y.place ? '<br><span class="slpl">📍 ' + esc(y.place) + '</span>' : '') + '</span></div>';
+      }).join('') + '</div>';
+    if (st === 'ok' && plcOk(p) && p.can && p.mode !== 'hint' && !(p.mode === 'noted' && !p.ready))
+      h += '<button class="main vzcard" data-vz="' + esc(x.id) + '">✅ Взял — списать с этих мест</button>';
+    else if (st === 'ok' && p && p.mode === 'hint')
+      h += '<div class="note" style="margin:4px 0 0">У бота по этому документу задачи нет — если товар ещё на месте, проверьте и спишите в окне склада.</div>';
+    return h;
+  }
   function vzLabel(p, st) { return p.mode === 'noted' || st === 'ok' ? '✅ Взял — списать с этих мест' : '✅ Взял — собрано'; }
   function vzHtml(p, st) {
     // 23.11.2026 (руководитель): «Взял» — только у отгруженных; у «Создано» — места видны, кнопки нет
     if (!plcOk(p) || st !== 'ok') return '';
+    if (p.mode === 'hint') return '<div class="note">📍 Места — по схеме склада. У бота по этому документу задачи нет — если товар ещё на месте, проверьте и спишите в окне склада.</div>';
     if (!p.can) return '<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
     if (p.mode === 'noted' && !p.ready) return '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» и отметьте места.</div>';
     return '<button class="main" id="vzyal" style="margin-top:8px;background:linear-gradient(150deg,#4fd68a,#17964a)">' + vzLabel(p, st) + '</button>';
