@@ -291,6 +291,10 @@
   .mvs { text-align: center; padding: 10px 4px; border-radius: 12px; background: var(--bg2, #eef0f4); color: var(--tg-theme-text-color, #1e1e1e);
          font-weight: 800; font-size: 13px; line-height: 1.2; cursor: pointer; box-shadow: 0 2px 0 #d9dde5; }
   .mvs.on { background: #2d3a52; color: #fff; box-shadow: 0 3px 0 #18202f; }
+  .mvpair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; }
+  .mvpair .mvs { font-size: 12px; padding: 8px 4px; }
+  .mvpair1 { margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 14px; text-align: center; }
+  .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
   .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
                   margin: 0 0 8px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #1e1e1e); }
   .mvp { background: var(--bg2, #f1f3f7); border-radius: 14px; padding: 10px 10px 4px; margin: 0 0 8px; border: 2px solid transparent; }
@@ -622,7 +626,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'eb379cd8', newBuild = '';
+  var BUILD = 'c5c2df4f', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1181,14 +1185,36 @@
     load2('/api/flow', { kind: 'mv' }, function (r) {
       if (!document.body.contains(box)) return;
       var all0 = (r.rows || []).filter(function (x) { return x.step !== 'cancel'; });
-      if (!mvLine) {   // шаг 1: Терминал или Перечисление
-        box.innerHTML = '<div class="dir dir2">' + MLINE.map(function (l) {
-          var c = all0.filter(function (x) { return mvIn(x, l[0]); }).length;
-          return '<div class="' + l[3] + (c ? '' : ' z') + '" data-line="' + l[0] + '"><b>' + c + '</b>' + l[1] + '<small>' + l[2] + '</small></div>';
+      var card = function (x) {
+        var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '';
+        var fq = formOf(l0.name);
+        return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
+          '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
+          '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
+          trkBar(x.step) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
+      };
+      var openCards = function () {
+        Array.prototype.forEach.call(box.querySelectorAll('[data-mv]'), function (el) {
+          el.onclick = function () {
+            var id = el.getAttribute('data-mv');
+            try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+            setTimeout(function () { go(function () { showMove(id); }); }, 100);
+          };
+        });
+      };
+      if (!mvLine) {   // шаг 1: Перечисление · Терминал — на плитке сколько СОЗДАНО (ещё не отправлено); ниже — общий список созданных
+        var made = all0.filter(function (x) { return x.step === 'new'; });
+        var h1 = '<div class="dir dir2">' + MLINE.map(function (l) {
+          var c = made.filter(function (x) { return mvIn(x, l[0]); }).length;
+          return '<div class="' + l[3] + (c ? '' : ' z') + '" data-line="' + l[0] + '"><b>' + c + '</b>' + l[1] + '<small>' + l[2] + ' · создано</small></div>';
         }).join('') + '</div>';
+        h1 += '<div class="msec">🟡 СОЗДАНО — ЖДУТ ОТПРАВКИ · ' + made.length + '</div>';
+        h1 += made.length ? made.map(card).join('') : '<div class="empty">Созданных перемещений нет</div>';
+        box.innerHTML = h1;
         Array.prototype.forEach.call(box.querySelectorAll('[data-line]'), function (el) {
           el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = el.getAttribute('data-line'); flowDir = ''; mvStep = 'new'; showMoves(box); };   // сначала — «создано»
         });
+        openCards();
         return;
       }
       var LN = MLINE.filter(function (l) { return l[0] === mvLine; })[0];
@@ -1196,33 +1222,27 @@
       var rows = flowDir ? all.filter(function (x) { return x.dir === flowDir; }) : all;
       var h = '<div class="navb mvnav"><div class="bk" id="mvBack"><i>⬅</i>Назад</div><div class="nt"><small>Перемещения</small><b>' +
         LN[1] + ' · ' + LN[2] + '</b></div></div>';
-      // 23.11.2026 (руководитель): «➕ Создать перемещение» — документ ERP «Новый» (создаёт бот склада после «да»)
-      var pmv = r.perm || {};
-      if (r.admin || (pmv.lv === 2 && (pmv.acts || []).indexOf('send') >= 0))
-        h += '<button class="main mvadd" id="mvAdd">➕ Создать перемещение · ' + LN[1] + '</button>';
       h += '<div class="dir dirr">' + MDIR.map(function (d) {
         var c = all.filter(function (x) { return x.dir === d[0]; }).length;
         return '<div class="' + d[2] + (c ? '' : ' z') + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
       }).join('') + '</div>';
+      // 23.11.2026 (руководитель): «➕ Создать перемещение» — под направлениями; включается, когда направление выбрано
+      var pmv = r.perm || {};
+      if (r.admin || (pmv.lv === 2 && (pmv.acts || []).indexOf('send') >= 0))
+        h += flowDir ? '<button class="main mvadd" id="mvAdd">➕ Создать · ' + esc(dirName(flowDir)) + '</button>'
+          : '<button class="main mvadd off" disabled>➕ Создать перемещение — сначала выберите направление</button>';
       h += '<div class="stp">' + MSTEPS.map(function (s) {
         var c = rows.filter(function (x) { return x.step === s[0]; }).length;
         return '<div class="sp' + (mvStep === s[0] ? ' on' : '') + (c ? '' : ' z') + '" data-st="' + s[0] + '"><b>' + c + '</b>' + s[1] + ' ' + s[2] + '</div>';
       }).join('') + '</div>';
       if (mvStep) rows = rows.filter(function (x) { return x.step === mvStep; });
       if (!rows.length) h += '<div class="empty">Нет перемещений за ' + r.days + ' дн.</div>';
-      h += rows.map(function (x) {
-        var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '';
-        var fq = formOf(l0.name);
-        return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
-          '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
-          '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
-          trkBar(x.step) + (x.drv ? '<div class="tdrv">🚛 ' + esc(x.drv.driver) + '</div>' : '') + '</div>';
-      }).join('');
+      h += rows.map(card).join('');
       box.innerHTML = h;
       $('mvBack').onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = ''; flowDir = ''; mvStep = ''; showMoves(box); };
       if ($('mvAdd')) $('mvAdd').onclick = function () {
         try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-        var ln = mvLine; go(function () { showMvNew(ln); });
+        var ln = mvLine, dr = flowDir; go(function () { showMvNew(ln, dr); });
       };
       Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
         el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; mvStep = 'new'; showMoves(box); };   // направление — сначала «создано»
@@ -1230,13 +1250,7 @@
       Array.prototype.forEach.call(box.querySelectorAll('[data-st]'), function (el) {
         el.onclick = function () { var s = el.getAttribute('data-st'); mvStep = mvStep === s ? '' : s; showMoves(box); };
       });
-      Array.prototype.forEach.call(box.querySelectorAll('[data-mv]'), function (el) {
-        el.onclick = function () {
-          var id = el.getAttribute('data-mv');
-          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-          setTimeout(function () { go(function () { showMove(id); }); }, 100);
-        };
-      });
+      openCards();
     });
   }
   // ---------- ➕ Создать перемещение (руководитель 23.11.2026) ----------
@@ -1247,10 +1261,17 @@
                 ter: [[5, 'ГП завод'], [3, 'ГП Ташкент'], [1, 'Сырьё'], [8, 'Gynomedix Ташкент']] };
   var MV_ALL = { 1: 'Сырьё · Терминал', 2: 'Сырьё · Перечисление', 3: 'ГП Ташкент · Терминал', 4: 'ГП Ташкент · Перечисление',
                  5: 'ГП завод · Терминал', 6: 'ГП завод · Перечисление', 7: 'Gynomedix Ташкент · Перечисление', 8: 'Gynomedix Ташкент · Терминал' };
-  var mvN = null;   // { line, from, to, data, q: { pid: { rowKey: qty } }, find }
-  function showMvNew(line) {
-    var me = cur;
-    if (!mvN || mvN.line !== line) mvN = { line: line, from: 0, to: 0, data: null, q: {}, find: '' };
+  // 23.11.2026 (руководитель): направление уже выбрано — «откуда/куда» не спрашиваем. Пары складов направления;
+  // первая — обычная (по истории ERP); несколько — маленький выбор над списком. Сырьё → Ташкент и между линиями — нет.
+  var MV_PAIRS = {
+    per: { 'Завод→Ташкент': [[6, 4], [6, 7]], 'Ташкент→Завод': [[4, 6], [7, 6], [4, 2], [7, 2]],
+           'Завод→Завод': [[6, 2], [2, 6]], 'Ташкент→Ташкент': [[4, 7], [7, 4]] },
+    ter: { 'Завод→Ташкент': [[5, 3], [5, 8]], 'Ташкент→Завод': [[3, 5], [8, 5], [3, 1], [8, 1]],
+           'Завод→Завод': [[5, 1], [1, 5]], 'Ташкент→Ташкент': [[8, 3], [3, 8]] } };
+  var mvN = null;   // { line, dir, from, to, data, q: { pid: { rowKey: qty } }, find }
+  function showMvNew(line, dir) {
+    var me = cur, PR = (MV_PAIRS[line] || {})[dir] || [];
+    if (!mvN || mvN.line !== line || mvN.dir !== dir) mvN = { line: line, dir: dir, from: (PR[0] || [])[0] || 0, to: (PR[0] || [])[1] || 0, data: null, q: {}, find: '' };
     var S = mvN, LN = line === 'per' ? 'Перечисление' : 'Терминал';
     var other = line === 'per' ? 'ter' : 'per';
     var chip = function (id, nm, on, attr) { return '<div class="mvs' + (on ? ' on' : '') + '" ' + attr + '="' + id + '">' + esc(nm) + '</div>'; };
@@ -1268,13 +1289,12 @@
     var maxOf = function (it, j) { return Math.min(rowsOf(it)[j].qty, it.erp); };
     var sumOf = function (it) { var s = 0, m = S.q[it.pid] || {}; Object.keys(m).forEach(function (k) { s += +m[k] || 0; }); return s; };
     function build() {
-      var g = subTop('mv', 'Перемещения · ' + LN + ' · Новое перемещение');
-      g += '<div class="msec">ОТКУДА · ' + LN.toUpperCase() + '</div><div class="mvsg">' +
-        MV_ST[line].map(function (s) { return chip(s[0], s[1], S.from === s[0], 'data-mf'); }).join('') + '</div>';
-      if (S.from) {
-        // 23.11.2026 (руководитель): «куда» — только склады этой линии; сырьё — не в готовую продукцию Ташкента
-        g += '<div class="msec">КУДА</div><div class="mvsg">' + toList().map(function (s) { return chip(s[0], s[1], S.to === s[0], 'data-mt'); }).join('') + '</div>';
-      }
+      var g = subTop('mv', 'Перемещения · ' + LN + ' · ' + dirName(dir));
+      if (PR.length > 1)   // направление → несколько пар складов: маленький выбор, первая уже выбрана
+        g += '<div class="mvpair">' + PR.map(function (p) {
+          return '<div class="mvs' + (S.from === p[0] && S.to === p[1] ? ' on' : '') + '" data-pair="' + p[0] + ':' + p[1] + '">' + esc(shortSt(p[0])) + ' → ' + esc(shortSt(p[1])) + '</div>';
+        }).join('') + '</div>';
+      else g += '<div class="mvpair1">' + esc(shortSt(S.from)) + ' → ' + esc(shortSt(S.to)) + '</div>';
       if (S.from && !S.data) g += '<div class="spin">Загрузка склада из ERP…</div>';
       if (S.data) {
         var its = S.data.items || [];
@@ -1351,12 +1371,16 @@
     }
     function bind() {
       bindTabs();
-      Array.prototype.forEach.call(view.querySelectorAll('[data-mf]'), function (el) {
-        el.onclick = function () { var f = +el.getAttribute('data-mf'); if (f === S.from) return; S.from = f; S.to = 0; S.data = null; S.q = {}; S.find = ''; draw(); load_(); };
-      });
-      Array.prototype.forEach.call(view.querySelectorAll('[data-mt]'), function (el) {
-        el.onclick = function () { S.to = +el.getAttribute('data-mt'); Array.prototype.forEach.call(view.querySelectorAll('[data-mt]'), function (e) { e.classList.toggle('on', e === el); });
-          $('mvTot').innerHTML = totText(); $('mvGo').disabled = !ready(); };
+      Array.prototype.forEach.call(view.querySelectorAll('[data-pair]'), function (el) {
+        el.onclick = function () {
+          var p = el.getAttribute('data-pair').split(':'), f = +p[0], t = +p[1];
+          if (f === S.from && t === S.to) return;
+          try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+          if (f !== S.from) { S.from = f; S.to = t; S.data = null; S.q = {}; S.find = ''; draw(); return load_(); }
+          S.to = t;   // тот же склад «откуда» — выбранное остаётся
+          Array.prototype.forEach.call(view.querySelectorAll('[data-pair]'), function (e) { e.classList.toggle('on', e === el); });
+          $('mvTot').innerHTML = totText(); $('mvGo').disabled = !ready();
+        };
       });
       if ($('mvFind')) $('mvFind').oninput = function () {
         S.find = this.value.trim();
@@ -1407,8 +1431,8 @@
             mvN = null;   // выбор очищен; к созданному документу
             delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))];
             try { localStorage.removeItem('pfl:' + ck('/api/flow' + JSON.stringify({ kind: 'mv' }))); } catch (e) {}
-            mvStep = 'new'; flowDir = '';
-            if (r.id) cur = function () { showMove(String(r.id)); }, showMove(String(r.id)); else goBack();
+            mvStep = 'new';   // назад — в это направление, «создано»: новый документ — в списке созданных
+            goBack();
           }).catch(function (e) { b.disabled = false; b.textContent = '✅ Создать перемещение'; fail(e); });
         });
       };
