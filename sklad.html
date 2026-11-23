@@ -256,6 +256,7 @@
   .fchip[data-f=mv] { background: linear-gradient(150deg, #8b7bff, #4b39c9); box-shadow: 0 4px 0 #34278f; }
   .fchip[data-f=inc] { background: linear-gradient(150deg, #b5e655, #5c9e12); box-shadow: 0 4px 0 #3f700a; }
   .fchip[data-f=ret] { background: linear-gradient(150deg, #ff8f8f, #d43c3c); box-shadow: 0 4px 0 #962424; }
+  .fchip[data-f=prod] { background: linear-gradient(150deg, #4fd68a, #0f8a4a); box-shadow: 0 4px 0 #0b5e33; }   /* 23.11: Из производства */
   .fchip[data-f=ship] { background: linear-gradient(150deg, #c18cff, #8a3fd1); box-shadow: 0 4px 0 #5f2a96; }
   .rt2 .to.cl { background: #efeaff; color: #4b39c9; }
   .who { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
@@ -297,6 +298,13 @@
   .mvfire { margin: 4px 0; padding: 5px 9px; border-radius: 10px; background: #ffe3dc; color: #b3261e; font-weight: 900; font-size: 13px; line-height: 1.25; }
   .mvauto { margin: 4px 0; padding: 4px 9px; border-radius: 10px; background: #e8eefb; color: #2d3a52; font-weight: 800; font-size: 12px; line-height: 1.25; }
   img.fic { width: 1.15em; height: 1.15em; vertical-align: -0.2em; object-fit: contain; }
+  .mvph .mvn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 11px; margin-right: 6px;
+               background: #e8820c; color: #fff; font-size: 12px; font-weight: 900; vertical-align: 1px; }   /* 23.11: номер товара 1, 2, 3… */
+  .mvlist { margin: 6px 0 4px; }
+  .mvlist .mvlh { font-size: 12px; font-weight: 800; color: var(--hint); margin: 0 0 2px; }
+  .mvlist .mvli { display: flex; align-items: baseline; gap: 6px; font-size: 14.5px; line-height: 1.3; padding: 2px 0; }
+  .mvlist .mvli .no { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 10px;
+                      background: #e8820c; color: #fff; font-size: 12px; font-weight: 900; }
   .inv-ok { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
   .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
@@ -635,7 +643,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '290519b8', newBuild = '';
+  var BUILD = 'bbe0f568', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -852,7 +860,7 @@
     if (fl.length < 2 && !lastTabs2.length) return '';
     var sq = fl.length >= 4;   // 4 вкладки — ровные квадратики: значок сверху, слово снизу (влезает на телефоне)
     if (lastTabs2.length) {   // 22.11.2026 (руководитель): порядок — Отгрузка · Перемещ. · Возврат · Приходы / Завод · Ташкент · Инвент. · Остаток
-      var ORD = ['ship', 'mv', 'ret', 'inc', 'zav', 'tas', 'inv', 'ost'], all8 = fl.concat(lastTabs2);
+      var ORD = ['ship', 'mv', 'ret', 'inc', 'prod', 'zav', 'tas', 'inv', 'ost'], all8 = fl.concat(lastTabs2);
       all8.sort(function (a, b) { var i = ORD.indexOf(a[0]), j = ORD.indexOf(b[0]); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       var h8 = '';
       for (var i8 = 0; i8 < all8.length; i8 += 4) h8 += tabRow(all8.slice(i8, i8 + 4), true, active, i8 + 4 >= all8.length);
@@ -871,6 +879,11 @@
   function bindTabs() {
     Array.prototype.forEach.call(view.querySelectorAll('.fchip[data-f]'), function (el) {
       el.onclick = function () {
+        if (el.getAttribute('data-f') === 'prod') {   // 23.11.2026 (руководитель): «🏭 Из производства» — сразу, без захода в «Приходы»
+          try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+          stack = []; cur = showMenu; window.scrollTo(0, 0);   // «Назад» — в главное меню
+          return go(showProd);
+        }
         mfilter = el.getAttribute('data-f');
         try { localStorage.setItem('pfl:mfilter', mfilter); } catch (e) {}
         // 23.11.2026 (руководитель): вкладка сверху — раздел всегда с начала (не «остаётся на месте» внутри линии/направления/отбора)
@@ -1228,12 +1241,15 @@
       if (!document.body.contains(box)) return;
       var all0 = (r.rows || []).filter(function (x) { return x.step !== 'cancel'; });
       var card = function (x) {
-        var l0 = x.lines[0] || {}, more = x.lines.length > 1 ? ' +' + (x.lines.length - 1) : '';
-        var fq = formOf(l0.name);
+        // 23.11.2026 (руководитель): «Синимаг +2» вводило в заблуждение (взяли один товар) — весь список, с номерами 1, 2, 3…
+        var tot = x.lines.reduce(function (a, y) { return a + (+y.qty || 0); }, 0);
         return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
           mvBadge(x) +
           '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
-          '<div class="what">' + (fq ? fq[2] : '📦') + ' ' + esc(l0.name || '') + more + '<br><b>' + n(l0.qty) + ' шт</b>' + (l0.boxes ? ' · ' + esc(l0.boxes) : '') + '</div>' +
+          '<div class="mvlist"><div class="mvlh">' + x.lines.length + ' поз · ' + n(tot) + ' шт</div>' + x.lines.map(function (y, j) {
+            var fq = formOf(y.name);
+            return '<div class="mvli"><span class="no">' + (j + 1) + '</span><span class="pn">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '</span> · <b>' + n(y.qty) + ' шт</b></div>';
+          }).join('') + '</div>' +
           trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv && x.drv.taken ? '<div class="tdrv">🚛 забрал · ' + esc(x.drv.driver) + '</div>' : x.drv && x.drv.handed ? '<div class="tdrv">📦 передал · ' + esc(x.drv.handed_by || '') + '</div>' : '') + '</div>';
       };
       var openCards = function () {
@@ -1251,8 +1267,14 @@
           var c = made.filter(function (x) { return mvIn(x, l[0]); }).length;
           return '<div class="' + l[3] + (c ? '' : ' z') + '" data-line="' + l[0] + '"><b>' + c + '</b>' + l[1] + '<small>' + l[2] + ' · создано</small></div>';
         }).join('') + '</div>';
-        h1 += '<div class="msec">🟡 СОЗДАНО — ЖДУТ ОТПРАВКИ · ' + made.length + '</div>';
-        h1 += made.length ? made.map(card).join('') : '<div class="empty">Созданных перемещений нет</div>';
+        // 23.11.2026 (руководитель): ниже — общий список всех перемещений: что ещё не отправлено, что в пути, что принято
+        var GR = [['🟡 СОЗДАНО — ЖДУТ ОТПРАВКИ', function (x) { return x.step === 'new'; }],
+                  ['📦 ПЕРЕДАНО · 🚛 ЗАБРАЛИ — В ПУТИ', function (x) { return x.step === 'ready' || x.step === 'road' || x.step === 'came'; }],
+                  ['🟢 ПРИНЯТО · за ' + r.days + ' дн.', function (x) { return x.step === 'ok'; }]];
+        GR.forEach(function (g) {
+          var rs = all0.filter(g[1]);
+          h1 += '<div class="msec">' + g[0] + ' · ' + rs.length + '</div>' + (rs.length ? rs.map(card).join('') : '<div class="empty" style="padding:8px 0">нет</div>');
+        });
         box.innerHTML = h1;
         Array.prototype.forEach.call(box.querySelectorAll('[data-line]'), function (el) {
           el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = el.getAttribute('data-line'); flowDir = ''; mvStep = 'new'; showMoves(box); };   // сначала — «создано»
@@ -1348,7 +1370,7 @@
         g += its.map(function (it, i) {
           var sel = sumOf(it), hide = S.find && it.name.toLowerCase().indexOf(S.find.toLowerCase()) < 0;
           return '<div class="mvp' + (sel ? ' sel' : '') + '" data-pi="' + i + '"' + (hide ? ' style="display:none"' : '') + '>' +
-            '<div class="mvph"><b>' + esc(it.name) + '</b><span>ERP ' + fq(it.erp) + ' ' + esc(it.unit) + '</span></div>' +
+            '<div class="mvph"><b><span class="mvn">' + (i + 1) + '</span>' + esc(it.name) + '</b><span>ERP ' + fq(it.erp) + ' ' + esc(it.unit) + '</span></div>' +
             '<div class="mvpsel" id="mvsel' + i + '">' + (sel ? '✔ выбрано ' + fq(sel) + ' ' + esc(it.unit) : '') + '</div>' +
             rowsOf(it).map(function (b, j) {
               var v = (S.q[it.pid] || {})[j] || '';
@@ -1462,7 +1484,7 @@
           return { pid: x.it.pid, amount: x.s, note: note };
         });
         var q = 'Создать перемещение в ERP?\n' + MV_ALL[S.from] + ' → ' + MV_ALL[S.to] + '\n\n' +
-          p.map(function (x) { return '• ' + x.it.name + ' — ' + fq(x.s) + ' ' + x.it.unit; }).join('\n') + '\n\nДокумент будет «Новый»: остатки не меняются до приёма.';
+          p.map(function (x, k) { return (k + 1) + '. ' + x.it.name + ' — ' + fq(x.s) + ' ' + x.it.unit; }).join('\n') + '\n\nДокумент будет «Новый»: остатки не меняются до приёма.';
         var ask = function (cb) { try { tg.showConfirm(q, cb); } catch (e) { cb(confirm(q)); } };
         ask(function (yes) {
           if (!yes) return;
@@ -1762,7 +1784,7 @@
   var prodFlt = '';
   function showProd() {
     var me = cur;
-    view.innerHTML = subTop('inc', 'Приходы · Из производства') + '<div id="prodbox"><div class="spin">Загрузка…</div></div>';
+    view.innerHTML = subTop('prod', 'Из производства') + '<div id="prodbox"><div class="spin">Загрузка…</div></div>';
     bindTabs();
     load('/api/flow', { kind: 'prod' }, function (r) {
       var box = $('prodbox');
@@ -2006,7 +2028,7 @@
       if (r.inv_n != null) tabCount.inv = r.inv_n;
       if (r.ost_n != null) tabCount.ost = r.ost_n;
       // руководитель 22.11: второй ряд — 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (ERP, только чтение)
-      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы'], ['ret', '↩️ Возврат'], ['ship', '🛒 Отгрузка']] : [];
+      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы'], ['prod', '🏭 Из произв.'], ['ret', '↩️ Возврат'], ['ship', '🛒 Отгрузка']] : [];   // 23.11: «Из производства» — сразу, без захода в «Приходы»
       if (r.flow) { tabCount.mv = r.flow.mv; tabCount.inc = r.flow.inc; tabCount.ret = r.flow.ret; tabCount.ship = r.flow.ship; }
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
