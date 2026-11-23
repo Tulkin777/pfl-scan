@@ -527,6 +527,18 @@
   .nrbrow .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
   @media (min-width: 600px) { .navb .nrb { display: flex; } .nrbrow { display: none; } }
   .ivw { max-width: 860px; }
+  /* 23.11.2026 (вариант 10): мгновенная проверка и Темур — у строки; итог проверки — плашкой */
+  .ivnote { padding: 2px 8px 8px 36px; font-size: 13px; line-height: 1.3; background: rgba(255,170,40,.10); margin: -2px 0 4px; border-left: 4px solid #e8820c; }
+  .ivnote .w { color: #a85f00; } .ivnote .t { margin-top: 3px; font-weight: 700; }
+  .ivnote .t.bad { color: #c0392b; } .ivnote .t.mid { color: #a85f00; } .ivnote .t.okk { color: #17803c; }
+  .chkb { border-radius: 12px; padding: 9px 12px; margin: 0 0 10px; font-weight: 800; font-size: 15px; }
+  .chkb small { display: block; font-weight: 400; font-size: 13px; margin-top: 3px; }
+  .chkb.q { background: rgba(31,98,201,.12); color: #1f62c9; } .chkb.ok { background: rgba(23,150,74,.14); color: #17803c; }
+  .chkb.bad { background: rgba(214,59,59,.13); color: #c0392b; } .chkb.st { background: rgba(255,170,40,.18); color: #a85f00; }
+  .cst { display: inline-block; font-size: 12px; font-weight: 800; border-radius: 8px; padding: 2px 8px; }
+  .cst.q { background: rgba(31,98,201,.14); color: #1f62c9; } .cst.ok { background: rgba(23,150,74,.15); color: #17803c; }
+  .cst.bad { background: rgba(214,59,59,.14); color: #c0392b; } .cst.st, .cst.none { background: rgba(255,170,40,.2); color: #a85f00; }
+  .ivok0 { border-radius: 12px; padding: 12px; margin: 14px 0 6px; background: rgba(23,150,74,.14); color: #17803c; font-weight: 800; text-align: center; }
   /* 23.11.2026: «Вкладки главного экрана» в доступе — одна строка: название слева, ✅/⛔ справа */
   .whr.tabr { display: flex; align-items: center; gap: 8px; padding-top: 6px; padding-bottom: 6px; }
   .whr.tabr .wn { flex: 1; min-width: 0; margin: 0; font-size: 15px; }
@@ -756,7 +768,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1fc61a68', newBuild = '';
+  var BUILD = 'fc94ec22', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1226,6 +1238,8 @@
           // 23.11.2026 (руководитель): «⚖️ Расхождение 1С ↔ ERP» — число расхождений прямо на плитке, внутри — список
           (ostOk ? '<div class="tile cat k gpt ostt"><div class="bd' + (ostN ? '' : ' z') + '">' + (ostN == null ? '…' : ostN) + '</div><div class="e">⚖️</div>' +
             '<div class="n">Расхождение 1С ↔ ERP</div><div class="c">' + (ostN ? ostN + ' не сходится' : ostN === 0 ? 'всё сходится' : 'проверяю…') + '</div></div>' : '') + '</div>' +
+          // 23.11.2026 (вариант 10): подсчёты до ERP с итогом проверки Темура — здесь же, над документами ERP
+          '<div class="invdraft"></div>' +
           // 23.11.2026 (руководитель): созданные инвентаризации и проверка — сразу здесь, на первом экране
           '<div class="msec">📄 СОЗДАННЫЕ ИНВЕНТАРИЗАЦИИ · ' + rows.length + '</div><div class="invall"></div>';
       } else if (!s.kind) {   // всегда слева готовая продукция, справа сырьё (в Ташкенте — только готовая продукция)
@@ -1259,6 +1273,21 @@
           t.querySelector('.c').textContent = n ? n + ' не сходится' : 'всё сходится';
         });
       }
+      if (V.querySelector('.invdraft')) load2('/api/invd_all', {}, function (q) {
+        var bx = V.querySelector('.invdraft'); if (!bx || !q || !q.ok) return;
+        var ds = q.drafts || [];
+        var h2 = ds.length ? '<div class="msec">✏️ ПОДСЧЁТЫ ДО ERP · ' + ds.length + '</div>' + ds.map(function (d, i) {
+          return '<div class="ivd" data-id="' + esc(d.id) + '"><div class="t"><span class="ino">' + (i + 1) + '</span>' + esc(d.store_name) + '</div>' +
+            '<div class="m">изменено ' + d.n_changed + ' из ' + d.n + (d.n_warn ? ' · ⚠️ ' + d.n_warn : '') + ' · ' + esc(d.by) + ' · ' +
+            esc(String(d.at).slice(8, 10) + '.' + String(d.at).slice(5, 7) + ' ' + String(d.at).slice(11, 16)) + '</div>' +
+            '<div style="margin-top:5px">' + chkBanner(d, true) + '</div></div>';
+        }).join('') : '';
+        if (bx.innerHTML === h2) return;
+        bx.innerHTML = h2;
+        Array.prototype.forEach.call(bx.querySelectorAll('.ivd'), function (el) {
+          el.onclick = function () { var id0 = el.getAttribute('data-id'); try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} go(function () { showInvd(id0); }); };
+        });
+      });
       if (V.querySelector('.invall')) invDocs(rows, (r.perm || {}).lv === 2 && ((r.perm || {}).acts || []).indexOf('task') >= 0, V.querySelector('.invall'));
       Array.prototype.forEach.call(V.querySelectorAll('.tile[data-s]'), function (el) {
         el.onclick = function () {
@@ -1363,8 +1392,13 @@
         (dv ? '<span class="mk dv">' + (dv > 0 ? '+' : '−') + fmtq(Math.abs(dv)) + '</span>' : '') + mk +
         ' <span class="u">' + esc(String(r.unit || '').toLowerCase()) + '</span></div><div class="n">' + fmtq(r.erp) + '</div><div class="n">' + fmtq(r.c1) + '</div>' +
         (D.can && !D.erp_doc ? '<input inputmode="decimal" enterkeyhint="done" value="' + fmtq(r.fact).replace(/\s/g, '') + '" data-f="' + esc(r.pid) + '">'
-          : '<div class="fv">' + fmtq(r.fact) + '</div>') + '</div>';
+          : '<div class="fv">' + fmtq(r.fact) + '</div>') + '</div>' +
+        // 23.11.2026 (вариант 10): у изменённой строки — мгновенная проверка (⚠️) и замечание Темура
+        ((r.warn || []).length || r.temur ? '<div class="ivnote">' + (r.warn || []).map(function (w) { return '<div class="w">⚠️ ' + esc(w) + '</div>'; }).join('') +
+          (r.temur ? '<div class="t ' + (/Важно/.test(r.temur.level) ? 'bad' : /Внимание/.test(r.temur.level) ? 'mid' : 'okk') + '">🔎 Темур' +
+            (r.temur.level ? ' · ' + esc(r.temur.level) : '') + ': ' + esc(r.temur.text) + '</div>' : '') + '</div>' : '');
     }
+    var pollT = null;
     var D = null;
     function draw() {
       var q = find.toLowerCase(), hit = function (r) { return !q || r.name.toLowerCase().indexOf(q) >= 0; };
@@ -1377,6 +1411,7 @@
         '<br>' + (D.has_c1 ? '📗 ' + esc(D.c1_src) : '📕 1С: связи нет — только Перечисление (без Gynomedix)') + '</div>' +
         '<div class="ivsum"><div class="ch"><b>' + D.n_changed + '</b>изменено</div><div class="eq"><b>' + (D.has_c1 ? D.n_eq : '—') + '</b>= 1С</div>' +
         '<div class="ne"><b>' + (D.has_c1 ? D.n_ne : '—') + '</b>≠ 1С</div><div><b>' + D.n + '</b>всего</div></div>' +
+        chkBanner(D) +
         (D.n > 12 ? '<input class="txt ivfind" id="ivfind" placeholder="🔎 Найти товар" value="' + esc(find) + '">' : '') +
         '<div class="ivhd"><span>товар</span><span>ERP</span><span>1С</span><span>факт</span></div>';
       var ch = D.changed.filter(hit);
@@ -1388,13 +1423,25 @@
         h += rowH(r);
       });
       if (q && !ch.length && !D.rest.some(hit)) h += '<div class="empty">Не найдено</div>';
+      // 23.11.2026 (руководитель, вариант 10): без изменений — документ не нужен; есть — «🔎 Проверить (Темур)» →
+      // чисто → «✅ Создать и провести» (руководитель / назначенный); ошибки — исправить и проверить снова
+      var cs = (D.chk || {}).status || 'none';
       if (D.erp_doc) {
-        h += '<div class="ivbar"><button class="go" id="ivok">✅ Провести · тест</button></div>' +
-          '<div class="note">Документ №' + esc(D.erp_doc) + ' создан в ERP («Новый», остатки не менялись). Проверка — агент Темур, как обычно.<br>' +
-          '«Провести» пока тестовая: проведение — после разрешения руководителя.</div>';
-      } else if (D.can) {
-        h += '<div class="ivbar"><button class="go" id="iverp">📤 Создать в ERP · ' + D.n + ' поз.' + (D.n_changed ? ' · изменено ' + D.n_changed : '') + '</button></div>' +
-          '<div class="note">Впишите факт, где отличается, — сохраняется сразу. Потом «Создать в ERP»: документ создаётся один раз, изменить его потом нельзя.</div>';
+        h += '<div class="note" style="font-size:15px">' + (D.posted ? '✅ Проведён в ERP: №' + esc(D.erp_doc) + ' — остатки = факту.'
+          : '📤 Создан в ERP №' + esc(D.erp_doc) + ' («Новый»), но не проведён — проведение по списку на первом экране.') + '</div>';
+      } else if (!D.n_changed) {
+        h += '<div class="ivok0">✅ Расхождений нет — факт = ERP. Документ в ERP не нужен.</div>' +
+          (D.can ? '<div class="note">Нашли отличие — впишите факт в строке, тогда появится «🔎 Проверить (Темур)».</div>' : '');
+      } else if (D.can || D.can_post) {
+        var b1 = cs === 'queued' ? '<button id="ivchk" disabled>⏳ Темур проверяет…</button>'
+          : cs === 'clean' ? '<button id="ivchk">🔎 Проверить снова</button>'
+          : '<button class="go" id="ivchk">🔎 Проверить (Темур) · ' + D.n_changed + ' стр.</button>';
+        var b2 = cs === 'clean' && D.can_post ? '<button class="go" id="ivpost">✅ Создать и провести</button>' : '';
+        h += '<div class="ivbar">' + b1 + b2 + '</div>' + '<div class="note">' +
+          (cs === 'clean' ? (D.can_post ? '«Создать и провести»: документ в ERP только из изменённых строк и сразу проводится (остатки = факту).'
+            : '✅ Проверка чистая — «Создать и провести» нажимает руководитель или назначенный подтверждающий.')
+            : cs === 'errors' ? 'Исправьте строки с замечаниями Темура и нажмите «Проверить» снова.'
+            : 'Сначала проверка Темура — так в ERP не создаются ошибочные документы.') + '</div>';
       } else h += '<div class="note">👁 Только смотреть — менять факт не дано</div>';
       h += '</div>';
       if (h === lastH) return;
@@ -1433,17 +1480,56 @@
         };
         try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
       };
-      if ($('ivok')) $('ivok').onclick = function () {
-        call('/api/invd_ok', { id: id }, 30000).then(function (d) { haptic('warning'); say(d.text); }).catch(fail);
+      if ($('ivchk')) $('ivchk').onclick = function () {
+        var b = this; b.disabled = true; b.textContent = '⏳ Отправляю Темуру…';
+        call('/api/invd_check', { id: id }, 30000).then(function (d) {
+          haptic(d.ok ? 'success' : 'warning'); if (d.text) say(d.text);
+          if (d.ok) { D = d; lastH = ''; draw(); poll(); } else { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; }
+        }).catch(function (e) { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; ivErr(e); });
       };
+      if ($('ivpost')) $('ivpost').onclick = function () {
+        var b = this, q = 'Создать и провести инвентаризацию в ERP?\n' + D.store_name + '\nИзменено строк: ' + D.n_changed +
+          '\n\nОстатки этих строк в ERP станут равны факту. Перед этим сервер ещё раз сверит остатки ERP.';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Создаю и провожу в ERP…';
+          call('/api/invd_post', { id: id }, 260000).then(function (d) {
+            haptic(d.ok ? 'success' : 'warning'); say(d.text);
+            load('/api/invd_get', { id: id }, function (x) { if (x.ok) { D = x; lastH = ''; draw(); } });
+          }).catch(function (e) { b.disabled = false; b.textContent = '✅ Создать и провести'; ivErr(e); });
+        };
+        try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+      };
+    }
+    function poll() {   // Темур проверяет — раз в 15 с смотреть итог, пока экран открыт
+      if (pollT) clearTimeout(pollT);
+      if (!D || (D.chk || {}).status !== 'queued') return;
+      pollT = setTimeout(function () {
+        if (cur !== me) return;
+        call('/api/invd_get', { id: id }, 20000).then(function (x) {
+          if (cur !== me || !x.ok) return;
+          if (document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-f')) return poll();
+          D = x; draw(); poll();
+        }).catch(function () { poll(); });
+      }, 15000);
     }
     if (first && first.ok) { D = first; draw(); }
     load('/api/invd_get', { id: id }, function (x) {
       if (cur !== me) return;
       if (!x.ok) { view.innerHTML = subTop('inv', 'Инвентаризация') + '<div class="empty">' + esc(x.text || 'Черновика нет') + '</div>'; return bindTabs(); }
       if (document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-f')) return;   // человек вводит — не перерисовывать
-      D = x; draw();
+      D = x; draw(); poll();
     });
+  }
+  // 23.11.2026 (вариант 10): итог проверки Темура подсчёта — плашка над списком (и на первом экране)
+  function chkBanner(D, short) {
+    var c = D.chk || {}, s = c.status || 'none';
+    if (D.erp_doc || s === 'none') return short ? (D.n_changed ? '<span class="cst none">не проверено</span>' : '<span class="cst ok">расхождений нет</span>') : '';
+    var nb = Object.keys(c.rows || {}).filter(function (k) { return /Важно/.test(c.rows[k].level); }).length;
+    var T = { queued: ['q', '⏳ Темур проверяет…'], clean: ['ok', '✅ Темур: ошибок нет'], errors: ['bad', '❌ Темур: ошибки' + (nb ? ' — ' + nb : '')],
+              stale: ['st', '✏️ Факт меняли после проверки — проверьте снова'] }[s] || ['none', ''];
+    if (short) return '<span class="cst ' + T[0] + '">' + T[1] + '</span>';
+    return '<div class="chkb ' + T[0] + '">' + T[1] + (c.summary && s !== 'stale' ? '<small>' + esc(c.summary) + '</small>' : '') + '</div>';
   }
   // 23.11.2026 (руководитель): остаток — коротко, по алфавиту, Завод (зелёный) · Ташкент (синий) · Итого; ноль — бледная «—»
   function invStock(kind, prod, B) {
