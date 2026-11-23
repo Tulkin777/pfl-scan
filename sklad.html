@@ -285,6 +285,42 @@
   .dir.dir4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   /* 23.11.2026 (руководитель): Перемещения — шаг 1 две плитки линий, шаг 2 четыре направления мелко в один ряд */
   .dir.dir2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  /* 23.11.2026 (руководитель): «➕ Создать перемещение» — по товару, партии FIFO с местом, итог и кнопка внизу */
+  .mvadd { margin: 0 0 10px; background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff; }
+  .mvsg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; }
+  .mvs { text-align: center; padding: 10px 4px; border-radius: 12px; background: var(--bg2, #eef0f4); color: var(--tg-theme-text-color, #1e1e1e);
+         font-weight: 800; font-size: 13px; line-height: 1.2; cursor: pointer; box-shadow: 0 2px 0 #d9dde5; }
+  .mvs.on { background: #2d3a52; color: #fff; box-shadow: 0 3px 0 #18202f; }
+  .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
+                  margin: 0 0 8px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #1e1e1e); }
+  .mvp { background: var(--bg2, #f1f3f7); border-radius: 14px; padding: 10px 10px 4px; margin: 0 0 8px; border: 2px solid transparent; }
+  .mvp.sel { border-color: #17964a; background: #eefaf2; }
+  .mvph { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .mvph b { font-size: 15px; font-weight: 900; color: var(--tg-theme-text-color, #1e1e1e); line-height: 1.2; }
+  .mvph span { flex: 0 0 auto; font-size: 12px; font-weight: 700; color: #6b7385; }
+  .mvpsel { font-size: 12px; font-weight: 800; color: #17964a; min-height: 2px; margin: 2px 0 2px; }
+  .mvb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 0; border-top: 1px solid rgba(0,0,0,.07); }
+  .mvbi { flex: 1 1 100%; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+  .mvbi .bn { font-weight: 900; font-size: 14px; color: var(--tg-theme-text-color, #1e1e1e); }
+  .mvbi .bn.z { font-weight: 700; color: #9aa0ab; font-size: 12px; }
+  .mvbi .pl { display: inline-block; padding: 2px 8px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 12.5px; letter-spacing: .2px; }
+  .mvbi .pl.no { background: #e4e7ee; color: #6b7385; }
+  .mvbi small { margin-left: auto; font-size: 12.5px; color: #6b7385; font-weight: 800; white-space: nowrap; }
+  .mvq { flex: 1 1 100%; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .mvq button { width: 40px; height: 38px; padding: 0; border-radius: 10px; font-size: 20px; font-weight: 900; margin: 0; border: 0;
+                background: #fff; color: #2d3a52; box-shadow: 0 2px 0 #c9d1de, inset 0 0 0 2px #c9d1de; cursor: pointer; }
+  .mvq button:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px #c9d1de; }
+  .mvq button.all { width: auto; padding: 0 12px; font-size: 13px; background: #2d3a52; color: #fff; box-shadow: 0 2px 0 #18202f; }
+  .mvq input { width: 74px; height: 38px; box-sizing: border-box; text-align: center; font-size: 16px; font-weight: 900; border: 2px solid #c9d1de;
+               border-radius: 10px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #1e1e1e); padding: 0 2px; }
+  .mvbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+           background: var(--tg-theme-bg-color, #fff); box-shadow: 0 -4px 14px rgba(0,0,0,.12); }
+  .mvbar > div { flex: 1; min-width: 0; line-height: 1.2; }
+  .mvbar b { display: block; font-size: 15px; font-weight: 900; color: var(--tg-theme-text-color, #1e1e1e); }
+  .mvbar small { display: block; font-size: 11.5px; color: #6b7385; font-weight: 700; line-height: 1.15; }
+  .mvbar button { flex: 0 0 auto; width: auto; margin: 0; padding: 12px 14px; border-radius: 14px; font-weight: 900; font-size: 15px; color: #fff;
+                  background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 4px 0 #0f6e35; }
+  .mvbar button:disabled { background: #c9d1de; box-shadow: none; color: #fff; }
   .fchips.sq .fchip.lng { font-size: 11px; line-height: 1.1; letter-spacing: -.2px; }   /* «Склад завода» / «Склад Ташкента» — влезает в квадратик */
   /* 23.11.2026 (руководитель): место заметно, но спокойно — тёмно-синяя плашка, белый шрифт (как кнопка «Назад») */
   .plc .pl { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 15px;
@@ -584,7 +620,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e3b3b8b0', newBuild = '';
+  var BUILD = '77158e2a', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1158,6 +1194,10 @@
       var rows = flowDir ? all.filter(function (x) { return x.dir === flowDir; }) : all;
       var h = '<div class="navb mvnav"><div class="bk" id="mvBack"><i>⬅</i>Назад</div><div class="nt"><small>Перемещения</small><b>' +
         LN[1] + ' · ' + LN[2] + '</b></div></div>';
+      // 23.11.2026 (руководитель): «➕ Создать перемещение» — документ ERP «Новый» (создаёт бот склада после «да»)
+      var pmv = r.perm || {};
+      if (r.admin || (pmv.lv === 2 && (pmv.acts || []).indexOf('send') >= 0))
+        h += '<button class="main mvadd" id="mvAdd">➕ Создать перемещение · ' + LN[1] + '</button>';
       h += '<div class="dir dirr">' + MDIR.map(function (d) {
         var c = all.filter(function (x) { return x.dir === d[0]; }).length;
         return '<div class="' + d[2] + (c ? '' : ' z') + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><b>' + c + '</b>' + d[1] + '</div>';
@@ -1178,6 +1218,10 @@
       }).join('');
       box.innerHTML = h;
       $('mvBack').onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvLine = ''; flowDir = ''; mvStep = ''; showMoves(box); };
+      if ($('mvAdd')) $('mvAdd').onclick = function () {
+        try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        var ln = mvLine; go(function () { showMvNew(ln); });
+      };
       Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
         el.onclick = function () { var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; mvStep = 'new'; showMoves(box); };   // направление — сначала «создано»
       });
@@ -1192,6 +1236,168 @@
         };
       });
     });
+  }
+  // ---------- ➕ Создать перемещение (руководитель 23.11.2026) ----------
+  // Откуда → Куда → товары склада по товару (ERP — сколько можно), под каждым партии FIFO (старая первой) с местом схемы;
+  // количество — по партиям; внизу «✅ Создать перемещение» → подтверждение → бот склада создаёт документ ERP «Новый».
+  // Экран собирается целиком и ставится одним разом; при вводе количеств меняются только числа итога (без перерисовки).
+  var MV_ST = { per: [[6, 'ГП завод'], [4, 'ГП Ташкент'], [2, 'Сырьё'], [7, 'Gynomedix Ташкент']],
+                ter: [[5, 'ГП завод'], [3, 'ГП Ташкент'], [1, 'Сырьё'], [8, 'Gynomedix Ташкент']] };
+  var MV_ALL = { 1: 'Сырьё · Терминал', 2: 'Сырьё · Перечисление', 3: 'ГП Ташкент · Терминал', 4: 'ГП Ташкент · Перечисление',
+                 5: 'ГП завод · Терминал', 6: 'ГП завод · Перечисление', 7: 'Gynomedix Ташкент · Перечисление', 8: 'Gynomedix Ташкент · Терминал' };
+  var mvN = null;   // { line, from, to, data, q: { pid: { rowKey: qty } }, find }
+  function showMvNew(line) {
+    var me = cur;
+    if (!mvN || mvN.line !== line) mvN = { line: line, from: 0, to: 0, data: null, q: {}, find: '' };
+    var S = mvN, LN = line === 'per' ? 'Перечисление' : 'Терминал';
+    var other = line === 'per' ? 'ter' : 'per';
+    var chip = function (id, nm, on, attr) { return '<div class="mvs' + (on ? ' on' : '') + '" ' + attr + '="' + id + '">' + esc(nm) + '</div>'; };
+    var fq = function (x) { return n(Math.round(x * 1000) / 1000); };
+    var shortSt = function (id) {   // «ГП завод», другая линия — с припиской
+      var a = MV_ST[line].filter(function (s) { return s[0] === id; })[0];
+      if (a) return a[1];
+      var b = MV_ST[other].filter(function (s) { return s[0] === id; })[0];
+      return b ? b[1] + ' · ' + (other === 'per' ? 'Перечисл.' : 'Терминал') : String(id);
+    };
+    var rowsOf = function (it) { return it.rows.length ? it.rows : [{ batch: '', addr: '', code: '', qty: it.erp, none: true }]; };
+    var maxOf = function (it, j) { return Math.min(rowsOf(it)[j].qty, it.erp); };
+    var sumOf = function (it) { var s = 0, m = S.q[it.pid] || {}; Object.keys(m).forEach(function (k) { s += +m[k] || 0; }); return s; };
+    function build() {
+      var g = subTop('mv', 'Перемещения · ' + LN + ' · Новое перемещение');
+      g += '<div class="msec">ОТКУДА · ' + LN.toUpperCase() + '</div><div class="mvsg">' +
+        MV_ST[line].map(function (s) { return chip(s[0], s[1], S.from === s[0], 'data-mf'); }).join('') + '</div>';
+      if (S.from) {
+        g += '<div class="msec">КУДА</div><div class="mvsg">' + MV_ST[line].filter(function (s) { return s[0] !== S.from; })
+          .map(function (s) { return chip(s[0], s[1], S.to === s[0], 'data-mt'); }).join('') +
+          MV_ST[other].map(function (s) { return chip(s[0], s[1] + ' · ' + (other === 'per' ? 'Перечисл.' : 'Терминал'), S.to === s[0], 'data-mt'); }).join('') + '</div>';
+      }
+      if (S.from && !S.data) g += '<div class="spin">Загрузка склада из ERP…</div>';
+      if (S.data) {
+        var its = S.data.items || [];
+        g += '<div class="mvfind"><input id="mvFind" placeholder="🔍 Найти товар" value="' + esc(S.find) + '"></div>';
+        g += '<div class="note" style="margin:-2px 0 8px">' + its.length + ' товаров на складе «' + esc(S.data.name) + '» · ERP ' + esc(S.data.at) +
+          ' · партии — старая первой (FIFO)</div>';
+        if (!its.length) g += '<div class="empty">На этом складе в ERP ничего нет</div>';
+        g += its.map(function (it, i) {
+          var sel = sumOf(it), hide = S.find && it.name.toLowerCase().indexOf(S.find.toLowerCase()) < 0;
+          return '<div class="mvp' + (sel ? ' sel' : '') + '" data-pi="' + i + '"' + (hide ? ' style="display:none"' : '') + '>' +
+            '<div class="mvph"><b>' + esc(it.name) + '</b><span>ERP ' + fq(it.erp) + ' ' + esc(it.unit) + '</span></div>' +
+            '<div class="mvpsel" id="mvsel' + i + '">' + (sel ? '✔ выбрано ' + fq(sel) + ' ' + esc(it.unit) : '') + '</div>' +
+            rowsOf(it).map(function (b, j) {
+              var v = (S.q[it.pid] || {})[j] || '';
+              return '<div class="mvb">' + '<div class="mvbi">' + (b.none ? '<span class="pl no">место в схеме не найдено</span>' :
+                (b.batch ? '<span class="bn">п.' + esc(b.batch) + '</span>' : '<span class="bn z">без партии</span>') +
+                '<span class="pl">📍 ' + esc(b.code || b.addr) + '</span>') +
+                '<small>есть ' + fq(b.qty) + ' ' + esc(b.unit || it.unit) + (b.qty > it.erp ? ' · ERP ' + fq(it.erp) : '') + '</small></div>' +
+                '<div class="mvq"><button data-dec="' + i + ':' + j + '">−</button><input inputmode="decimal" data-in="' + i + ':' + j + '" value="' + v + '" placeholder="0">' +
+                '<button data-inc="' + i + ':' + j + '">+</button><button class="all" data-all="' + i + ':' + j + '">все</button></div></div>';
+            }).join('') + '</div>';
+        }).join('');
+        g += '<div style="height:84px"></div>';
+      }
+      g += '<div class="mvbar"><div id="mvTot">' + totText() + '</div><button id="mvGo"' + (ready() ? '' : ' disabled') + '>✅ Создать перемещение</button></div>';
+      return g;
+    }
+    function picked() {
+      var out = [];
+      ((S.data && S.data.items) || []).forEach(function (it) {
+        var s = sumOf(it);
+        if (s > 0) out.push({ it: it, s: s });
+      });
+      return out;
+    }
+    function totText() {
+      var p = picked(), s = p.reduce(function (a, x) { return a + x.s; }, 0);
+      return p.length ? '<b>' + p.length + ' поз · ' + fq(s) + '</b>' + (S.to ? '<small>' + esc(shortSt(S.from)) + ' → ' + esc(shortSt(S.to)) + '</small>' : '<small>выберите «куда»</small>')
+        : '<small>Выберите товар</small>';
+    }
+    function ready() { return S.from && S.to && picked().length; }
+    function draw() { view.innerHTML = build(); bind(); }
+    function upd(i) {   // меняются только числа: итог внизу и «выбрано» у товара (без перерисовки списка)
+      var it = S.data.items[i], s = sumOf(it), el = $('mvsel' + i), card = view.querySelector('[data-pi="' + i + '"]');
+      if (el) el.textContent = s ? '✔ выбрано ' + fq(s) + ' ' + it.unit : '';
+      if (card) card.classList.toggle('sel', s > 0);
+      $('mvTot').innerHTML = totText();
+      $('mvGo').disabled = !ready();
+    }
+    function setQ(i, j, v, inp) {
+      var it = S.data.items[i], mx = maxOf(it, j);
+      v = Math.max(0, Math.min(+v || 0, mx));
+      var other = sumOf(it) - (+((S.q[it.pid] || {})[j]) || 0);
+      if (other + v > it.erp) v = Math.max(0, it.erp - other);   // всего по товару — не больше остатка ERP
+      v = Math.round(v * 1000) / 1000;
+      S.q[it.pid] = S.q[it.pid] || {};
+      if (v) S.q[it.pid][j] = v; else delete S.q[it.pid][j];
+      var el = inp || view.querySelector('[data-in="' + i + ':' + j + '"]');
+      if (el && (el !== document.activeElement || String(v) !== String(+el.value || 0))) el.value = v || '';
+      upd(i);
+    }
+    function load_() {
+      var f = S.from;
+      call('/api/mv_stock', { from: f }, 30000).then(function (r) {
+        if (cur !== me || S.from !== f) return;
+        S.data = r;
+        var q = {};   // выбранное, которого больше нет на складе, — убрать
+        (r.items || []).forEach(function (it) { if (S.q[it.pid]) q[it.pid] = S.q[it.pid]; });
+        S.q = q;
+        draw();
+      }).catch(function (e) { if (cur === me) fail(e); });
+    }
+    function bind() {
+      bindTabs();
+      Array.prototype.forEach.call(view.querySelectorAll('[data-mf]'), function (el) {
+        el.onclick = function () { var f = +el.getAttribute('data-mf'); if (f === S.from) return; S.from = f; S.to = 0; S.data = null; S.q = {}; S.find = ''; draw(); load_(); };
+      });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-mt]'), function (el) {
+        el.onclick = function () { S.to = +el.getAttribute('data-mt'); Array.prototype.forEach.call(view.querySelectorAll('[data-mt]'), function (e) { e.classList.toggle('on', e === el); });
+          $('mvTot').innerHTML = totText(); $('mvGo').disabled = !ready(); };
+      });
+      if ($('mvFind')) $('mvFind').oninput = function () {
+        S.find = this.value.trim();
+        (S.data.items || []).forEach(function (it, i) {
+          var c = view.querySelector('[data-pi="' + i + '"]');
+          if (c) c.style.display = !S.find || it.name.toLowerCase().indexOf(S.find.toLowerCase()) >= 0 ? '' : 'none';
+        });
+      };
+      var ij = function (el, a) { var p = el.getAttribute(a).split(':'); return [+p[0], +p[1]]; };
+      Array.prototype.forEach.call(view.querySelectorAll('[data-in]'), function (el) {
+        el.oninput = function () { var p = ij(el, 'data-in'); setQ(p[0], p[1], String(el.value).replace(',', '.'), el); };
+        el.onblur = function () { var p = ij(el, 'data-in'); var v = (S.q[S.data.items[p[0]].pid] || {})[p[1]]; el.value = v || ''; };
+      });
+      var step = function (el, a, d) { var p = ij(el, a), it = S.data.items[p[0]], cur0 = +((S.q[it.pid] || {})[p[1]]) || 0;
+        setQ(p[0], p[1], d === 'all' ? maxOf(it, p[1]) : cur0 + d); try { tg.HapticFeedback.selectionChanged(); } catch (e) {} };
+      Array.prototype.forEach.call(view.querySelectorAll('[data-inc]'), function (el) { el.onclick = function () { step(el, 'data-inc', 1); }; });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-dec]'), function (el) { el.onclick = function () { step(el, 'data-dec', -1); }; });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-all]'), function (el) { el.onclick = function () { step(el, 'data-all', 'all'); }; });
+      $('mvGo').onclick = function () {
+        if (!ready()) return;
+        var p = picked(), b = $('mvGo');
+        var items = p.map(function (x) {   // в ERP — по товару; партии и места — в примечание строки
+          var m = S.q[x.it.pid] || {}, rs = rowsOf(x.it);
+          var note = Object.keys(m).map(function (j) { var r0 = rs[+j]; return (r0.batch ? 'п.' + r0.batch + ' ' : '') + fq(m[j]) + (r0.addr ? ' ← ' + r0.addr : ''); }).join('; ');
+          return { pid: x.it.pid, amount: x.s, note: note };
+        });
+        var q = 'Создать перемещение в ERP?\n' + MV_ALL[S.from] + ' → ' + MV_ALL[S.to] + '\n\n' +
+          p.map(function (x) { return '• ' + x.it.name + ' — ' + fq(x.s) + ' ' + x.it.unit; }).join('\n') + '\n\nДокумент будет «Новый»: остатки не меняются до приёма.';
+        var ask = function (cb) { try { tg.showConfirm(q, cb); } catch (e) { cb(confirm(q)); } };
+        ask(function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Создаю в ERP…';
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          call('/api/mv_create', { from: S.from, to: S.to, items: items }, 125000).then(function (r) {
+            haptic(r.ok ? 'success' : 'warning'); say(r.text || (r.ok ? 'Создано' : 'Не создано'));
+            if (!r.ok) { b.disabled = false; b.textContent = '✅ Создать перемещение'; return; }
+            mvN = null;   // выбор очищен; к созданному документу
+            delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))];
+            try { localStorage.removeItem('pfl:' + ck('/api/flow' + JSON.stringify({ kind: 'mv' }))); } catch (e) {}
+            mvStep = 'new'; flowDir = '';
+            if (r.id) cur = function () { showMove(String(r.id)); }, showMove(String(r.id)); else goBack();
+          }).catch(function (e) { b.disabled = false; b.textContent = '✅ Создать перемещение'; fail(e); });
+        });
+      };
+    }
+    draw();
+    if (S.from && !S.data) load_();
   }
   function showMove(id) {
     var me = cur;
