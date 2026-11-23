@@ -317,6 +317,7 @@
   .pcard .mvn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 11px;
                 background: #e8820c; color: #fff; font-size: 12px; font-weight: 900; }
   .mvlist { margin: 6px 0 4px; }
+  .mvlist .mvbt { color: #a85a00; } .mvlist .mvhint { color: var(--hint); font-size: 11px; }   /* 23.11: партия в строке */
   .mvlist .mvlh { font-size: 12px; font-weight: 800; color: var(--hint); margin: 0 0 2px; }
   .mvlist .mvli { display: flex; align-items: baseline; gap: 6px; font-size: 14.5px; line-height: 1.3; padding: 2px 0; }
   .mvlist .mvli .no { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 10px;
@@ -669,7 +670,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '2adf7941', newBuild = '';
+  var BUILD = '06abf25e', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1274,7 +1275,10 @@
           '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
           '<div class="mvlist"><div class="mvlh">' + x.lines.length + ' поз · ' + n(tot) + ' шт</div>' + x.lines.map(function (y, j) {
             var fq = formOf(y.name);
-            return '<div class="mvli"><span class="no">' + (j + 1) + '</span><span class="pn">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '</span> · <b>' + n(y.qty) + ' шт</b></div>';
+            // 23.11.2026 (руководитель): партия рядом с количеством — выбранная человеком/авто (из документа) или предложенная по схеме
+            var bt = (y.places || []).filter(function (p) { return p.batch; }).map(function (p) { return 'п.' + esc(p.batch); });
+            return '<div class="mvli"><span class="no">' + (j + 1) + '</span><span class="pn">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '</span> · <b>' + n(y.qty) + ' шт</b>' +
+              (bt.length ? ' · <b class="mvbt">' + bt.join(', ') + '</b>' + ((y.places || [])[0].hint ? ' <small class="mvhint">предложено</small>' : '') : '') + '</div>';
           }).join('') + '</div>' +
           trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv && x.drv.taken ? '<div class="tdrv">🚛 забрал · ' + esc(x.drv.driver) + '</div>' : x.drv && x.drv.handed ? '<div class="tdrv">📦 передал · ' + esc(x.drv.handed_by || '') + '</div>' : '') + '</div>';
       };
