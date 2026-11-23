@@ -586,6 +586,16 @@
   input.txt { font: inherit; width: 100%; padding: 11px 12px; border-radius: 12px; border: 2px solid var(--btn); margin: 6px 0; background: var(--bg); color: var(--fg); }
   /* 23.11.2026 (руководитель): инвентаризация из мини-аппа — черновик подсчёта */
   .ivnew { width: 100%; padding: 13px; font-size: 16px; font-weight: 800; border-radius: 14px; margin: 0 0 10px; background: linear-gradient(150deg, #6fb2ff, #1f62c9); color: #fff; box-shadow: 0 4px 0 #154a9a; }
+  .ivtyp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+  .ivt { border-radius: 14px; padding: 12px 8px; text-align: center; cursor: pointer; background: linear-gradient(150deg, #ffd25a, #e0a100);
+         color: #4a3300; box-shadow: 0 4px 0 #a37400; }
+  .ivt i { display: block; font-style: normal; font-size: 26px; line-height: 1.1; }
+  .ivt b { display: block; font-size: 17px; font-weight: 900; } .ivt span { display: block; font-size: 12px; margin-top: 3px; line-height: 1.2; }
+  .ivt.on { background: linear-gradient(150deg, #6fb2ff, #1f62c9); color: #fff; box-shadow: 0 4px 0 #154a9a; }
+  .ivt.sm { grid-column: 1 / -1; padding: 8px; background: var(--bg2); color: var(--fg); box-shadow: none; }
+  .ivt.sm b { display: inline; font-size: 14px; } .ivt.sm span { display: inline; margin-left: 6px; color: var(--hint); }
+  .ivt.sm.on { background: linear-gradient(150deg, #6fb2ff, #1f62c9); color: #fff; } .ivt.sm.on span { color: #fff; }
+  .ivt.off { opacity: .55; } .ivt:active { transform: translateY(2px); box-shadow: none; }
   .ivd { background: var(--bg2); border-radius: 14px; padding: 10px 12px; margin: 0 0 8px; border-left: 6px solid #1f62c9; cursor: pointer; }
   .ivd .t { font-weight: 800; } .ivd .m { font-size: 13px; color: var(--hint); margin-top: 2px; }
   .dhead.st-iv { background: linear-gradient(150deg, #6fb2ff, #1f62c9); box-shadow: 0 4px 0 #154a9a; }
@@ -709,7 +719,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd21c43b2', newBuild = '';
+  var BUILD = '8ddf4f51', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1178,33 +1188,47 @@
     load2('/api/invd_list', body, function (r) {
       var bx = $('invdbox');
       if (cur !== me || !bx || !r.ok) return;
-      var h = (r.drafts || []).map(function (d) {
+      var h = (r.drafts || []).filter(function (d) { return !d.typ; }).map(function (d) {   // черновики по виду — на плитках вида
         return '<div class="ivd" data-id="' + esc(d.id) + '"><div class="t">✏️ Черновик · ' + esc(d.store_name) + '</div>' +
           '<div class="m">' + esc(d.at.slice(8, 10) + '.' + d.at.slice(5, 7) + ' ' + d.at.slice(11)) + ' · ' + esc(d.by) + ' · ' + d.n + ' поз. · изменено ' + d.n_changed +
           (d.has_c1 ? ' · = 1С ' + d.n_eq : ' · без 1С') + '</div></div>';
       }).join('');
-      var free = (r.stores || []).filter(function (st) { return !(r.drafts || []).some(function (d) { return d.store === st.id; }); });
+      var free = (r.stores || []).filter(function (st) { return !st.types.length && !(r.drafts || []).some(function (d) { return d.store === st.id; }); });
       if (r.can && free.length) h = free.map(function (st) {
         return '<button class="ivnew" data-st="' + st.id + '">➕ Создать инвентаризацию' + ((r.stores || []).length > 1 ? ' · ' + esc(st.name) : '') + '</button>';
       }).join('') + h;
+      // 23.11.2026 (руководитель): склад сырья — инвентаризация по виду (папки ERP): сырьё · упаковка · тара (+ прочее)
+      (r.stores || []).filter(function (st) { return st.types.length; }).forEach(function (st) {
+        var g = '<div class="msec">➕ СОЗДАТЬ ИНВЕНТАРИЗАЦИЮ · ПО ВИДУ</div><div class="ivtyp">';
+        st.types.forEach(function (t) {
+          var dr = (r.drafts || []).filter(function (d) { return d.store === st.id && d.typ === t.key; })[0];
+          var ic = t.name.split(' ')[0], wd = t.name.split(' ').slice(1).join(' '), sm = t.key === 'other';
+          var nmh = (sm ? esc(ic) + ' ' : '<i>' + esc(ic) + '</i>') + '<b>' + esc(wd) + '</b>';
+          g += dr ? '<div class="ivt on' + (sm ? ' sm' : '') + '" data-id="' + esc(dr.id) + '">' + nmh + '<span>✏️ черновик · ' + dr.n + ' поз.</span></div>'
+            : '<div class="ivt' + (sm ? ' sm' : '') + (r.can ? '' : ' off') + '" data-st="' + st.id + '" data-ty="' + t.key + '">' + nmh + '<span>' + esc(t.sub) + '</span></div>';
+        });
+        h = g + '</div>' + h;
+      });
       if (bx.innerHTML === h) return;
       bx.innerHTML = h;
-      Array.prototype.forEach.call(bx.querySelectorAll('.ivd'), function (el) {
+      Array.prototype.forEach.call(bx.querySelectorAll('.ivd, .ivt[data-id]'), function (el) {
         el.onclick = function () { var id = el.getAttribute('data-id'); try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}; go(function () { showInvd(id); }); };
       });
       Array.prototype.forEach.call(bx.querySelectorAll('[data-st]'), function (b) {
         b.onclick = function () {
-          var st = +b.getAttribute('data-st'), nm = ((r.stores || []).filter(function (x) { return x.id === st; })[0] || {}).name || '';
-          var q = 'Создать инвентаризацию?\n' + nm + '\n\nВсе товары склада ERP, факт = остаток ERP' +
-            ((r.stores || []).some(function (x) { return x.id === st && x.c1; }) ? ', рядом остаток 1С' : ' (связи с 1С нет)') +
-            '.\nЭто черновик в мини-аппе — в ERP пока ничего не создаётся.';
+          if (!r.can) return say('👁 Только смотреть — создавать инвентаризацию вам не дано.');
+          var st = +b.getAttribute('data-st'), ty = b.getAttribute('data-ty') || '', S0 = (r.stores || []).filter(function (x) { return x.id === st; })[0] || {};
+          var T0 = (S0.types || []).filter(function (t) { return t.key === ty; })[0], lbl0 = b.innerHTML;
+          var q = 'Создать инвентаризацию?\n' + (S0.name || '') + (T0 ? ' · ' + T0.name.replace(/^\S+\s/, '') + ' (' + T0.sub + ')' : '') +
+            '\n\n' + (T0 ? 'Только товары этого вида' : 'Все товары склада') + ' ERP, факт = остаток ERP' +
+            (S0.c1 ? ', рядом остаток 1С' : ' (связи с 1С нет)') + '.\nЭто черновик в мини-аппе — в ERP пока ничего не создаётся.';
           var go_ = function (yes) {
             if (!yes) return;
-            b.disabled = true; b.textContent = '⏳ Собираю остатки ERP и 1С…';
-            call('/api/invd_new', { store: st }, 125000).then(function (d) {
-              if (!d.ok) { b.disabled = false; b.textContent = '➕ Создать инвентаризацию'; return say(d.text); }
+            b.disabled = true; b.innerHTML = '<b>⏳</b><span>Собираю остатки ERP и 1С…</span>';
+            call('/api/invd_new', { store: st, typ: ty }, 125000).then(function (d) {
+              if (!d.ok) { b.disabled = false; b.innerHTML = lbl0; return say(d.text); }
               haptic('success'); go(function () { showInvd(d.id, d); });
-            }).catch(function (e) { b.disabled = false; b.textContent = '➕ Создать инвентаризацию'; ivErr(e); });
+            }).catch(function (e) { b.disabled = false; b.innerHTML = lbl0; ivErr(e); });
           };
           try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
         };
