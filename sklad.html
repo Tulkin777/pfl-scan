@@ -515,7 +515,9 @@
   .navb { display: flex; align-items: stretch; gap: 10px; margin: 14px 0 10px; }
   .navb .nrb { display: none; align-items: center; gap: 6px; margin-left: auto; }
   .navb .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
-  .rb.ext { background: rgba(214,59,59,.14); color: #d63b3b; font-weight: 900; }
+  .rb.ext { background: linear-gradient(150deg, #ff5a4f, #d32f2f); color: #fff; box-shadow: 0 3px 0 #9a1f1f; }
+  .rb.ext:active { transform: translateY(2px); box-shadow: none; }
+  .rb.ext svg { display: block; }
   body.fs .navb .nrb { display: flex; } body.fs .navb .nrb .rb { width: 32px; height: 32px; flex-basis: 32px; font-size: 14px; }
   @media (min-width: 600px) { .navb .nrb { display: flex; } }
   .ivw { max-width: 860px; }
@@ -707,7 +709,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '54bbdcf6', newBuild = '';
+  var BUILD = 'd21c43b2', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -972,11 +974,13 @@
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
       '<div class="rb" data-rf="1" title="Обновить">🔄</div>' + (isAdmin ? '<div class="rb" data-ac="1" title="Доступ">👥</div>' : '') +
-      (tg ? '<div class="rb ext" data-ex="1" title="Выйти">✖</div>' : '') + '</div>';
+      (tg ? '<div class="rb ext" data-ex="1" title="Выйти">' + PWR + '</div>' : '') + '</div>';
     return tabsHtml(active) + '<div class="navb c-' + esc(active) + '"><div class="bk" data-back="1"><i>⬅</i>Назад</div>' +
       '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div>' + rbs + '</div>';
   }
   var isAdmin = false;
+  // 23.11.2026 (руководитель): значок «выключить» как в Windows — красный, всем знаком
+  var PWR = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7.05 6.05a8 8 0 1 0 9.9 0"/><path d="M12 3v8"/></svg>';
   document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
     var b = e.target.closest && e.target.closest('[data-back]');
     if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} goBack(); return; }
@@ -2319,7 +2323,7 @@
         (canFull() ? '<div class="rb" id="fsb" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
         '<div class="rb" id="ref" title="Обновить">🔄</div>' +
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') +
-        (tg ? '<div class="rb ext" data-ex="1" title="Выйти">✖</div>' : '') + '</div>';   // 23.11: ✖ выйти из мини-аппа
+        (tg ? '<div class="rb ext" data-ex="1" title="Выйти">' + PWR + '</div>' : '') + '</div>';   // 23.11: ✖ выйти из мини-аппа
       isAdmin = !!r.admin;
       tabCount = { zav: 0, tas: 0 };
       Object.keys(tiles).forEach(function (k2) { if (tabCount[ITEM[k2].f] != null) tabCount[ITEM[k2].f] += tiles[k2].t; });
