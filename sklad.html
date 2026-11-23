@@ -259,6 +259,7 @@
   .fchip[data-f=ret] { background: linear-gradient(150deg, #ff8f8f, #d43c3c); box-shadow: 0 4px 0 #962424; }
   .fchip[data-f=prod] { background: linear-gradient(150deg, #4fd68a, #0f8a4a); box-shadow: 0 4px 0 #0b5e33; }   /* 23.11: Из производства */
   .fchip[data-f=wh] { background: linear-gradient(150deg, #4fd6b8, #138f86); box-shadow: 0 4px 0 #0c6660; }   /* 23.11: Склады */
+  .fchip[data-f=zp] { background: linear-gradient(150deg, #7fdc9a, #1f9e5a); box-shadow: 0 4px 0 #13703e; }   /* 23.11: Зарплата */
   .fchip[data-f=cert] { background: linear-gradient(150deg, #e7b96a, #a8741c); box-shadow: 0 4px 0 #7a520f; }   /* 23.11: Разрешительные документы */
   .fchip[data-f=ship] { background: linear-gradient(150deg, #c18cff, #8a3fd1); box-shadow: 0 4px 0 #5f2a96; }
   .rt2 .to.cl { background: #efeaff; color: #4b39c9; }
@@ -542,6 +543,10 @@
   .cst.q { background: rgba(31,98,201,.14); color: #1f62c9; } .cst.ok { background: rgba(23,150,74,.15); color: #17803c; }
   .cst.bad { background: rgba(214,59,59,.14); color: #c0392b; } .cst.st, .cst.none { background: rgba(255,170,40,.2); color: #a85f00; }
   /* 23.11.2026: Разрешения — ровная сетка: состояние (3–4 одинаковые) и группа (по 4 в ряд) */
+  .zpf { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; }
+  .zpf .nn { min-width: 20px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; }
+  .zpf .t { flex: 1; min-width: 0; } .zpf .t b { display: block; font-size: 15px; text-transform: capitalize; } .zpf .t small { color: var(--hint); font-size: 12px; }
+  .zpf .cdl { width: 42px; height: 36px; padding: 0; margin: 0; border-radius: 10px; font-size: 17px; background: var(--bg); }
   .crt-l { font-size: 11px; font-weight: 800; color: var(--hint); text-transform: uppercase; letter-spacing: .3px; margin: 2px 2px 4px; }
   .crt-g { display: grid; gap: 6px; margin: 0 0 10px; max-width: 860px; }
   .crt-g.st3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .crt-g.st4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -821,9 +826,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '397d0554', newBuild = '';
+  var BUILD = '6e7b6d08', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795455902' || 0;
+  var BUILD_AT = +'1795456209' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1061,7 +1066,7 @@
       // 23.11.2026 (руководитель): Отгрузка · Перемещение · Приход · Возврат · Из производства · склады · Инвентаризация · Остаток
       // 23.11.2026 (руководитель): Завод + Ташкент → одна «🏬 Склады»; последняя — «📜 Разрешительные документы»
       // 23.11.2026 (руководитель): «Инвент. и остаток» — под «Перемещениями», «Склады» сдвинуты вправо
-      var ORD = ['ship', 'mv', 'inc', 'ret', 'prod', 'inv', 'wh', 'ost', 'cert'], all8 = fl.concat(lastTabs2);
+      var ORD = ['ship', 'mv', 'inc', 'ret', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp'], all8 = fl.concat(lastTabs2);
       if (active === 'zav' || active === 'tas') active = 'wh';   // внутри склада завода / Ташкента горит «Склады»
       all8.sort(function (a, b) { var i = ORD.indexOf(a[0]), j = ORD.indexOf(b[0]); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       var h8 = '';
@@ -1102,7 +1107,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', wh: 'Склады', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', wh: 'Склады', zp: 'Зарплата', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
@@ -2866,6 +2871,67 @@
       });
     });
   }
+  // 23.11.2026 (руководитель): 💰 Зарплата — как инвентаризация: две кнопки рядом (📋 Посещение · ⏱ Табель), длинная внизу
+  // (💵 Расчёт зарплаты завода). Внутри — файлы по месяцам: ⬇️ в личку бота склада (через час удалится); посещение —
+  // 📎 загрузить отчёт iVMS-4200 через личку бота документов (агент Камол разберёт)
+  var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
+              pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'] };
+  function showZp(box) {
+    var me = cur;
+    load('/api/zp', {}, function (D) {
+      if (cur !== me || !box.isConnected) return;
+      if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var ks = ['dav', 'tab', 'pay'].filter(function (k) { return D.parts[k]; });
+      if (!ks.length) { box.innerHTML = '<div class="empty">Разделы зарплаты вам пока не даны</div>'; return; }
+      var odd = ks.length % 2 === 1;
+      box.innerHTML = '<div class="mgrid">' + ks.map(function (k, i) {
+        var t = ZPT[k], f = (D.parts[k].files || [])[0];
+        return '<div class="tile cat ' + t[0] + (odd && i === ks.length - 1 ? ' wide' : '') + '" data-zp="' + k + '"><div class="e">' + t[1] + '</div>' +
+          '<div class="n">' + t[2] + '</div><div class="c">' + (f ? 'последний: ' + esc(f.month || f.at) : 'файлов пока нет') + '<br>' + t[3] + '</div></div>';
+      }).join('') + '</div>';
+      Array.prototype.forEach.call(box.querySelectorAll('[data-zp]'), function (el) {
+        el.onclick = function () { var k = el.getAttribute('data-zp'); try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(function () { showZpPart(k); }); };
+      });
+    });
+  }
+  function showZpPart(k) {
+    var me = cur, t = ZPT[k];
+    view.innerHTML = subTop('zp', t[2]) + '<div id="zpp"><div class="spin">Загрузка…</div></div>';
+    bindTabs();
+    load('/api/zp', {}, function (D) {
+      if (cur !== me) return;
+      var B = $('zpp'); if (!B) return;
+      var h = '';
+      if (k === 'dav' && D.dav_up) h += '<div class="ivbar"><button class="go" id="zpup">📎 Загрузить отчёт посещения</button></div>' +
+        '<div class="note" style="margin-top:0">Бот документов попросит файл Excel из iVMS-4200 в личке, агент Камол сразу разберёт посещение и табель.</div>';
+      var parts = k === 'pay' ? ['pay', 'ved'] : [k];
+      parts.forEach(function (p) {
+        var P2 = D.parts[p]; if (!P2) return;
+        var fs = P2.files || [];
+        h += '<div class="msec">' + esc(P2.title.toUpperCase()) + ' · ' + fs.length + '</div>';
+        h += fs.length ? fs.map(function (f, i) {
+          return '<div class="zpf"><span class="nn">' + (i + 1) + '</span><div class="t"><b>' + esc(f.month || f.id) + '</b><small>' + esc(f.at) + ' · ' + f.kb + ' КБ</small></div>' +
+            '<button class="cdl" data-zg="' + p + '" data-id="' + esc(f.id) + '" title="Скачать — в личку бота">⬇️</button></div>';
+        }).join('') : '<div class="empty" style="padding:14px">Файлов пока нет</div>';
+      });
+      h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните).</div>';
+      B.innerHTML = h;
+      if ($('zpup')) $('zpup').onclick = function () {
+        var b = this; b.disabled = true; b.textContent = '⏳';
+        call('/api/zp_dav_up', {}, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = '📎 Загрузить отчёт посещения'; })
+          .catch(function (e) { b.disabled = false; b.textContent = '📎 Загрузить отчёт посещения'; ivErr(e); });
+      };
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zg]'), function (b) {
+        b.onclick = function () {
+          if (b.disabled) return;
+          b.disabled = true; b.textContent = '⏳';
+          call('/api/zp_get', { kind: b.getAttribute('data-zg'), id: b.getAttribute('data-id') }, 90000).then(function (q) {
+            haptic(q.ok ? 'success' : 'warning'); say(q.text); b.textContent = q.ok ? '✅' : '⬇️'; b.disabled = false;
+          }).catch(function (e) { b.disabled = false; b.textContent = '⬇️'; ivErr(e); });
+        };
+      });
+    });
+  }
   var menuTimer = null;
   function showMenu() {
     if (newBuild && newBuild !== BUILD) return reloadTo(newBuild);   // вернулись на главный — подхватить новую версию
@@ -2918,7 +2984,9 @@
       // 23.11.2026 (руководитель): вкладка «📦 Остаток» убрана — расхождение 1С ↔ ERP теперь в «📋 Инвент. и остаток»
       ostOn = false;
       if (certOn) fl.push(['cert', '📜 Разрешения']);   // 23.11.2026 (руководитель): последняя вкладка — сертификаты и разрешения
-      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) ||
+      var zpOn = !!r.zp;
+      if (zpOn) fl.push(['zp', '💰 Зарплата']);   // 23.11.2026 (руководитель): после «Разрешений» — посещение и зарплата завода
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) || (mfilter === 'zp' && zpOn) ||
           (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       if (mf === 'wh' && !whF.length && !gpOn) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
       lastTabs = fl;
@@ -2933,12 +3001,15 @@
         h += '<div id="flowbox" style="margin-top:12px"><div class="spin">Загрузка из ERP…</div></div>';
       } else if (mf === 'cert') {
         h += '<div id="certbox" style="margin-top:12px"><div class="spin">Загрузка документов…</div></div>';
+      } else if (mf === 'zp') {
+        h += '<div id="zpbox" style="margin-top:12px"><div class="spin">Загрузка…</div></div>';
       } else if (mf === 'wh') {   // 🏬 Склады: две большие кнопки — Склад завода · Склад Ташкента
         var WHT = { zav: ['g', '🏭', 'Склад завода', 'Готовая продукция · Сырьё и упаковка'],
                     tas: ['b', '🏙', 'Склад Ташкента', 'Готовая продукция · Перечисление и Терминал'] };
         h += '<div class="mgrid" style="margin-top:14px">' + whF.map(function (f) {
           var w = WHT[f[0]], t = tabCount[f[0]] || 0;
-          return '<div class="tile cat wide ' + w[0] + '" data-wf="' + f[0] + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + w[1] + '</div>' +
+          // 23.11.2026 (руководитель «слишком широкие»): как в инвентаризации — два рядом, остаток ГП — длинный внизу
+          return '<div class="tile cat ' + (whF.length === 1 ? 'wide ' : '') + w[0] + '" data-wf="' + f[0] + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + w[1] + '</div>' +
             '<div class="n">' + w[2] + '</div><div class="c">' + w[3] + '</div></div>';
         }).join('') +
           // 23.11.2026 (руководитель): третья кнопка — «📦 Остаток готовой продукции» (из инвентаризации), по доступу линий
@@ -2966,6 +3037,7 @@
       if (mf === 'ost') showOst($('ostbox'));
       if ($('flowbox')) showFlow(mf, $('flowbox'));
       if ($('certbox')) showCert($('certbox'));
+      if ($('zpbox')) showZp($('zpbox'));
       Array.prototype.forEach.call(view.querySelectorAll('[data-wf]'), function (el) {
         el.onclick = function () {
           mfilter = el.getAttribute('data-wf');
@@ -3743,13 +3815,13 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
-      var LV = it.key.indexOf('cert_') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
+      var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
       h += '<div class="whr' + (isTab ? ' tabr' : '') + '"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
         LV.map(function (p) { var v = p[0], on = isTab ? ((x.lv >= 1) === (v === 2)) : x.lv === v; return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (on ? ' class="on' + v + '"' : '') + '>' + p[1] + '</span>'; }).join('') + '</div>';
@@ -3793,6 +3865,10 @@
      ['cert_up', '📎', 'Загружать недостающие (через бот документов)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">📜 Вкладка ⛔ — её нет совсем. Показана — человек видит только виды документов с ✅ Дать (например, только СЭЗ). ' +
       '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
+    h += '<div class="agrp">ЗАРПЛАТА</div>';   // 23.11.2026 (руководитель): вкладка «💰 Зарплата» — по умолчанию всем скрыта
+    [['zp', '💰', 'Вкладка «Зарплата»'], ['zp_dav', '📋', 'Посещение (смотреть и загружать)'], ['zp_tab', '⏱', 'Табель в минутах'],
+     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+    h += '<div class="note">💰 Вкладка ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
     h += '<div class="note">💻 👁 или ✋ — можно: /pc в боте даёт ссылку, работает 08:50–18:00. ⛔ — нельзя, ссылка сразу перестаёт работать. Склады — те же права.</div>';
