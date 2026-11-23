@@ -518,8 +518,11 @@
   .rb.ext { background: linear-gradient(150deg, #ff5a4f, #d32f2f); color: #fff; box-shadow: 0 3px 0 #9a1f1f; }
   .rb.ext:active { transform: translateY(2px); box-shadow: none; }
   .rb.ext svg { display: block; }
-  body.fs .navb .nrb { display: flex; } body.fs .navb .nrb .rb { width: 32px; height: 32px; flex-basis: 32px; font-size: 14px; }
-  @media (min-width: 600px) { .navb .nrb { display: flex; } }
+  /* руководитель 23.11: кнопки на ВСЕХ экранах всегда — телефон: строкой сверху справа; широкий экран: в шапке */
+  .nrbrow { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  .nrbrow .nrb { display: flex; align-items: center; gap: 8px; }
+  .nrbrow .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
+  @media (min-width: 600px) { .navb .nrb { display: flex; } .nrbrow { display: none; } }
   .ivw { max-width: 860px; }
   /* 23.11.2026: «📦 Остаток» — Завод зелёный · Ташкент синий · Итого тёмный; ноль бледный */
   .stsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 8px; max-width: 860px; }
@@ -741,7 +744,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '4372d3e7', newBuild = '';
+  var BUILD = '7cd61a74', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1008,7 +1011,8 @@
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
       '<div class="rb" data-rf="1" title="Обновить">🔄</div>' + (isAdmin ? '<div class="rb" data-ac="1" title="Доступ">👥</div>' : '') +
       (tg ? '<div class="rb ext" data-ex="1" title="Выйти">' + PWR + '</div>' : '') + '</div>';
-    return tabsHtml(active) + '<div class="navb c-' + esc(active) + '"><div class="bk" data-back="1"><i>⬅</i>Назад</div>' +
+    // руководитель 23.11: кнопки — на ВСЕХ экранах всегда; телефон — строкой сверху справа, компьютер — в шапке
+    return '<div class="nrbrow">' + rbs + '</div>' + tabsHtml(active) + '<div class="navb c-' + esc(active) + '"><div class="bk" data-back="1"><i>⬅</i>Назад</div>' +
       '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div>' + rbs + '</div>';
   }
   var isAdmin = false;
