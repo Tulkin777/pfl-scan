@@ -285,6 +285,7 @@
   .dir.dir4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   /* 23.11.2026 (руководитель): Перемещения — шаг 1 две плитки линий, шаг 2 четыре направления мелко в один ряд */
   .dir.dir2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .fchips.sq .fchip.lng { font-size: 11px; line-height: 1.1; letter-spacing: -.2px; }   /* «Склад завода» / «Склад Ташкента» — влезает в квадратик */
   /* 23.11.2026 (руководитель): место заметно, но спокойно — тёмно-синяя плашка, белый шрифт (как кнопка «Назад») */
   .plc .pl { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 15px;
              letter-spacing: .3px; box-shadow: 0 2px 0 #18202f; }
@@ -583,7 +584,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ade09bb1', newBuild = '';
+  var BUILD = '28184c8c', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -770,7 +771,7 @@
       { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav', g: 'raw' } ] }
   ];
   // руководитель 22.11: «Все» убрать — склады по вкладкам Завод · Ташкент · Сырьё (выбранная запоминается)
-  var FILTERS = [['zav', '🏭 Завод'], ['tas', '🏙 Ташкент']];   // руководитель 22.11: сырьё — внутри «Завод», после готовой продукции
+  var FILTERS = [['zav', '🏭 Склад завода'], ['tas', '🏙 Склад Ташкента']];   // 23.11.2026 (руководитель): «склад» дописать   // руководитель 22.11: сырьё — внутри «Завод», после готовой продукции
   var mfilter = 'ship';   // 22.11.2026 (руководитель): первая вкладка — Отгрузка
   try { mfilter = localStorage.getItem('pfl:mfilter') || 'ship'; } catch (e) {}
   var lastBadge = {};
@@ -813,7 +814,7 @@
       var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
       var cnt = tabCount[f[0]];   // руководитель 22.11: на вкладке — сколько задач / документов / расхождений
       var bd = cnt != null ? '<span class="tbd' + (cnt ? (f[0] === 'ost' ? ' red' : '') : ' z') + '">' + cnt + '</span>' : '';
-      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + bd + lb + '</div>';
+      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (sq && f[1].length > 12 ? ' lng' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + bd + lb + '</div>';
     }).join('') + (free ? new Array(Math.max(0, 4 - fl.length) + 1).join('<div class="fchip free"><i>＋</i>свободно</div>') : '') + '</div>';
   }
   function bindTabs() {
@@ -830,7 +831,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Завод', tas: 'Ташкент', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склад завода', tas: 'Склад Ташкента', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     return tabsHtml(active) + '<div class="navb c-' + esc(active) + '"><div class="bk" data-back="1"><i>⬅</i>Назад</div>' +
       '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div></div>';
