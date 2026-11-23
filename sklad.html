@@ -578,7 +578,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b3e3b1bf', newBuild = '';
+  var BUILD = '5b74f266', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1496,11 +1496,14 @@
         h += '<div class="dhead st-' + st + '"><div class="dn">' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' + numRow(x, true) +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st) + sigRow(x);
-        h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+        h += '<div class="box" id="sostav"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
           var fq = formOf(y.name);
           return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
             (y.boxes ? ' · ' + esc(y.boxes) : '') + '<span class="bt" data-li="' + j + '"></span></div>';
         }).join('') + '</div>';
+        // 23.11.2026 (руководитель): сразу после состава — «✅ Взял» и «Склад «откуда»» (до счёт-фактуры и спецификации)
+        if (x.to_wh) h += '<div id="plbox"></div><button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' +
+          x.to_wh + '">➡ Склад «откуда»' + (st === 'new' ? ' · собрать по номерам' : ' · окно склада') + '</button>';
         // 22.11.2026 (руководитель): счёт-фактура 1С с партиями; в составе — номер партии у каждой строки
         h += '<div id="sfbox"></div>';
         // 22.11.2026 (руководитель): спецификация Smartup — листом сразу под составом (без скачивания)
@@ -1512,10 +1515,6 @@
         h += '<div class="box"><h3>Ход</h3><div class="tl">' + T2.map(function (t) {
           return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
         }).join('') + '</div></div>';
-        // 23.11.2026 (руководитель): места строк прямо здесь; знает место — сразу «✅ Взял», не знает — «Склад «откуда»»
-        if (x.to_wh) h += '<div id="plbox"></div>';
-        if (x.to_wh) h += '<button class="main" style="margin-top:8px;background:linear-gradient(150deg,#8b7bff,#4b39c9)" data-go="' + x.to_wh + '">➡ Склад «откуда»' +
-          (st === 'new' ? ' · собрать по номерам' : ' · окно склада') + '</button>';
         h += '<div class="note">Собрать — в окне склада (колонка «🛒 Отгрузка»); провести — в ERP.</div>';
         view.innerHTML = h;
         bindTabs();
@@ -1554,7 +1553,7 @@
             if (it) go(function () { showWh(it, w); });
           };
         });
-        if ($('plbox')) shipPlaces(x, $('plbox'));
+        if ($('plbox')) shipPlaces(x, $('plbox'), st);
         return;
       }
       h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
@@ -2076,53 +2075,57 @@
   }
   // 23.11.2026 (руководитель): карточка отгрузки — откуда брать (место у каждой строки) и «✅ Взял» без захода в склад.
   // «Взял» = те же две кнопки бота склада, что нажимает кладовщик: «⚠️ Отгружено: N» → «✅ Взяли с этих мест — списать».
-  function shipPlaces(x, box) {
+  // 23.11.2026 (руководитель): место — прямо в строках состава; «✅ Взял» — сразу под составом.
+  // noted (отгружено в ERP, в боте не отмечено): «⚠️ Отгружено: N» → «✅ Взяли с этих мест — списать».
+  // pick (задача «Собрать»): «Продажа: N» → «✅ Собрано» (берёт с мест) → если в ERP уже отгружено — «🚚 Отгружено».
+  function shipPlaces(x, box, st) {
     var me = cur;
     call('/api/ship_places', { id: x.id }, 30000).then(function (p) {
       if (cur !== me || !document.body.contains(box)) return;
       if (!p || p.mode === 'none' || !(p.lines || []).length) { box.innerHTML = p && p.text ? '<div class="note">' + esc(p.text) + '</div>' : ''; return; }
-      var h = '<div class="box plc"><h3>📍 Откуда брать · ' + (p.mode === 'noted' ? 'отгружено, в боте не отмечено' : 'собрать') + '</h3>' +
-        p.lines.map(function (y, j) {
-          return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') + ' · <b>' + n(y.qty) + ' шт</b>' +
-            '<br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
-        }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '') + '</div>';
-      if (p.mode === 'noted') {
-        if (p.ready && p.can) h += '<button class="main" id="vzyal" style="background:linear-gradient(150deg,#4fd68a,#17964a)">✅ Взял — списать с этих мест</button>';
-        else if (!p.ready) h += '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» → окно склада и отметьте места.</div>';
-        else h += '<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
-      }
+      var so = $('sostav');
+      if (so) so.innerHTML = '<h3>Состав · ' + p.lines.length + ' · 📍 откуда брать</h3>' + p.lines.map(function (y, j) {
+        var fq = formOf(y.item);
+        return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
+          ' · <b>' + n(y.qty) + ' шт</b><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
+      }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
+      var lbl = p.mode === 'noted' || st === 'ok' ? '✅ Взял — списать с этих мест' : '✅ Взял — собрано';
+      var h = '';
+      if (!p.can) h = '<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
+      else if (p.mode === 'noted' && !p.ready) h = '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» и отметьте места.</div>';
+      else h = '<button class="main" id="vzyal" style="margin-top:8px;background:linear-gradient(150deg,#4fd68a,#17964a)">' + lbl + '</button>';
       box.innerHTML = h;
-      if ($('vzyal')) $('vzyal').onclick = function () { vzyal(x, p, $('vzyal')); };
+      if ($('vzyal')) $('vzyal').onclick = function () { vzyal(x, p, $('vzyal'), lbl, st); };
     }).catch(function () {});
   }
-  function vzyal(x, p, b) {
-    var wh = p.wh, re1 = new RegExp(':sna:' + x.id + '$'), re2 = new RegExp(':snok:' + x.id + '$');
-    var q = 'Списать ' + p.lines.length + ' поз. документа ' + x.id + ' с мест:\n' + p.lines.map(function (y) { return '• ' + y.item + ' ' + n(y.qty) + ' шт ← ' + (y.code || y.place); }).join('\n') + '\n\nВзяли?';
+  function vzyal(x, p, b, lbl, st) {
+    var wh = p.wh, R = function (s) { return new RegExp(':' + s + ':' + x.id + '(:\\d+)?$'); };
+    var chain = p.mode === 'noted' ? ['sna', 'snok'] : st === 'ok' ? ['shd', 'shp', 'shs'] : ['shd', 'shp'];
+    var q = (p.mode === 'noted' || st === 'ok' ? 'Списать' : 'Собрано') + ' · документ ' + x.id + ':\n' +
+      p.lines.map(function (y) { return '• ' + y.item + ' ' + n(y.qty) + ' шт ← ' + (y.code || y.place || '?'); }).join('\n') + '\n\nВзяли с этих мест?';
     var ask = function (cb) { try { tg.showConfirm(q, cb); } catch (e) { cb(confirm(q)); } };
     var btnIn = function (w, re) {   // кнопка в окне бота склада (панель и остальные окна этого склада)
       var all = [w].concat((w && w.more) || []), hit = null;
       all.forEach(function (m) { ((m && m.kb) || []).forEach(function (row) { row.forEach(function (k) { if (!hit && re.test(k.callback_data || k.data || '')) hit = { d: k.callback_data || k.data, key: m.key }; }); }); });
       return hit;
     };
-    var bad = function (t) { b.disabled = false; b.textContent = '✅ Взял — списать с этих мест'; haptic('warning'); say(t); };
+    var txt = function (r) { return ((r && r.answers) || []).map(function (a) { return a.text; }).join('\n') || (r && r.text) || ''; };
+    var bad = function (t) { b.disabled = false; b.textContent = lbl; haptic('warning'); say(t); };
+    var step = function (i, w, last) {   // нажать по очереди кнопки бота; следующей нет — бот остановил (ответ бота — человеку)
+      if (i >= chain.length) {
+        haptic('success'); say(txt(last) || 'Готово'); b.textContent = '✅ Сделано'; return;
+      }
+      var k = btnIn(w, R(chain[i]));
+      if (!k) return bad(i === 0 ? 'В окне склада этого документа уже нет — возможно, уже сделано. Обновите.'
+        : (txt(last) || 'Бот склада остановил — откройте «Склад «откуда»» и посмотрите.'));
+      return call('/api/kc_press', { wh: wh, data: k.d, key: k.key || '' }, 125000).then(function (r) { return step(i + 1, r.win, r); });
+    };
     ask(function (yes) {
       if (!yes) return;
-      b.disabled = true; b.textContent = '⏳ Списываю у бота склада…';
+      b.disabled = true; b.textContent = '⏳ Выполняю у бота склада…';
       try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-      call('/api/kc_win', { wh: wh }, 15000).then(function (w) {
-        var k1 = btnIn(w, re1);
-        if (!k1) return bad('В окне склада этого документа уже нет — возможно, его уже списали. Обновите.');
-        return call('/api/kc_press', { wh: wh, data: k1.d, key: k1.key || '' }, 125000).then(function (r) {
-          var k2 = btnIn(r.win, re2);
-          if (!k2) return bad('Бот не дал «Списать» — не всё нашлось на местах. Откройте «Склад «откуда»».');
-          return call('/api/kc_press', { wh: wh, data: k2.d, key: k2.key || '' }, 125000).then(function (r2) {
-            var tx = (r2.answers || []).map(function (a) { return a.text; }).join('\n') || r2.text || '';
-            if (!r2.ok) return bad(tx || 'Не получилось — откройте окно склада.');
-            haptic('success'); say(tx || 'Списано');
-            b.textContent = '✅ Списано';
-          });
-        });
-      }).catch(function (e) { bad((e && e.text) || 'Ошибка связи — попробуйте ещё раз.'); });
+      call('/api/kc_win', { wh: wh }, 15000).then(function (w) { return step(0, w, null); })
+        .catch(function (e) { bad((e && e.text) || 'Ошибка связи — попробуйте ещё раз.'); });
     });
   }
   var HINT = '👇 Нажмите задачу — на схеме покажу 🟧 откуда брать и 🟦 куда ставить';
