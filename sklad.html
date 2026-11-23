@@ -297,6 +297,7 @@
   .mvfire { margin: 4px 0; padding: 5px 9px; border-radius: 10px; background: #ffe3dc; color: #b3261e; font-weight: 900; font-size: 13px; line-height: 1.25; }
   .mvauto { margin: 4px 0; padding: 4px 9px; border-radius: 10px; background: #e8eefb; color: #2d3a52; font-weight: 800; font-size: 12px; line-height: 1.25; }
   img.fic { width: 1.15em; height: 1.15em; vertical-align: -0.2em; object-fit: contain; }
+  .inv-ok { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
   .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
                   margin: 0 0 8px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #1e1e1e); }
@@ -634,7 +635,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b91c3450', newBuild = '';
+  var BUILD = '290519b8', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1085,7 +1086,11 @@
       B.innerHTML = rows.map(function (x, i) {
         return '<div class="doc"><div class="dh"><b>№' + esc(x.doc) + '</b><span class="st">' + esc(x.status_text) + '</span></div>' +
           '<div class="dm">' + esc(x.date) + ' · ' + esc(String(x.author || '').split(' ')[0]) + ' · ' + esc(x.place) + ' · разница: <b>' + esc(x.diff) + '</b></div>' +
-          '<div class="row3">' + (can && !x.done ? '<button class="b1" data-c="' + i + '">🔎 Проверить (Темур)</button>' : '') +
+          // 23.11.2026 (руководитель): Темур проверил, ошибки нет — «✅ Подтвердить» (подтверждают руководитель и назначенные),
+          // после него Темур проводит документ в ERP; повторное «Проверить» тут не нужно
+          '<div class="row3">' + ((x.status === 'approve' || x.status === 'approve_fixed')
+            ? '<button class="b1 inv-ok" data-ap="' + i + '">✅ Подтвердить инвентаризацию</button>'
+            : (can && !x.done ? '<button class="b1" data-c="' + i + '">🔎 Проверить (Темур)</button>' : '')) +
           (x.has_excel ? '<button data-x="' + i + '">📄 Excel</button>' : '') + '</div></div>';
       }).join('') + (can ? '' : '<div class="note">👁 Только смотреть — «Проверить» не дано</div>');
       Array.prototype.forEach.call(B.querySelectorAll('[data-c]'), function (b) {
@@ -1093,6 +1098,21 @@
           var x = rows[+b.getAttribute('data-c')]; b.disabled = true; b.textContent = '⏳ Отправляю Темуру…';
           call('/api/inv_check', { doc: x.doc }, 30000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; })
             .catch(function (e) { b.disabled = false; b.textContent = '🔎 Проверить (Темур)'; fail(e); });
+        };
+      });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-ap]'), function (b) {
+        b.onclick = function () {
+          var x = rows[+b.getAttribute('data-ap')];
+          var q0 = 'Подтвердить инвентаризацию №' + x.doc + '?\nТемур проверил: ошибки нет (разница ' + x.diff + ').\nПосле подтверждения Темур проведёт документ в ERP.';
+          var go_ = function (yes) {
+            if (!yes) return;
+            b.disabled = true; b.textContent = '⏳ Подтверждаю…';
+            call('/api/inv_approve', { doc: x.doc }, 60000).then(function (q) {
+              haptic(q.ok ? 'success' : 'warning'); say(q.text);
+              b.textContent = q.ok ? '✅ Подтверждено — проводится в ERP' : '✅ Подтвердить инвентаризацию'; b.disabled = !!q.ok;
+            }).catch(function (e) { b.disabled = false; b.textContent = '✅ Подтвердить инвентаризацию'; fail(e); });
+          };
+          try { tg.showConfirm(q0, go_); } catch (e) { go_(confirm(q0)); }
         };
       });
       Array.prototype.forEach.call(B.querySelectorAll('[data-x]'), function (b) {
