@@ -524,6 +524,10 @@
   .nrbrow .nrb .rb { width: 36px; height: 36px; font-size: 16px; flex: 0 0 36px; }
   @media (min-width: 600px) { .navb .nrb { display: flex; } .nrbrow { display: none; } }
   .ivw { max-width: 860px; }
+  /* 23.11.2026: «Вкладки главного экрана» в доступе — одна строка: название слева, ✅/⛔ справа */
+  .whr.tabr { display: flex; align-items: center; gap: 8px; padding-top: 6px; padding-bottom: 6px; }
+  .whr.tabr .wn { flex: 1; min-width: 0; margin: 0; font-size: 15px; }
+  .whr.tabr .lv { flex: 0 0 190px; margin: 0; } .whr.tabr .lv span { padding: 7px 4px; font-size: 13px; }
   .ino { display: inline-block; min-width: 24px; height: 20px; line-height: 20px; border-radius: 10px; padding: 0 5px; margin-right: 6px;
          background: rgba(127,127,127,.16); color: var(--hint); font-size: 12px; font-weight: 800; text-align: center; vertical-align: 1px; }
   .ivr.ch .ino { background: #e8820c; color: #fff; }
@@ -747,7 +751,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '39dc5c83', newBuild = '';
+  var BUILD = 'f4621f23', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -2428,15 +2432,19 @@
       lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы']].concat(prodPerm.lv >= 1 ? [['prod', '🏭 Из произв.']] : [])
         .concat([['ret', '↩️ Возврат'], ['ship', '🛒 Отгрузка']]) : [];   // 23.11: «Из производства» — сразу, без захода в «Приходы»
       if (r.flow) { tabCount.mv = r.flow.mv; tabCount.inc = r.flow.inc; tabCount.ret = r.flow.ret; tabCount.ship = r.flow.ship; }
+      // 23.11.2026 (руководитель): вкладки, скрытые в «👥 Доступ», — нет на экране (и их складов в «Склад завода/Ташкента»)
+      var TB = r.tabs || {}, tabOn = function (k) { return TB[k] !== false; };
+      lastTabs2 = lastTabs2.filter(function (t) { return tabOn(t[0]); });
+      Object.keys(tiles).forEach(function (k) { if (!tabOn(ITEM[k].f)) delete tiles[k]; });
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
       var mf = fl.length < 2 ? 'all' : fl.some(function (f) { return f[0] === mfilter; }) ? mfilter : fl[0][0];   // одна вкладка — без вкладок
       // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
-      var invOn = r.inv && r.inv.lv >= 1;
+      var invOn = r.inv && r.inv.lv >= 1 && tabOn('inv'), ostOn = r.ost && tabOn('ost');
       if (invOn) fl.push(['inv', '📋 Инвент. и остаток']);   // 23.11.2026 (руководитель): инвентаризация и остаток — вместе
-      if (r.ost) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
-      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && r.ost) || (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow)) mf = mfilter;
+      if (ostOn) fl.push(['ost', '📦 Остаток']);   // руководитель 22.11: как /qoldiq — лист пересчёта сырья
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       lastTabs = fl;
       h += tabsHtml(mf);
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
@@ -3230,13 +3238,16 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc') return [];
+      if (k === 'pc' || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] };
-      h += '<div class="whr"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
-        [0, 1, 2].map(function (v) { return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (x.lv === v ? ' class="on' + v + '"' : '') + '>' + LVNAME[v] + '</span>'; }).join('') + '</div>';
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0;
+      // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
+      var LV = isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
+      h += '<div class="whr' + (isTab ? ' tabr' : '') + '"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
+        LV.map(function (p) { var v = p[0], on = isTab ? ((x.lv >= 1) === (v === 2)) : x.lv === v; return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (on ? ' class="on' + v + '"' : '') + '>' + p[1] + '</span>'; }).join('') + '</div>';
+      if (isTab) { h += '</div>'; return; }
       if (x.lv === 2) {
         h += '<div class="acts">' + actsOf(it.key).map(function (a) {
           var on = (x.acts || []).indexOf(a) >= 0;
@@ -3245,6 +3256,13 @@
       }
       h += '</div>';
     }
+    // 23.11.2026 (руководитель): вкладки главного экрана — показать / скрыть каждому (даже если склад дан)
+    h += '<div class="agrp">ВКЛАДКИ ГЛАВНОГО ЭКРАНА</div>';
+    [['ship', '🛒', 'Отгрузка'], ['mv', '🚚', 'Перемещения'], ['inc', '📥', 'Приходы'], ['ret', '↩️', 'Возврат'], ['prod', '🏭', 'Из производства'],
+     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация и остаток'], ['ost', '📦', 'Остаток (лист)']].forEach(function (t) {
+      row({ key: 'tab_' + t[0], emoji: t[1], name: t[2] });
+    });
+    h += '<div class="note">⛔ Скрыть — вкладки у человека нет на главном экране, данные по ней сервер не даёт. Склады и кнопки — по правам ниже.</div>';
     SECTIONS.forEach(function (s) {
       h += '<div class="agrp">' + esc(s.head + ' · ' + s.sub).toUpperCase() + '</div>';
       s.items.forEach(row);
