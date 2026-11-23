@@ -328,6 +328,7 @@
   .plbl { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; color: #fff !important; }
   .pscan { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .plbl2 { margin-top: 8px; font-size: 14px; }
+  .latebad { margin-top: 4px; padding: 4px 9px; border-radius: 9px; background: #ffe3dc; color: #b3261e; font-weight: 900; font-size: 12.5px; }   /* 23.11: просрочено */
   .inv-ok { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .mvadd.off { background: #c9d1de !important; color: #fff; box-shadow: none; font-size: 14px; }
   .mvfind input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px;
@@ -666,7 +667,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '3545fcf1', newBuild = '';
+  var BUILD = 'db6931f8', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1644,6 +1645,8 @@
     // 22.11.2026 (руководитель): создано · отгружено (первый признак ERP/Smartup/1С, ждёт склад) · 🗄 архив (склад подтвердил, что забрал)
     if (kind === 'ship') return [['new', '🟡 создано', 'd4', function (x) { return x.step === 'new'; }],
                                  ['ok', '🚚 отгружено', 'd5', function (x) { return x.step === 'ok'; }],
+                                 // 23.11.2026 (руководитель): отгружено больше 2 дней (3-й день), склад не подтвердил — для контроля
+                                 ['late', '⏰ просрочено', 'd4', function (x) { return x.step === 'late'; }],
                                  ['arch', '🗄 архив', 'd3', function (x) { return x.step === 'arch'; }]];
     return kind === 'inc'
       ? [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
@@ -1707,6 +1710,7 @@
           (kind === 'ship' ? x.lines.length + ' поз · ' + n(tot) : n(l0.qty)) + '</b></div>' +
           docBar(kind, st) + (kind === 'inc' && x.status === 2 && x.placed === false ? '<div class="tdrv" style="color:#c0392b">📍 ещё не поставлен на полку</div>' : '') +
           (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') +
+          (kind === 'ship' && x.step === 'late' ? '<div class="latebad">⏰ ПРОСРОЧЕНО · ' + (x.late_days || 3) + '-й день · склад не подтвердил</div>' : '') +
           (kind === 'ship' ? sigRow(x) : '') + '</div>';
       }).join('');
       box.innerHTML = h;
@@ -1854,7 +1858,7 @@
       var st = docStep(kind, x), SN = { new: '🟡 СОЗДАН — НЕ ПРОВЕДЁН', ok: '🟢 ПРОВЕДЁН', shelf: '📍 НА ПОЛКЕ' };
       var h = subTop(kind, NM + ' · №' + x.id);
       if (kind === 'ship') {   // 🛒 Отгрузка: склад → клиент; собрать — в окне склада, провести — в ERP
-        var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : '🚚 ОТГРУЖЕНО' };
+        var SS = { new: '🟡 СОЗДАНО — ЖДЁТ ОТГРУЗКИ', ok: x.step === 'arch' ? '🗄 АРХИВ · ОТГРУЖЕНО' : x.step === 'late' ? '⏰ ПРОСРОЧЕНО · ' + (x.late_days || 3) + '-й день' : '🚚 ОТГРУЖЕНО' };
         h += '<div class="dhead st-' + st + '"><div class="dn">' + esc(x.id) + '</div><div class="ds">' + SS[st] + '</div></div>' + numRow(x, true) +
           '<div class="rt2 big"><span class="fr">📤 Склад<br>' + esc(x.store) + '</span><i>→</i><span class="to cl">🛒 Клиент<br>' + esc(x.who) + '</span></div>' +
           docBar(kind, st) + sigRow(x);
