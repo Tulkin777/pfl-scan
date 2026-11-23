@@ -672,7 +672,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '618b0950', newBuild = '';
+  var BUILD = '600087ce', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -800,6 +800,8 @@
   function cget(k) { k = ck(k); try { return JSON.parse(localStorage.getItem('pfl:' + k)); } catch (e) { return mem[k] || null; } }
   function cset(k, v) { k = ck(k); mem[k] = v; try { localStorage.setItem('pfl:' + k, JSON.stringify(v)); } catch (e) {} }
   function canDo(a) { return curPerm.lv === 2 && (curPerm.acts || []).indexOf(a) >= 0; }
+  var prodPerm = { lv: 0, acts: [] };
+  function canProd() { return prodPerm.lv === 2 && (prodPerm.acts || []).indexOf('task') >= 0; }
   function load(path, body, render) {
     var my = ++scr, key = path + JSON.stringify(body || {}), c = cget(key);
     if (c) render(c, true);
@@ -1553,12 +1555,13 @@
       var anyPl = x.lines.some(function (y) { return (y.places || []).length; });
       // 23.11.2026 (руководитель): до «Передал» — откуда брать (склад завода); после — куда ставить (Ташкент, задача «Принять»)
       var toPl = x.lines.some(function (y) { return (y.places || []).some(function (p) { return p.to; }); });
-      h += '<div class="box' + (anyPl ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (anyPl ? (toPl ? ' · 📥 куда ставить' : ' · 📍 откуда брать') : '') + '</h3>' + x.lines.map(function (y, j) {
+      var donePl = x.lines.some(function (y) { return (y.places || []).some(function (p) { return p.placed; }); });   // после приёма — куда поставили
+      h += '<div class="box' + (anyPl ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (anyPl ? (donePl ? ' · ✅ поставлено на место' : toPl ? ' · 📥 куда ставить' : ' · 📍 откуда брать') : '') + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name), pl = y.places || [];
         return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · ' + n(y.qty) + ' шт</span>' +
           (y.boxes ? '<br><small style="color:var(--hint)">' + esc(y.boxes) + '</small>' : '') +
           pl.map(function (p) {
-            return '<br><span class="pl">📍 ' + esc(p.code || p.addr) + '</span> ' + (p.batch ? '<b>п.' + esc(p.batch) + '</b> · ' : '') + n(p.qty) + ' шт' +
+            return '<br>' + (p.code || p.addr ? '<span class="pl">📍 ' + esc(p.code || p.addr) + '</span> ' : '') + (p.batch ? '<b>п.' + esc(p.batch) + '</b> · ' : '') + n(p.qty) + ' шт' +
               (p.hint ? ' <small style="color:var(--hint)">· по схеме</small>' : '');
           }).join('') + '</div>';
       }).join('') + '</div>';
@@ -2124,7 +2127,9 @@
       if (r.inv_n != null) tabCount.inv = r.inv_n;
       if (r.ost_n != null) tabCount.ost = r.ost_n;
       // руководитель 22.11: второй ряд — 🚚 Перемещения · 📥 Приходы · ↩️ Возврат (ERP, только чтение)
-      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы'], ['prod', '🏭 Из произв.'], ['ret', '↩️ Возврат'], ['ship', '🛒 Отгрузка']] : [];   // 23.11: «Из производства» — сразу, без захода в «Приходы»
+      prodPerm = r.prod || { lv: 0, acts: [] };   // 23.11.2026: свой пункт доступа «🏭 Из производства»
+      lastTabs2 = r.flow ? [['mv', '🚚 Перемещ.'], ['inc', '📥 Приходы']].concat(prodPerm.lv >= 1 ? [['prod', '🏭 Из произв.']] : [])
+        .concat([['ret', '↩️ Возврат'], ['ship', '🛒 Отгрузка']]) : [];   // 23.11: «Из производства» — сразу, без захода в «Приходы»
       if (r.flow) { tabCount.mv = r.flow.mv; tabCount.inc = r.flow.inc; tabCount.ret = r.flow.ret; tabCount.ship = r.flow.ship; }
       var fl = FILTERS.filter(function (f) {
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
@@ -2728,8 +2733,8 @@
     var head = '<div class="lbl">' + esc(t.label) + '</div><div class="name">' + esc(x.short) + '</div>' +
       '<div class="meta"><b>п.' + esc(x.batch) + '</b> · ' + n(x.qty) + ' ' + esc(x.unit) + (x.boxes ? ' · ' + esc(x.boxes) : '') + '</div>' +
       '<div class="pstep"><span class="' + (printed ? 'done' : 'cur') + '">1 · 🖨 Наклейка</span><span class="' + (printed ? 'cur' : '') + '">2 · 📍 ' + esc(dst) + '</span></div>';
-    var ct = canDo('task');
-    if (!ct) { P.className = 'panel'; P.innerHTML = head + '<div class="note">👁 Только смотреть — кнопки действий не даны</div>'; return; }
+    var ct = canProd();   // 23.11.2026: доступ «🏭 Из производства», не «Задачи» склада
+    if (!ct) { P.className = 'panel'; P.innerHTML = head + '<div class="note">👁 Только смотреть — кнопки «Из производства» не даны</div>'; return; }
     P.className = 'panel';
     P.innerHTML = head + (printed
       ? '<div class="todo">Наклейки на коробках · поставьте партию на <b>' + esc(dst) + '</b> и отсканируйте QR таблички места</div>' +
@@ -2929,7 +2934,7 @@
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
       if (k === 'pc') return [];
-      return k === 'inv' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
+      return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
       var x = get(it.key) || { lv: 0, acts: [] };
@@ -2938,7 +2943,7 @@
       if (x.lv === 2) {
         h += '<div class="acts">' + actsOf(it.key).map(function (a) {
           var on = (x.acts || []).indexOf(a) >= 0;
-          return '<span data-k="' + it.key + '" data-a="' + a + '" class="' + (on ? 'y' + (x.own ? ' x' : '') : 'n') + '">' + (it.key === 'inv' ? '🔎 Проверить' : ACTNAME[a]) + '</span>';
+          return '<span data-k="' + it.key + '" data-a="' + a + '" class="' + (on ? 'y' + (x.own ? ' x' : '') : 'n') + '">' + (it.key === 'inv' ? '🔎 Проверить' : it.key === 'prod' ? '🖨 Наклейка и место' : ACTNAME[a]) + '</span>';
         }).join('') + '</div>';
       }
       h += '</div>';
@@ -2947,6 +2952,9 @@
       h += '<div class="agrp">' + esc(s.head + ' · ' + s.sub).toUpperCase() + '</div>';
       s.items.forEach(row);
     });
+    h += '<div class="agrp">ИЗ ПРОИЗВОДСТВА</div>';   // 23.11.2026 (руководитель): отдельный доступ к вкладке «🏭 Из произв.»
+    row({ key: 'prod', emoji: '🏭', name: 'Из производства (выпуски цеха)' });
+    h += '<div class="note">🏭 👁 — видит вкладку и выпуски · ✋ + «🖨 Наклейка и место» — печатает наклейку и ставит на место (QR). Окно склада завода — по правам «Готовая продукция завода».</div>';
     h += '<div class="agrp">ИНВЕНТАРИЗАЦИЯ</div>';
     row({ key: 'inv', emoji: '📋', name: 'Инвентаризация (агент Темур)' });
     h += '<div class="agrp">ПЕРЕМЕЩЕНИЯ</div>';
