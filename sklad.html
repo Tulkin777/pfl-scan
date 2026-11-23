@@ -405,6 +405,16 @@
   .dir div.shp .ptag.ter { background: #10295c; color: #fff; }   /* руководитель 22.11: голубой сливался с синей плиткой */
   .dir div.shp.z .sc { background: #dfe3ea; color: #9aa0ab; box-shadow: none; } .dir div.shp.z .ptag { background: #e4e7ee; color: #9aa0ab; box-shadow: none; }
   .dir div.shp.z .brs .br0 { background: #e4e7ee; color: #9aa0ab; }
+  /* 24.11.2026 (руководитель): 4 плитки «Откуда» в Отгрузке — спокойный красный, читаемо и пустые (не серое пятно) */
+  .dir div.shp, .dir div.shp.z { background: linear-gradient(150deg, #f6a9a2, #d9534f); color: #fff; box-shadow: 0 3px 0 #a33a36; opacity: 1; filter: none; }
+  .dir div.shp.z { background: linear-gradient(150deg, #f3c9c5, #e6928c); box-shadow: 0 3px 0 #c06e68; }
+  .dir div.shp .cty { color: #fff; text-shadow: 0 1px 2px rgba(110,20,20,.35); }
+  .dir div.shp .sc, .dir div.shp.z .sc { background: #fff; color: #b3302b; box-shadow: 0 1px 3px rgba(0,0,0,.2); font-weight: 900; }
+  .dir div.shp.z .sc { color: #c06e68; }
+  .dir div.shp .ptag, .dir div.shp.z .ptag { background: rgba(255,255,255,.88); color: #9b2a26; box-shadow: none; }
+  .dir div.shp .ptag.ter, .dir div.shp.z .ptag.ter { background: #7a1f1c; color: #fff; }
+  .dir div.shp .brs .br0, .dir div.shp.z .brs .br0 { background: rgba(255,255,255,.55); color: #8e2a26; }
+  .dir div.shp.on { box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #a33a36, 0 6px 10px rgba(0,0,0,.25); }
   /* 22.11.2026 (руководитель): нажатое — «негатив»: тёмная заливка, белые буквы, приподнято; остальные — бледнее */
   .stp .sp.on { background: linear-gradient(150deg, #6b5cff, #3a28b8) !important; color: #fff !important; box-shadow: 0 4px 0 #261a80 !important;
                 transform: translateY(-2px); opacity: 1 !important; }
@@ -853,9 +863,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'cd54159e', newBuild = '';
+  var BUILD = '3ed2391c', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795458108' || 0;
+  var BUILD_AT = +'1795464770' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1144,7 +1154,7 @@
         try { localStorage.setItem('pfl:mfilter', mfilter); if (MVT.indexOf(mfilter) >= 0) localStorage.setItem('pfl:mvsub', mfilter); } catch (e) {}
         // 23.11.2026 (руководитель): вкладка сверху — раздел всегда с начала (не «остаётся на месте» внутри линии/направления/отбора)
         try { mvLine = ''; flowDir = ''; mvStep = ''; mvN = null; } catch (e) {}
-        try { docFlt = { inc: '', ret: '', ship: 'ok' }; docPl = { inc: '', ship: '' }; docWho = { inc: '', ship: '' }; } catch (e) {}
+        try { docFlt = { inc: '', ret: '', ship: 'ok' }; docPl = { inc: '', ship: '' }; docWho = { inc: '', ship: '' }; docPick = { step: false, pl: false }; } catch (e) {}
         try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
         window.scrollTo(0, 0);
         if (cur === showMenu) showMenu(); else home();
@@ -2382,6 +2392,7 @@
   // 22.11.2026 (руководитель): в Отгрузке всегда выбран шаг, по умолчанию «создано»
   // 22.11.2026 (руководитель): главное — «отгружено» (ждёт подтверждения склада): открывается первым, его считают плитки
   var docFlt = { inc: '', ret: '', ship: 'ok' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
+  var docPick = { step: false, pl: false };   // 24.11.2026: отгрузка — шаг / склад выбран вручную (тогда не переключаем сами)
   // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
   var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
                  ship: [['t4', 'Ташкент · Перечисление', 'd1', [4], 'Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['t3', 'Ташкент · Терминал', 'd7', [3, 8], 'Ташкент', 'ТЕРМИНАЛ'],
@@ -2436,11 +2447,26 @@
       var inPl = function (x) { return !pl || pl[3].indexOf(+x.st) >= 0; }, inWho = function (x) { return !docWho[kind] || x.who === docWho[kind]; };
       if (kind === 'ship' || kind === 'inc') docWho[kind] = '';   // 22.11.2026 (руководитель): строки клиентов/поставщиков нет
       var live = function (x) { return kind !== 'ship' || docFlt.ship === 'arch' || x.step !== 'arch'; };   // архив — только по нажатию
+      // 24.11.2026 (руководитель «на вкладке 5, внутри 0»): число на вкладке = отгружено + просрочено. Если в выбранном шаге
+      // и складе пусто, а в другом есть — открыть там, где есть (с полуночи «отгружено» переходит в «просрочено»)
+      if (kind === 'ship') {
+        var cnt = function (s, p) { return all.filter(function (x) { return x.step === s && (!p || p[3].indexOf(+x.st) >= 0); }).length; };
+        if (!cnt(docFlt.ship, pl)) {
+          // склад не выбирали сами (остался с прошлого раза) и в нём нет ни отгруженного, ни просроченного — показать все склады
+          if (pl && !docPick.pl && !cnt('ok', pl) && !cnt('late', pl) && (cnt('ok') || cnt('late'))) { docPl.ship = ''; pl = null; }
+          // шаг не выбирали сами — открыть тот, где есть: сначала «отгружено», потом «просрочено»
+          if (!docPick.step && !cnt(docFlt.ship, pl)) docFlt.ship = cnt('ok', pl) ? 'ok' : cnt('late', pl) ? 'late' : docFlt.ship;
+          f = F.filter(function (q) { return q[0] === docFlt[kind]; })[0];
+        }
+      }
+      inPl = function (x) { return !pl || pl[3].indexOf(+x.st) >= 0; };
       var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x) && live(x); });
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
         h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
-          var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (!f || f[3](x)) && live(x); }), c = rq.length;
+          // 24.11.2026: в отгрузке плитка «Откуда» считает отгружено + просрочено (как число на вкладке) — сумма плиток = вкладке
+          var act = kind === 'ship' && (docFlt.ship === 'ok' || docFlt.ship === 'late');
+          var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (act ? (x.step === 'ok' || x.step === 'late') : (!f || f[3](x))) && live(x); }), c = rq.length;
           if (kind === 'ship') return shipTile(q, c, rq, docPl[kind] === q[0]);
           return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
         }).join('') + '</div>';
@@ -2492,13 +2518,14 @@
         el.onclick = function () {
           var q = el.getAttribute('data-df');
           docFlt[kind] = kind === 'ship' ? q : (docFlt[kind] === q ? '' : q);   // отгрузка: шаг не снимается — всегда один выбран
+          if (kind === 'ship') docPick.step = true;   // выбрали сами — не переключать
           showDocs(kind, box);
         };
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-dp]'), function (el) {
         el.onclick = function () {
           var q = el.getAttribute('data-dp'); docPl[kind] = docPl[kind] === q ? '' : q;
-          if (kind === 'ship') docFlt.ship = 'ok';   // выбрали «откуда» — сразу «отгружено»
+          if (kind === 'ship') { docFlt.ship = 'ok'; docPick.pl = !!docPl.ship; docPick.step = false; }   // выбрали «откуда» — «отгружено» (нет — «просрочено»)
           showDocs(kind, box);
         };
       });
@@ -3329,7 +3356,7 @@
           mfilter = el.getAttribute('data-mvs');
           try { localStorage.setItem('pfl:mfilter', mfilter); localStorage.setItem('pfl:mvsub', mfilter); } catch (e) {}
           try { mvLine = ''; flowDir = ''; mvStep = ''; mvN = null; } catch (e) {}
-          try { docFlt = { inc: '', ret: '', ship: 'ok' }; docPl = { inc: '', ship: '' }; docWho = { inc: '', ship: '' }; } catch (e) {}
+          try { docFlt = { inc: '', ret: '', ship: 'ok' }; docPl = { inc: '', ship: '' }; docWho = { inc: '', ship: '' }; docPick = { step: false, pl: false }; } catch (e) {}
           try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
           showMenu();
         };
