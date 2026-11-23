@@ -370,7 +370,8 @@
   .mvbar button { flex: 0 0 auto; width: auto; margin: 0; padding: 12px 14px; border-radius: 14px; font-weight: 900; font-size: 15px; color: #fff;
                   background: linear-gradient(150deg, #4fd68a, #17964a); box-shadow: 0 4px 0 #0f6e35; }
   .mvbar button:disabled { background: #c9d1de; box-shadow: none; color: #fff; }
-  .fchips.sq .fchip.lng { font-size: 11px; line-height: 1.1; letter-spacing: -.2px; }   /* «Склад завода» / «Склад Ташкента» — влезает в квадратик */
+  .fchips.sq .fchip.lng { font-size: 11px; line-height: 1.1; letter-spacing: -.2px; }
+  .fchips.sq .fchip.xl { font-size: 10px; letter-spacing: -.5px; }   /* 23.11: «Инвентаризация» — целиком */   /* «Склад завода» / «Склад Ташкента» — влезает в квадратик */
   /* 23.11.2026 (руководитель): место заметно, но спокойно — тёмно-синяя плашка, белый шрифт (как кнопка «Назад») */
   .plc .pl { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: #2d3a52; color: #fff; font-weight: 900; font-size: 15px;
              letter-spacing: .3px; box-shadow: 0 2px 0 #18202f; }
@@ -805,9 +806,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7e8d4224', newBuild = '';
+  var BUILD = '5a52b746', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795455354' || 0;
+  var BUILD_AT = +'1795455678' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1059,7 +1060,7 @@
       var lb = sq ? '<i>' + f[1].split(' ')[0] + '</i>' + f[1].split(' ').slice(1).join(' ') : f[1];
       var cnt = tabCount[f[0]];   // руководитель 22.11: на вкладке — сколько задач / документов / расхождений
       var bd = cnt != null ? '<span class="tbd' + (cnt ? (f[0] === 'ost' ? ' red' : '') : ' z') + '">' + cnt + '</span>' : '';
-      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (sq && f[1].length > 12 ? ' lng' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + bd + lb + '</div>';
+      return '<div class="fchip' + (f[0] === 'inv' ? ' inv' : f[0] === 'ost' ? ' ost' : '') + (sq && f[1].length > 12 ? ' lng' : '') + (sq && f[1].length > 15 ? ' xl' : '') + (f[0] === active ? ' on' : '') + '" data-f="' + f[0] + '">' + bd + lb + '</div>';
     }).join('') + (free ? new Array(Math.max(0, 4 - fl.length) + 1).join('<div class="fchip free"><i>＋</i>свободно</div>') : '') + '</div>';
   }
   function bindTabs() {
@@ -1086,7 +1087,7 @@
     topShow(false);
     // 22.11.2026 (руководитель): кнопка «⬅ Назад» отдельно; справа — где вы: путь мелко, название крупно (не кнопка)
     var pp = String(label || '').split(' · '), ttl = pp.pop(), path = pp.join(' › ');
-    var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', inv: 'Инвентаризация и остаток', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
+    var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', wh: 'Склады', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Перемещения', inc: 'Приходы', ret: 'Возврат', ship: 'Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
     var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
@@ -1233,13 +1234,26 @@
   function whName(k) { return PARTNAME[k] || (ITEM[k] || {}).name || k; }
   // руководитель 22.11: шаги как на заводе — Завод/Ташкент → Готовая продукция/Сырьё → ПЕРЕЧИСЛЕНИЕ/ТЕРМИНАЛ → документы.
   // box — первый шаг прямо под вкладками главного экрана (шапка и вкладки не пропадают)
-  var invFull = true;   // 23.11.2026: false — дан только «📦 Остаток готовой продукции» (без документов и пересчёта)
+  var invFull = true;   // 23.11.2026: false — инвентаризация не дана (остаток ГП — без пересчёта)
+  function gpTotal(el) {   // 23.11.2026: итог остатка готовой продукции крупно на плитке (только линии по доступу)
+    var gpT = {};
+    GPP.forEach(function (p) {
+      load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
+        var t = q && q.ok && q.tot && q.tot['шт'];
+        if (!el || !document.body.contains(el) || !t) return;
+        gpT[p] = t;
+        var a = gpT['Перечисление'], b = gpT['Терминал'], tot = (a ? a.total : 0) + (b ? b.total : 0);
+        el.innerHTML = '<span class="gpbig">' + fmtq(tot) + ' шт</span>' +
+          (a ? 'Перечисление ' + fmtq(a.total) : '') + (a && b ? ' · ' : '') + (b ? 'Терминал ' + fmtq(b.total) : '');
+      });
+    });
+  }
   var GPP = ['Перечисление', 'Терминал'];   // 23.11.2026 (руководитель): линии остатка ГП по доступу — только Перечисление / только Терминал / обе
   function showInv(s, box) {
     var me = cur, V = box || view;
     if (!box) title.textContent = '📋 ' + ([s.city, s.kind, s.prod].filter(Boolean).join(' · ') || 'Инвентаризация');
     if (!box) V.innerHTML = '<div class="spin">Загрузка документов ERP…</div>';
-    var src = s.gp && !invFull ? function (p, b, cb) { cb({ rows: [] }); } : (box ? load2 : load);   // только остаток — документы не нужны
+    var src = s.gp ? function (p, b, cb) { cb({ rows: [] }); } : (box ? load2 : load);   // остаток ГП — документы не нужны
     src('/api/inv', {}, function (r) {
       if (cur !== me || (box && !document.body.contains(box))) return;
       if (!box) sub.textContent = 'Документы ERP на ' + (r.updated || '—') + ' · проверяет агент Темур';
@@ -1270,7 +1284,7 @@
         if (s.prod) {
           // 23.11.2026 (руководитель): в конце пути — жёлтые плитки складов этой линии (завод и Ташкент) → сразу пересчёт; ниже остаток
           // 23.11.2026 (руководитель): упор — на остаток: он сверху, крупно; пересчёт (жёлтые плитки) — ниже
-          V.innerHTML = subTop('inv', 'Остаток готовой продукции · ' + s.prod) +
+          V.innerHTML = subTop('wh', 'Остаток готовой продукции · ' + s.prod) +
             '<div class="msec gpsec">📦 ОСТАТОК ГОТОВОЙ ПРОДУКЦИИ · ' + esc(s.prod.toUpperCase()) + '</div><div id="gpst"></div>' +
             (invFull ? '<div class="msec">✏️ ПЕРЕСЧИТАТЬ (ИНВЕНТАРИЗАЦИЯ)</div><div id="invdz"></div><div id="invdt"></div>' : '');
           if (invFull) {   // только остаток — без пересчёта
@@ -1284,7 +1298,7 @@
           return '<div class="tile cat p' + (GPP.length === 1 ? ' wide' : '') + '" data-s=\'' + JSON.stringify({ gp: 1, prod: p }) + '\'><div class="e">📦</div>' +
             '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div><div class="c gpsum" data-p="' + p + '">остаток загружается…</div></div>';
         }).join('') + '</div>' + (GPP.length ? '' : '<div class="empty">Остаток готовой продукции вам не дан</div>');
-        V.innerHTML = (box ? '<div class="msec gpsec" style="margin-top:12px">📦 ОСТАТОК ГОТОВОЙ ПРОДУКЦИИ</div>' : subTop('inv', 'Остаток готовой продукции')) + h;
+        V.innerHTML = (box ? '<div class="msec gpsec" style="margin-top:12px">📦 ОСТАТОК ГОТОВОЙ ПРОДУКЦИИ</div>' : subTop('wh', 'Остаток готовой продукции')) + h;
         bindTabs();
         GPP.forEach(function (p) {   // итоги прямо на плитке (остаток ERP)
           load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
@@ -1301,11 +1315,9 @@
         h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
           return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
         }).join('') +
-          // 23.11.2026 (руководитель): упор на остаток — название «Остаток готовой продукции» и итог крупно прямо на плитке
-          (GPP.length ? '<div class="tile cat p' + (ostOk ? '' : ' wide') + ' gpt" data-s=\'' + JSON.stringify({ gp: 1 }) + '\'><div class="e">📦</div><div class="n">Остаток готовой продукции</div>' +
-          '<div class="c gptot">Завод · Ташкент · Итого</div></div>' : '') +
-          // 23.11.2026 (руководитель): «⚖️ Расхождение 1С ↔ ERP» — число расхождений прямо на плитке, внутри — список
-          (ostOk ? '<div class="tile cat k gpt ostt"><div class="bd' + (ostN ? '' : ' z') + '">' + (ostN == null ? '…' : ostN) + '</div><div class="e">⚖️</div>' +
+          // 23.11.2026 (руководитель): «📦 Остаток готовой продукции» перенесён во вкладку «🏬 Склады»;
+          // «⚖️ Расхождение 1С ↔ ERP» — число расхождений прямо на плитке, внутри — список
+          (ostOk ? '<div class="tile cat k wide gpt ostt"><div class="bd' + (ostN ? '' : ' z') + '">' + (ostN == null ? '…' : ostN) + '</div><div class="e">⚖️</div>' +
             '<div class="n">Расхождение 1С ↔ ERP</div><div class="c">' + (ostN ? ostN + ' не сходится' : ostN === 0 ? 'всё сходится' : 'проверяю…') + '</div></div>' : '') + '</div>' +
           // 23.11.2026 (вариант 10): подсчёты до ERP с итогом проверки Темура — здесь же, над документами ERP
           '<div class="invdraft"></div>' +
@@ -1340,19 +1352,6 @@
           var n = q.gate.length;
           t.querySelector('.bd').textContent = n; t.querySelector('.bd').className = 'bd' + (n ? '' : ' z');
           t.querySelector('.c').textContent = n ? n + ' не сходится' : 'всё сходится';
-        });
-      }
-      if (V.querySelector('.gptot')) {   // 23.11.2026 (руководитель): итог остатка готовой продукции крупно на плитке
-        var gpT = {};
-        GPP.forEach(function (p) {   // только линии по доступу
-          load2('/api/inv_stock', { kind: 'Готовая продукция', prod: p }, function (q) {
-            var el = V.querySelector('.gptot'), t = q && q.ok && q.tot && q.tot['шт'];
-            if (!el || !t) return;
-            gpT[p] = t;
-            var a = gpT['Перечисление'], b = gpT['Терминал'], tot = (a ? a.total : 0) + (b ? b.total : 0);
-            el.innerHTML = '<span class="gpbig">' + fmtq(tot) + ' шт</span>' +
-              (a ? 'Перечисление ' + fmtq(a.total) : '') + (a && b ? ' · ' : '') + (b ? 'Терминал ' + fmtq(b.total) : '');
-          });
         });
       }
       if (V.querySelector('.invdraft')) load2('/api/invd_all', {}, function (q) {
@@ -2891,23 +2890,24 @@
         return Object.keys(tiles).some(function (k) { return ITEM[k].f === f[0]; });
       });
       // 23.11.2026 (руководитель): «Склад завода» и «Склад Ташкента» — одна вкладка «🏬 Склады», внутри две большие кнопки
-      var fl = whF.length ? [['wh', '🏬 Склады']] : [];
-      tabCount.wh = (tabCount.zav || 0) + (tabCount.tas || 0);
-      var mf = whF.some(function (f) { return f[0] === mfilter; }) ? mfilter : 'wh';
-      if (mf === 'wh' && whF.length === 1) mf = whF[0][0];   // один склад — сразу он
-      var certOn = (r.cert || 0) >= 1;
-      // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
-      // 23.11.2026 (руководитель): «📦 Остаток готовой продукции» — отдельный доступ: без инвентаризации вкладка показывает только его
+      // 23.11.2026 (руководитель): «📦 Остаток готовой продукции» — во вкладке «🏬 Склады» (третья кнопка), доступ — тот же
       invFull = !!(r.inv && r.inv.lv >= 1);
       GPP = r.gpp || (r.admin ? ['Перечисление', 'Терминал'] : []);   // 23.11.2026: какие линии остатка ГП видны
-      var invOn = (invFull || GPP.length > 0) && tabOn('inv'), ostOn = r.ost && tabOn('ost');
-      if (invOn) fl.push(['inv', '📋 Инвент. и остаток']);   // 23.11.2026 (руководитель): название — «Инвентаризация и остаток»
+      var gpOn = GPP.length > 0;
+      var fl = whF.length || gpOn ? [['wh', '🏬 Склады']] : [];
+      tabCount.wh = (tabCount.zav || 0) + (tabCount.tas || 0);
+      var mf = whF.some(function (f) { return f[0] === mfilter; }) ? mfilter : 'wh';
+      if (mf === 'wh' && whF.length === 1 && !gpOn) mf = whF[0][0];   // один склад (и нет остатка ГП) — сразу он
+      var certOn = (r.cert || 0) >= 1;
+      // руководитель 22.11: «📋 Инвент.» — обычная вкладка, как Завод и Ташкент: шапка остаётся, внутри — по шагам
+      var invOn = invFull && tabOn('inv'), ostOn = r.ost && tabOn('ost');
+      if (invOn) fl.push(['inv', '📋 Инвентаризация']);   // 23.11.2026 (руководитель): «и остаток» убрано — остаток ГП в «Складах»
       // 23.11.2026 (руководитель): вкладка «📦 Остаток» убрана — расхождение 1С ↔ ERP теперь в «📋 Инвент. и остаток»
       ostOn = false;
       if (certOn) fl.push(['cert', '📜 Разрешения']);   // 23.11.2026 (руководитель): последняя вкладка — сертификаты и разрешения
       if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) ||
           (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
-      if (mf === 'wh' && !whF.length) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
+      if (mf === 'wh' && !whF.length && !gpOn) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
       lastTabs = fl;
       h += tabsHtml(mf);
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
@@ -2927,7 +2927,10 @@
           var w = WHT[f[0]], t = tabCount[f[0]] || 0;
           return '<div class="tile cat wide ' + w[0] + '" data-wf="' + f[0] + '"><div class="bd' + (t ? '' : ' z') + '">' + t + '</div><div class="e">' + w[1] + '</div>' +
             '<div class="n">' + w[2] + '</div><div class="c">' + w[3] + '</div></div>';
-        }).join('') + '</div>';
+        }).join('') +
+          // 23.11.2026 (руководитель): третья кнопка — «📦 Остаток готовой продукции» (из инвентаризации), по доступу линий
+          (gpOn ? '<div class="tile cat wide p gpt" data-gpst="1"><div class="e">📦</div><div class="n">Остаток готовой продукции</div>' +
+            '<div class="c gptot">Завод · Ташкент · Итого</div></div>' : '') + '</div>';
       } else if (cats.length > 1 || mf === 'tas') {
         var ct = cats.map(function (c) { return catTile(c, tiles); }).join('');
         if (cats.length === 1) ct = ct.replace('tile cat ', 'tile cat wide ');   // одна кнопка — во всю ширину
@@ -2939,7 +2942,14 @@
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
       bindCats();
-      if (mf === 'inv') showInv(invFull ? {} : { gp: 1 }, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
+      if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
+      if (view.querySelector('[data-gpst]')) {   // 📦 Остаток готовой продукции: итог на плитке, нажатие — Перечисление / Терминал
+        gpTotal(view.querySelector('.gptot'));
+        view.querySelector('[data-gpst]').onclick = function () {
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          go(function () { showInv({ gp: 1 }); });
+        };
+      }
       if (mf === 'ost') showOst($('ostbox'));
       if ($('flowbox')) showFlow(mf, $('flowbox'));
       if ($('certbox')) showCert($('certbox'));
@@ -3742,7 +3752,7 @@
     // 23.11.2026 (руководитель): вкладки главного экрана — показать / скрыть каждому (даже если склад дан)
     h += '<div class="agrp">ВКЛАДКИ ГЛАВНОГО ЭКРАНА</div>';
     [['ship', '🛒', 'Отгрузка'], ['mv', '🚚', 'Перемещения'], ['inc', '📥', 'Приходы'], ['ret', '↩️', 'Возврат'], ['prod', '🏭', 'Из производства'],
-     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация и остаток']].forEach(function (t) {   // «Остаток» — убран (23.11)
+     ['zav', '🏭', 'Склад завода'], ['tas', '🏙', 'Склад Ташкента'], ['inv', '📋', 'Инвентаризация']].forEach(function (t) {   // «Остаток» — убран (23.11)
       row({ key: 'tab_' + t[0], emoji: t[1], name: t[2] });
     });
     h += '<div class="note">⛔ Скрыть — вкладки у человека нет на главном экране, данные по ней сервер не даёт. Склады и кнопки — по правам ниже.</div>';
@@ -3758,7 +3768,7 @@
     row({ key: 'gpost_per', emoji: '📦', name: 'Остаток готовой продукции · Перечисление' });
     row({ key: 'gpost_ter', emoji: '📦', name: 'Остаток готовой продукции · Терминал' });
     row({ key: 'inv', emoji: '📋', name: 'Инвентаризация (агент Темур)' });
-    h += '<div class="note">📦 Остаток готовой продукции — по линиям: дали только Перечисление — видит только Перечисление, только Терминал — только Терминал, обе — обе (Завод · Ташкент · Итого). Без инвентаризации вкладка «Инвент. и остаток» покажет лишь этот остаток. 📋 Инвентаризация — всё (4 кнопки); остаток ГП в ней — по складам, которые человеку даны.</div>';
+    h += '<div class="note">📦 Остаток готовой продукции — кнопка во вкладке «🏬 Склады», по линиям: дали только Перечисление — видит только Перечисление, только Терминал — только Терминал, обе — обе (Завод · Ташкент · Итого). С инвентаризацией — ещё линии своих складов ГП и пересчёт. 📋 Инвентаризация — документы, подсчёты, расхождение 1С ↔ ERP.</div>';
     h += '<div class="agrp">ПЕРЕМЕЩЕНИЯ</div>';
     row({ key: 'mv', emoji: '🚚', name: 'Перемещения' });
     h += '<div class="note">📦 Передал — склад «откуда» отдал (и «➕ Создать перемещение») · 🚛 Забрал — забрал после «Передал» · 📥 Принять — поставить на место (склад «куда»)</div>';
