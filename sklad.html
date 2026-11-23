@@ -768,7 +768,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'fc94ec22', newBuild = '';
+  var BUILD = '2af0b159', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1208,7 +1208,11 @@
       // остаток по алфавиту, Завод · Ташкент · Итого (не внутри Завода и Ташкента)
       if (s.gp) {
         if (s.prod) {
-          V.innerHTML = subTop('inv', 'Инвентаризация · Готовая продукция · ' + s.prod) + '<div id="gpst"></div>';
+          // 23.11.2026 (руководитель): в конце пути — жёлтые плитки складов этой линии (завод и Ташкент) → сразу пересчёт; ниже остаток
+          V.innerHTML = subTop('inv', 'Инвентаризация · Готовая продукция · ' + s.prod) + '<div id="invdz"></div><div id="invdt"></div>' +
+            '<div class="msec">📦 ОСТАТОК · ЗАВОД · ТАШКЕНТ · ИТОГО</div><div id="gpst"></div>';
+          invdBox({ city: 'Завод', prod: s.prod }, 'Готовая продукция', 'invdz');
+          invdBox({ city: 'Ташкент', prod: s.prod }, 'Готовая продукция', 'invdt');
           bindTabs();
           return invStock('Готовая продукция', s.prod, $('gpst'));
         }
@@ -1300,10 +1304,10 @@
   }
   // 23.11.2026 (руководитель): инвентаризация из мини-аппа — «➕ Создать» (склад → строки ERP + остаток 1С) → черновик →
   // факт правится здесь → «📤 Создать в ERP» (документ «Новый», остатки не меняются) → проверка Темура. «Провести» — пока тест.
-  function invdBox(s, kind) {
+  function invdBox(s, kind, boxId) {   // boxId — свой блок (на экране «Готовая продукция» их два: завод и Ташкент)
     var me = cur, body = { city: s.city, kind: kind, prod: s.prod };
     load2('/api/invd_list', body, function (r) {
-      var bx = $('invdbox');
+      var bx = $(boxId || 'invdbox'), cityT = boxId ? ' · ' + String(s.city || '').toUpperCase() : '';
       if (cur !== me || !bx || !r.ok) return;
       // 23.11.2026 (руководитель): без «создать черновик / удалить» — нажал склад или вид, сразу список с актуальными
       // остатками; правки сохраняются сами; в ERP — только «📤 Создать в ERP»
@@ -1321,7 +1325,7 @@
       var gpT = '';
       (r.stores || []).filter(function (st) { return !st.types.length; }).forEach(function (st) {
         if ((st.rooms || []).length) {   // ГП завода: ГП1 · ГП2 (· нет на схеме)
-          h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО СКЛАДУ</div><div class="ivtyp">' + st.rooms.map(function (x) {
+          h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ' + cityT + ' · ПО СКЛАДУ</div><div class="ivtyp">' + st.rooms.map(function (x) {
             return roomTile(st.id, '', x.key, x.key === 'none' ? '📍' : '🏭', x.key === 'none' ? 'Нет на схеме' : x.name,
               x.key === 'none' ? 'нигде не стоит' : x.unplaced ? 'на схеме пусто — здесь всё нерасставленное' : 'по схеме бота', x);
           }).join('') + '</div>';
@@ -1331,7 +1335,7 @@
         var nm2 = st.name.split(' · ');
         gpT += roomTile(st.id, '', '', /Gynomedix/.test(st.name) ? '🌸' : st.name.indexOf('Ташкент') >= 0 ? '🏙' : '🏭', nm2[0], nm2.slice(1).join(' · '), st);
       });
-      if (gpT) h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО СКЛАДУ</div><div class="ivtyp">' + gpT + '</div>';
+      if (gpT) h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ' + cityT + ' · ПО СКЛАДУ</div><div class="ivtyp">' + gpT + '</div>';
       // склад сырья — по виду (папки ERP): сырьё (по складам 1 / 2) · упаковка · тара (+ прочее)
       (r.stores || []).filter(function (st) { return st.types.length; }).forEach(function (st) {
         var g = '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО ВИДУ</div><div class="ivtyp">';
@@ -1373,7 +1377,7 @@
   // 23.11.2026 (руководитель): на плитке вида — сколько наименований и количество (по единицам), видно, стоит ли создавать
   function ivCnt(t) {
     if (t.n == null) return '';
-    if (!t.n) return '<em class="ivc">нет товаров</em>';
+    if (!t.n) return '<em class="ivc"><b>0</b> наим.<br>0 шт</em>';   // руководитель 23.11: пусто — так и писать «0»
     var q = Object.keys(t.qty || {}).slice(0, 2).map(function (u) { return fmtq(Math.round(t.qty[u])) + ' ' + esc(u); }).join(' · ');
     return '<em class="ivc"><b>' + t.n + '</b> наим.' + (q ? (t.key === 'other' ? ' · ' : '<br>') + q : '') + '</em>';
   }
