@@ -493,6 +493,7 @@
   .rt2.big { font-size: 14px; }
   .tl div { font-size: 14px; padding: 5px 0; border-top: 1px solid rgba(127,127,127,.15); } .tl .nx { color: var(--hint); }
   .act-give { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; box-shadow: 0 4px 0 #a85f00; margin-top: 8px; }
+  .act-acc { background: linear-gradient(150deg, #4fd68a, #17964a) !important; box-shadow: 0 4px 0 #0f6f36; margin-top: 8px; }
   .act-road { background: linear-gradient(150deg, #8b7bff, #4b39c9) !important; box-shadow: 0 4px 0 #34278f; margin-top: 8px; }
   .act-came { background: linear-gradient(150deg, #6fb2ff, #1f62c9) !important; box-shadow: 0 4px 0 #154a9a; margin-top: 8px; }
   button.drv { background: linear-gradient(150deg, #8b7bff, #4b39c9); color: #fff; box-shadow: 0 3px 0 #34278f; }
@@ -667,7 +668,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'db6931f8', newBuild = '';
+  var BUILD = '26d2b821', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1568,15 +1569,27 @@
       // кнопка действия — по шагу и по праву (📦 Отправить · 🚛 Везти · 📥 Принять)
       // 23.11.2026 (руководитель): два шага против случайных нажатий — сначала «📦 Передал» (склад «откуда», право «Передал»),
       // только потом «🚛 Забрал» (право «Забрал»). Без водителя, никого не информируем.
-      if (x.step === 'new' && can('send')) h += '<button class="main act-give" data-act="give">📦 Передал</button>';
+      // 23.11.2026 (руководитель «Да»): «Передал» и «Принял» — через бота склада (скан QR места в задаче склада)
+      if (x.step === 'new' && can('send') && x.from_wh) h += '<button class="main act-give" data-gotask="' + x.from_wh + '">📦 Передал — скан места на складе завода</button>';
       else if (x.step === 'new' && !inside) h += '<div class="note">Ждём «📦 Передал» от склада «откуда» — потом появится «🚛 Забрал».</div>';
       if (!inside && x.step === 'ready' && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал</button>';
+      if ((x.step === 'road' || x.step === 'came' || (inside && x.step === 'ready')) && can('accept') && x.to_wh)
+        h += '<button class="main act-acc" data-gotask="' + x.to_wh + '">📥 Принял — поставить на место</button>';
       h += '<div class="row" style="margin-top:8px">' +
         (x.from_wh && can('send') ? '<button data-go="' + x.from_wh + '">➡ Склад «откуда»' + (x.step === 'new' ? ' · собрать' : '') + '</button>' : '') +
         (x.to_wh && can('accept') ? '<button data-go="' + x.to_wh + '">➡ Склад «куда»' + (x.step === 'came' ? ' · принять' : '') + '</button>' : '') + '</div>' +
         '<div class="note">Собрать и принять — в окне склада (как в группе). Кнопки видит тот, у кого есть право в «👥 Доступ».</div>';
       view.innerHTML = h;
       bindTabs();
+      Array.prototype.forEach.call(view.querySelectorAll('[data-gotask]'), function (b) {
+        b.onclick = function () {   // окно склада сразу с задачей этого перемещения (скан QR места — бот выполняет)
+          var w = b.getAttribute('data-gotask'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
+          if (!it) return say('Этот склад вам не открыт.');
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          wantTask = '~' + x.id;
+          go(function () { showWh(it, w); });
+        };
+      });
       Array.prototype.forEach.call(view.querySelectorAll('[data-act]'), function (b) {
         b.onclick = function () {
           var act = b.getAttribute('data-act'); b.disabled = true;
@@ -2309,7 +2322,13 @@
         };
       });
       if (wantTask) {   // 22.11.2026: пришли из карточки отгрузки — её задачу «Собрать» выбрать сразу
-        var wi = tasks.map(function (t) { return String(t.id).split('|').pop(); }).indexOf(wantTask), we = wi >= 0 && $('cols').querySelector('.tb[data-i="' + wi + '"]');
+        // 23.11.2026: «~104077» — задача этого перемещения (первая открытая): «Взять · перемещение №» / «Принять №»
+        var wi = wantTask.charAt(0) === '~'
+          ? tasks.map(function (t) { return isQrTask(t) && String(t.doc) === wantTask.slice(1); }).indexOf(true)
+          : tasks.map(function (t) { return String(t.id).split('|').pop(); }).indexOf(wantTask);
+        if (wi < 0 && wantTask.charAt(0) === '~') say('Задачи по перемещению №' + wantTask.slice(1) + ' в этом складе нет' +
+          (wantTask.length ? ' — бот её ещё не создал или она уже выполнена.' : '.'));
+        var we = wi >= 0 && $('cols').querySelector('.tb[data-i="' + wi + '"]');
         wantTask = '';
         if (we && st.sel !== tasks[wi].id) we.click();
       }
@@ -2675,8 +2694,44 @@
       });
     };
   }
+  // 23.11.2026 (руководитель «Да»): перемещение через бота — «📦 Передал» (завод: «Взять · перемещение №») и
+  // «📥 Принял» (Ташкент: «Принять №»): скан QR таблички места → бот снимает / ставит партию; «👀 Смотреть места» — свободные
+  function isQrTask(t) {
+    var tid = String(t.id).split('|').pop();
+    return (t.kind === 'take' && /перемещение/i.test(t.label) && ['gp1', 'gp2', 'ter_gp'].indexOf(t.wh) >= 0) ||
+      (tid.charAt(0) === 'r' && ['per_tas', 'ter_tas', 'per_gx'].indexOf(t.wh) >= 0);
+  }
+  function qrPanel(t, st) {
+    var x = t.lines[0], P = $('panel'), take = t.kind === 'take';
+    var place = take ? (x.src_code || x.src || '—') : (x.dst_code || x.dst || '—');
+    var h = '<div class="lbl">' + esc(t.label) + '</div><div class="name">' + esc(x.short) + '</div>' +
+      '<div class="meta">' + (x.batch ? '<b>п.' + esc(x.batch) + '</b> · ' : '') + n(x.qty) + ' ' + esc(x.unit) + (x.boxes ? ' · ' + esc(x.boxes) : '') + '</div>' +
+      '<div class="todo">' + (take ? '📦 Возьмите партию с места <b>' + esc(place) + '</b> и отсканируйте QR таблички этого места — бот снимет её со склада, в Ташкенте появится «Принять».'
+        : '📥 Поставьте партию на <b>' + esc(place) + '</b> и отсканируйте QR таблички места — бот поставит её на место.') + '</div>';
+    if (!canDo('task')) { P.className = 'panel'; P.innerHTML = h + '<div class="note">👁 Только смотреть — кнопки действий не даны</div>'; return; }
+    P.className = 'panel';
+    P.innerHTML = h + '<button class="main pscan" id="tqr">📷 Сканировать QR места' + (take ? ' — взял' : ' — поставить') + '</button>' +
+      '<button class="plbl2" id="tlook">👀 Смотреть места' + (take ? '' : ' — не согласен с местом') + '</button>' +
+      (take ? '' : '<div class="note">Другое место: отсканируйте его табличку — бот поставит туда, если место подходит.</div>') + '<div id="res"></div>';
+    var id = t.id;
+    $('tqr').onclick = function () {
+      scanQr('QR таблички места · joy QR', function (code) {
+        var b = $('tqr'); if (b) { b.disabled = true; b.textContent = '⏳ Бот склада выполняет…'; }
+        call('/api/task_qr', { id: id, code: code }, 125000).then(function (r) {
+          haptic(r.ok ? 'success' : 'warning'); say(r.text);
+          if (r.done) { delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; P.className = 'panel hint'; P.innerHTML = esc(r.text); st.sel = null; }
+          else if (b) { b.disabled = false; b.textContent = '📷 Сканировать QR места' + (take ? ' — взял' : ' — поставить'); }
+        }).catch(function (e) { if (b) { b.disabled = false; b.textContent = '📷 Сканировать QR места'; } fail(e); });
+      });
+    };
+    $('tlook').onclick = function () {   // что где лежит и свободные места этого склада
+      var it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(t.wh) >= 0; })[0];
+      if (it) go(function () { showPlaces(it, [t.wh]); });
+    };
+  }
   function taskPanel(t, st) {
     if (t.prod && t.wh === 'gp1') return prodPanel(t, st);   // 23.11.2026: выпуск производства — свой путь (наклейка → QR места)
+    if (isQrTask(t)) return qrPanel(t, st);   // 23.11.2026: «Передал» / «Принял» перемещения — QR места боту
     var x = t.lines[0], where = t.scan === 'src' ? 'откуда' : 'куда', verb = verbOf(t), P = $('panel');
     P.className = 'panel';
     var h = '<div class="lbl">' + esc(t.label) + '</div>';
