@@ -799,7 +799,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '223f8418', newBuild = '';
+  var BUILD = '8ae2518d', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -827,6 +827,20 @@
     d.innerHTML = '🔄 Есть новая версия<span style="flex:1"></span><button>Обновить</button>';
     d.querySelector('button').onclick = function () { reloadTo(newBuild, true); };
     document.body.insertBefore(d, document.body.firstChild);
+  }
+  // 23.11.2026 (руководитель): «первый раз — старый вид, потом новый». Telegram держит копию страницы до 10 мин — поэтому
+  // ДО первого экрана спрашиваем ver.json (без кэша, не дольше 1,5 с): версия новее — сразу на новую, старый вид не рисуем
+  function verGate(fn) {
+    if (BUILD.indexOf('BUILD') >= 0) return fn();
+    var done = false, go1 = function () { if (!done) { done = true; fn(); } };
+    var tm = setTimeout(go1, 1500);   // нет связи / долго — открываем что есть, дальше проверка раз в минуту
+    fetch('ver.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (done) return;
+      var n = 0;
+      try { n = +(sessionStorage.getItem('pfl:rl:' + j.build) || 0); } catch (e) {}
+      if (j.build && j.build !== BUILD && n < 2) { done = true; clearTimeout(tm); return reloadTo(j.build); }
+      clearTimeout(tm); go1();
+    }).catch(function () { clearTimeout(tm); go1(); });
   }
   function checkBuild() {
     if (BUILD.indexOf('BUILD') >= 0 || document.hidden) return;   // локальная копия — без проверки
@@ -3987,7 +4001,7 @@
         '<button class="main" id="ackx">Закрыть</button></div>';
       $('ackx').onclick = function () { try { tg.close(); } catch (e) {} };
     }).catch(fail);
-  } else winOne(function () { boot(function () { winServer(home); }); });
+  } else verGate(function () { winOne(function () { boot(function () { winServer(home); }); }); });
 })();
 </script>
 </body>
