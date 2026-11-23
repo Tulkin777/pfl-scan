@@ -549,7 +549,8 @@
   .crt .ch b { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .crt .cs { font-weight: 900; font-size: 13px; border-radius: 8px; padding: 2px 7px; }
   .crt .cs.ok { background: rgba(23,150,74,.15); color: #17964a; } .crt .cs.bad { background: rgba(214,59,59,.14); color: #d63b3b; }
-  .crt .cd { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px; align-items: baseline; padding: 4px 0 4px 22px;
+  .crt .cdl { width: 38px; height: 32px; padding: 0; margin: 0; border-radius: 9px; font-size: 16px; line-height: 1; background: var(--bg); align-self: center; }
+  .crt .cd { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 38px; gap: 4px; align-items: baseline; padding: 4px 0 4px 22px;
              border-top: 1px solid rgba(127,127,127,.18); font-size: 13px; }
   .crt .cd .ct { font-weight: 700; } .crt .cd .cv { color: var(--hint); text-align: right; font-size: 12px; }
   .crt .cd.bad .cv { color: #d63b3b; font-weight: 700; } .crt .cd.sn .cv { color: #d97a00; font-weight: 700; }
@@ -802,9 +803,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8b990142', newBuild = '';
+  var BUILD = 'c07480f9', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795453244' || 0;
+  var BUILD_AT = +'1795453439' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2753,8 +2754,9 @@
 
   // 23.11.2026 (руководитель): 📜 Разрешительные документы — по каждому товару: СЭЗ, Минздрав, сертификаты… есть / нет / истёк
   // (те же данные, что /sert и окно «Сертификаты» дашборда; только смотреть)
-  var certG = '', certBad = false;
-  try { certG = localStorage.getItem('pfl:certg') || ''; certBad = localStorage.getItem('pfl:certbad') === '1'; } catch (e) {}
+  // certBad: '0' — все товары, '1' — только где не хватает, '2' — только где всё есть (23.11.2026, руководитель)
+  var certG = '', certBad = '0';
+  try { certG = localStorage.getItem('pfl:certg') || ''; certBad = localStorage.getItem('pfl:certbad') || '0'; } catch (e) {}
   var CST = { ok: ['✅', 'ok', 'есть'], soon: ['⚠️', 'sn', 'скоро истекает'], expired: ['⛔', 'bad', 'истёк'], missing: ['❌', 'bad', 'нет'],
               nofile: ['📄', 'bad', 'нет файла'], checked: ['☑️', 'sn', 'проверен Азизом, ждёт подтверждения'], pending: ['⏳', 'sn', 'на проверке у Азиза'],
               rejected: ['⛔', 'bad', 'отклонён'], none: ['➖', 'no', 'не требуется'] };
@@ -2772,11 +2774,13 @@
         '<div class="crt-f"><span data-cg=""' + (certG ? '' : ' class="on"') + '>Все</span>' + gs.map(function (g) {
           return '<span data-cg="' + esc(g.group) + '"' + (certG === g.group ? ' class="on"' : '') + '>' + esc(g.group.charAt(0) + g.group.slice(1).toLowerCase()) + ' · ' + g.n + '</span>';
         }).join('') + '</div>' +
-        '<div class="crt-f"><span data-cb="0"' + (certBad ? '' : ' class="on"') + '>Все товары</span><span data-cb="1"' + (certBad ? ' class="on"' : '') + '>❌ Только где не хватает</span></div>';
+        '<div class="crt-f">' + [['0', 'Все товары'], ['2', '✅ Только где всё есть'], ['1', '❌ Только где не хватает']].map(function (o) {
+          return '<span data-cb="' + o[0] + '"' + (certBad === o[0] ? ' class="on"' : '') + '>' + o[1] + '</span>';
+        }).join('') + '</div>';
       var n = 0;
       gs.forEach(function (g) {
         if (certG && g.group !== certG) return;
-        var rows = g.rows.filter(function (r) { return !certBad || r.bad; });
+        var rows = g.rows.filter(function (r) { return certBad === '1' ? r.bad : certBad === '2' ? !r.bad : true; });
         if (!rows.length) return;
         h += '<div class="ivsec">' + esc(g.group) + ' · ' + rows.length + '</div>';
         rows.forEach(function (r) {
@@ -2788,19 +2792,31 @@
               var tail = d.state === 'ok' || d.state === 'soon' || d.state === 'checked' ?
                 (d.number ? '№ ' + esc(d.number) : '') + (d.until ? ' · до ' + dmy(d.until) : '') + (d.state === 'soon' && d.days != null ? ' · ' + d.days + ' дн.' : '') :
                 d.state === 'expired' && d.until ? 'истёк ' + dmy(d.until) : s[2];
-              return '<div class="cd ' + s[1] + '"><span class="ci">' + s[0] + '</span><span class="ct">' + esc(d.type) + '</span><span class="cv">' + tail + '</span></div>';
+              // 23.11.2026 (руководитель): ⬇️ — файл в личку бота склада (по доступу к виду; и просроченный), через час удалится
+              return '<div class="cd ' + s[1] + '"><span class="ci">' + s[0] + '</span><span class="ct">' + esc(d.type) + '</span><span class="cv">' + tail + '</span>' +
+                (d.dl ? '<button class="cdl" data-dl="' + esc(r.pid) + '" data-dt="' + esc(d.type) + '" title="Скачать — в личку бота">⬇️</button>' : '<span></span>') + '</div>';
             }).join('') + '</div>';
         });
       });
-      if (!n) h += '<div class="empty">' + (certBad ? 'Всё есть — не хватает ни у одного товара 👍' : 'Товаров нет') + '</div>';
-      h += '<div class="note">' + (D.all ? '' : 'Вам видны: ' + esc((D.types || []).join(', ')) + '. ') + 'Получить файл — в боте документов командой /sert. ' +
+      if (!n) h += '<div class="empty">' + (certBad === '1' ? 'Всё есть — не хватает ни у одного товара 👍' : certBad === '2' ? 'Нет товара, у которого есть все документы' : 'Товаров нет') + '</div>';
+      h += '<div class="note">' + (D.all ? '' : 'Вам видны: ' + esc((D.types || []).join(', ')) + '. ') + '⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). ' +
         'Новый документ — загрузить в бот (/yuklash), Азиз проверит и добавит сюда. Обновлено ' + esc(D.at) + '.</div>';
       box.innerHTML = h;
+      Array.prototype.forEach.call(box.querySelectorAll('[data-dl]'), function (b) {
+        b.onclick = function () {
+          if (b.disabled) return;
+          b.disabled = true; b.textContent = '⏳';
+          call('/api/cert_get', { pid: b.getAttribute('data-dl'), type: b.getAttribute('data-dt') }, 90000).then(function (q) {
+            haptic(q.ok ? 'success' : 'warning'); say(q.text);
+            b.textContent = q.ok ? '✅' : '⬇️'; b.disabled = false;
+          }).catch(function (e) { b.disabled = false; b.textContent = '⬇️'; ivErr(e); });
+        };
+      });
       Array.prototype.forEach.call(box.querySelectorAll('[data-cg]'), function (el) {
         el.onclick = function () { certG = el.getAttribute('data-cg'); try { localStorage.setItem('pfl:certg', certG); } catch (e) {} showCert(box); };
       });
       Array.prototype.forEach.call(box.querySelectorAll('[data-cb]'), function (el) {
-        el.onclick = function () { certBad = el.getAttribute('data-cb') === '1'; try { localStorage.setItem('pfl:certbad', certBad ? '1' : '0'); } catch (e) {} showCert(box); };
+        el.onclick = function () { certBad = el.getAttribute('data-cb'); try { localStorage.setItem('pfl:certbad', certBad); } catch (e) {} showCert(box); };
       });
     });
   }
