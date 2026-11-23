@@ -538,6 +538,8 @@
   .cst { display: inline-block; font-size: 12px; font-weight: 800; border-radius: 8px; padding: 2px 8px; }
   .cst.q { background: rgba(31,98,201,.14); color: #1f62c9; } .cst.ok { background: rgba(23,150,74,.15); color: #17803c; }
   .cst.bad { background: rgba(214,59,59,.14); color: #c0392b; } .cst.st, .cst.none { background: rgba(255,170,40,.2); color: #a85f00; }
+  .doc.dopen { cursor: pointer; } .doc .dlink { color: var(--btn); font-weight: 800; white-space: nowrap; }
+  .inv-cx { background: linear-gradient(150deg, #ff7a6e, #d63b3b) !important; color: #fff !important; box-shadow: 0 3px 0 #9a1f1f; }
   .ivok0 { border-radius: 12px; padding: 12px; margin: 14px 0 6px; background: rgba(23,150,74,.14); color: #17803c; font-weight: 800; text-align: center; }
   /* 23.11.2026: «Вкладки главного экрана» в доступе — одна строка: название слева, ✅/⛔ справа */
   .whr.tabr { display: flex; align-items: center; gap: 8px; padding-top: 6px; padding-bottom: 6px; }
@@ -781,7 +783,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5b2cf079', newBuild = '';
+  var BUILD = 'e421f5bb', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1602,12 +1604,69 @@
       draw();
     });
   }
+  // 23.11.2026 (руководитель): «✖ Отменить» — сначала ERP (бот), сервер проверяет «Отменён» чтением ERP, потом экран
+  function invCancel(doc, b, after) {
+    var q = 'Отменить инвентаризацию №' + doc + ' в ERP?\n\nДокумент станет «Отменён», остатки не меняются. Сотрудник увидит отмену в ERP.\nВернуть нельзя — только создать заново.';
+    var go_ = function (yes) {
+      if (!yes) return;
+      var t0 = b.textContent; b.disabled = true; b.textContent = '⏳ Отменяю в ERP…';
+      call('/api/inv_cancel_doc', { doc: doc }, 200000).then(function (r) {
+        haptic(r.ok ? 'success' : 'warning'); say(r.text);
+        if (r.ok) { b.textContent = '✖ Отменён'; if (after) after(); } else { b.disabled = false; b.textContent = t0; }
+      }).catch(function (e) { b.disabled = false; b.textContent = t0; ivErr(e); });
+    };
+    try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+  }
+  // документ ERP изнутри: что изменилось (факт ≠ учёт) — сверху; «✅ Провести» (мини-апп, Темур чисто) и «✖ Отменить»
+  function showInvDoc(doc) {
+    var me = cur;
+    view.innerHTML = '<div class="spin">Загрузка документа ERP…</div>';
+    load('/api/inv_doc', { doc: doc }, function (D) {
+      if (cur !== me) return;
+      if (!D.ok) { view.innerHTML = subTop('inv', 'Инвентаризация · №' + doc) + '<div class="empty">' + esc(D.text || 'Нет документа') + '</div>'; return bindTabs(); }
+      var rn = 0, row = function (r) {
+        rn++;
+        return '<div class="ivr' + (r.d ? ' ch' : '') + '"><div class="nn">' + rn + '</div><div class="nm">' + esc(r.name) +
+          (r.d ? '<span class="mk dv">' + (r.d > 0 ? '+' : '−') + fmtq(Math.abs(r.d)) + '</span>' : '') + '</div>' +
+          '<div class="n">' + fmtq(r.erp) + '</div><div class="n">' + fmtq(r.c1) + '</div><div class="n"><b>' + fmtq(r.fact) + '</b></div></div>';
+      };
+      var stc = D.status === 1 ? 'st-iv' : D.status === 2 ? 'st-ok' : 'st-new';
+      var h = subTop('inv', 'Инвентаризация · №' + D.doc) + '<div class="ivw">' +
+        '<div class="dhead ' + stc + '"><div class="dn">№' + esc(D.doc) + '</div><div class="ds">' + esc(D.status_name) + '</div></div>' +
+        '<div class="note" style="text-align:left;margin:0 0 8px">' + esc(D.store_name) + ' · ' + esc(D.date) + ' · ' + esc(D.author) +
+        (D.comment ? '<br>' + esc(D.comment) : '') + '</div>' +
+        '<div class="ivsum"><div class="ch"><b>' + D.changed.length + '</b>изменено</div><div class="ne"><b>' + fmtq(D.short) + '</b>недостача</div>' +
+        '<div class="eq"><b>' + fmtq(D.extra) + '</b>излишек</div><div><b>' + D.n + '</b>всего</div></div>' +
+        (D.mini ? chkBanner({ chk: D.chk, n_changed: D.changed.length }) : '') +
+        '<div class="ivhd"><span>№</span><span>товар</span><span>учёт</span><span>1С</span><span>факт</span></div>';
+      if (D.changed.length) h += '<div class="ivsec ch">✏️ Изменено · ' + D.changed.length + '</div>' + D.changed.map(row).join('');
+      if (D.rest.length) h += '<div class="ivsec">Без изменений · ' + D.rest.length + '</div>' + D.rest.map(row).join('');
+      h += (D.can_post || D.can_cancel ? '<div class="ivbar">' + (D.can_cancel ? '<button class="inv-cx" id="dcx">✖ Отменить</button>' : '') +
+        (D.can_post ? '<button class="go" id="dpp">✅ Провести</button>' : '') + '</div>' : '') +
+        '<div class="note">' + (D.status === 1 ? (D.can_post ? '«Провести»: остатки изменённых строк в ERP станут = факту (перед этим сервер проверит, что остатки не менялись).'
+          : D.mini ? '' : 'Проверка и подтверждение — в списке на первом экране (Темур).') : D.status === 2 ? 'Проведён — остатки ERP = факту.' : 'Отменён — остатки не менялись.') + '</div></div>';
+      view.innerHTML = h; bindTabs();
+      if ($('dcx')) $('dcx').onclick = function () { invCancel(D.doc, this, function () { cur(); }); };
+      if ($('dpp')) $('dpp').onclick = function () {
+        var b = this, q0 = 'Провести инвентаризацию №' + D.doc + '?\nИзменено строк: ' + D.changed.length + '\nОстатки этих строк в ERP станут равны факту.';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Провожу в ERP…';
+          call('/api/inv_post_doc', { doc: D.doc }, 200000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); cur(); })
+            .catch(function (e) { b.disabled = false; b.textContent = '✅ Провести'; ivErr(e); });
+        };
+        try { tg.showConfirm(q0, go_); } catch (e) { go_(confirm(q0)); }
+      };
+    });
+  }
   // 23.11.2026 (руководитель): созданные инвентаризации ERP и «Проверить / Подтвердить» — на ПЕРВОМ экране «Инвентаризации»
   function invDocs(rows, can, B) {
     if (!rows.length) { B.innerHTML = '<div class="empty">✅ Не проведённых инвентаризаций нет</div>'; return; }
     B.innerHTML = rows.map(function (x, i) {
-      return '<div class="doc"><div class="dh"><b><span class="ino">' + (i + 1) + '</span>№' + esc(x.doc) + '</b><span class="st">' + esc(x.status_text) + '</span></div>' +
-        '<div class="dm">' + esc(x.date) + ' · ' + esc(String(x.author || '').split(' ')[0]) + ' · ' + esc(x.place) + ' · разница: <b>' + esc(x.diff) + '</b></div>' +
+      // 23.11.2026 (руководитель): карточку можно открыть — внутри что изменилось; «✖ Отменить» — рядом с «Провести»
+      return '<div class="doc dopen" data-open="' + i + '"><div class="dh"><b><span class="ino">' + (i + 1) + '</span>№' + esc(x.doc) + '</b><span class="st">' + esc(x.status_text) + '</span></div>' +
+        '<div class="dm">' + esc(x.date) + ' · ' + esc(String(x.author || '').split(' ')[0]) + ' · ' + esc(x.place) + ' · разница: <b>' + esc(x.diff) + '</b>' +
+        ' · <span class="dlink">открыть ›</span></div>' +
         // Темур проверил, ошибки нет — «✅ Подтвердить» (руководитель и назначенные), после него Темур проводит в ERP
         // 23.11.2026 (руководитель): создан из мини-аппа (Темур проверил до ERP) — сразу «✅ Провести» у руководителя / назначенного
         '<div class="row3">' + (x.mini ? (x.can_post ? '<button class="b1 inv-ok" data-pp="' + i + '">✅ Провести</button>'
@@ -1615,8 +1674,20 @@
           : (x.status === 'approve' || x.status === 'approve_fixed')
           ? '<button class="b1 inv-ok" data-ap="' + i + '">✅ Подтвердить инвентаризацию</button>'
           : (can && !x.done ? '<button class="b1" data-c="' + i + '">🔎 Проверить (Темур)</button>' : '')) +
-        (x.has_excel ? '<button data-x="' + i + '">📄 Excel</button>' : '') + '</div></div>';
+        (x.has_excel ? '<button data-x="' + i + '">📄 Excel</button>' : '') +
+        (x.can_cancel ? '<button class="b1 inv-cx" data-cx="' + i + '">✖ Отменить</button>' : '') + '</div></div>';
     }).join('') + (can ? '' : '<div class="note">👁 Только смотреть — «Проверить» не дано</div>');
+    Array.prototype.forEach.call(B.querySelectorAll('[data-open]'), function (el) {
+      el.onclick = function (ev) {
+        if (ev.target.closest('button')) return;   // кнопки — своё действие
+        var x = rows[+el.getAttribute('data-open')];
+        try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+        go(function () { showInvDoc(x.doc); });
+      };
+    });
+    Array.prototype.forEach.call(B.querySelectorAll('[data-cx]'), function (b) {
+      b.onclick = function (ev) { ev.stopPropagation(); invCancel(rows[+b.getAttribute('data-cx')].doc, b, function () { cur(); }); };
+    });
     Array.prototype.forEach.call(B.querySelectorAll('[data-c]'), function (b) {
       b.onclick = function () {
         var x = rows[+b.getAttribute('data-c')]; b.disabled = true; b.textContent = '⏳ Отправляю Темуру…';
