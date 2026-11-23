@@ -756,7 +756,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6a02f14e', newBuild = '';
+  var BUILD = 'f4f23f03', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1292,7 +1292,8 @@
       (r.stores || []).filter(function (st) { return !st.types.length; }).forEach(function (st) {
         if ((st.rooms || []).length) {   // ГП завода: ГП1 · ГП2 (· нет на схеме)
           h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО СКЛАДУ</div><div class="ivtyp">' + st.rooms.map(function (x) {
-            return roomTile(st.id, '', x.key, x.key === 'none' ? '📍' : '🏭', x.key === 'none' ? 'Нет на схеме' : x.name, x.key === 'none' ? 'нигде не стоит' : 'по схеме бота', x);
+            return roomTile(st.id, '', x.key, x.key === 'none' ? '📍' : '🏭', x.key === 'none' ? 'Нет на схеме' : x.name,
+              x.key === 'none' ? 'нигде не стоит' : x.unplaced ? 'на схеме пусто — здесь всё нерасставленное' : 'по схеме бота', x);
           }).join('') + '</div>';
           return;
         }
@@ -1307,7 +1308,8 @@
           var ic = t.name.split(' ')[0], wd = t.name.split(' ').slice(1).join(' '), sm = t.key === 'other';
           if ((t.rooms || []).length) {   // сырьё: склад 1 · склад 2 · нет на схеме
             g += t.rooms.map(function (x) {
-              return roomTile(st.id, t.key, x.key, x.key === 'none' ? '📍' : ic, x.key === 'none' ? wd + ' · нет на схеме' : wd + ' · ' + x.name, '', x);
+              return roomTile(st.id, t.key, x.key, x.key === 'none' ? '📍' : ic, x.key === 'none' ? wd + ' · нет на схеме' : wd + ' · ' + x.name,
+                x.unplaced ? 'на схеме пусто — здесь всё нерасставленное' : '', x);
             }).join('');
             return;
           }
@@ -1330,7 +1332,7 @@
           b.disabled = true; b.innerHTML = b.tagName === 'DIV' ? '<b>⏳</b><span>Беру остатки ERP и 1С…</span>' : '⏳ Беру остатки ERP и 1С…';
           call('/api/invd_new', { store: st, typ: ty, room: rm }, 125000).then(function (d) {
             b.disabled = false; b.innerHTML = lbl0;
-            if (!d.ok) return say(d.text);
+            if (!d.ok) { say(d.text); if (/устарел/.test(d.text || '') && cur) cur(); return; }   // старая плитка из памяти — экран заново
             go(function () { showInvd(d.id, d); });
           }).catch(function (e) { b.disabled = false; b.innerHTML = lbl0; ivErr(e); });
         };
