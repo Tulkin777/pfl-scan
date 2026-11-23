@@ -586,6 +586,7 @@
   input.txt { font: inherit; width: 100%; padding: 11px 12px; border-radius: 12px; border: 2px solid var(--btn); margin: 6px 0; background: var(--bg); color: var(--fg); }
   /* 23.11.2026 (руководитель): инвентаризация из мини-аппа — черновик подсчёта */
   .ivnew { width: 100%; padding: 13px; font-size: 16px; font-weight: 800; border-radius: 14px; margin: 0 0 10px; background: linear-gradient(150deg, #6fb2ff, #1f62c9); color: #fff; box-shadow: 0 4px 0 #154a9a; }
+  .ivnew small { display: block; font-size: 13px; font-weight: 700; margin-top: 3px; opacity: .9; }
   .ivtyp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
   .ivt { border-radius: 14px; padding: 12px 8px; text-align: center; cursor: pointer; background: linear-gradient(150deg, #ffd25a, #e0a100);
          color: #4a3300; box-shadow: 0 4px 0 #a37400; }
@@ -722,7 +723,7 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1a43a4a1', newBuild = '';
+  var BUILD = '4de41f44', newBuild = '';
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
   // руководитель 22.11: обновление тихое — без плашки; внутри склада не трогаем, на главном — сразу; новую страницу
@@ -1192,50 +1193,41 @@
     load2('/api/invd_list', body, function (r) {
       var bx = $('invdbox');
       if (cur !== me || !bx || !r.ok) return;
-      var h = (r.drafts || []).filter(function (d) { return !d.typ; }).map(function (d) {   // черновики по виду — на плитках вида
-        return '<div class="ivd" data-id="' + esc(d.id) + '"><div class="t">✏️ Черновик · ' + esc(d.store_name) + '</div>' +
-          '<div class="m">' + esc(d.at.slice(8, 10) + '.' + d.at.slice(5, 7) + ' ' + d.at.slice(11)) + ' · ' + esc(d.by) + ' · ' + d.n + ' поз. · изменено ' + d.n_changed +
-          (d.has_c1 ? ' · = 1С ' + d.n_eq : ' · без 1С') + '</div></div>';
-      }).join('');
-      var free = (r.stores || []).filter(function (st) { return !st.types.length && !(r.drafts || []).some(function (d) { return d.store === st.id; }); });
-      if (r.can && free.length) h = free.map(function (st) {
-        return '<button class="ivnew" data-st="' + st.id + '">➕ Создать инвентаризацию' + ((r.stores || []).length > 1 ? ' · ' + esc(st.name) : '') + '</button>';
-      }).join('') + h;
-      // 23.11.2026 (руководитель): склад сырья — инвентаризация по виду (папки ERP): сырьё · упаковка · тара (+ прочее)
+      // 23.11.2026 (руководитель): без «создать черновик / удалить» — нажал склад или вид, сразу список с актуальными
+      // остатками; правки сохраняются сами; в ERP — только «📤 Создать в ERP»
+      var h = '';
+      (r.stores || []).filter(function (st) { return !st.types.length; }).forEach(function (st) {
+        var dr = (r.drafts || []).filter(function (d) { return d.store === st.id && !d.typ; })[0];
+        h += '<button class="ivnew" data-st="' + st.id + '">📋 Пересчитать склад' + ((r.stores || []).length > 1 ? ' · ' + esc(st.name) : '') +
+          (dr && dr.n_changed ? '<small>✏️ изменено ' + dr.n_changed + ' из ' + dr.n + ' — продолжить</small>' : '') + '</button>';
+      });
+      // склад сырья — по виду (папки ERP): сырьё · упаковка · тара (+ прочее)
       (r.stores || []).filter(function (st) { return st.types.length; }).forEach(function (st) {
-        var g = '<div class="msec">➕ СОЗДАТЬ ИНВЕНТАРИЗАЦИЮ · ПО ВИДУ</div><div class="ivtyp">';
+        var g = '<div class="msec">📋 ПЕРЕСЧИТАТЬ · ПО ВИДУ</div><div class="ivtyp">';
         st.types.forEach(function (t) {
           var dr = (r.drafts || []).filter(function (d) { return d.store === st.id && d.typ === t.key; })[0];
           var ic = t.name.split(' ')[0], wd = t.name.split(' ').slice(1).join(' '), sm = t.key === 'other';
           var nmh = (sm ? esc(ic) + ' ' : '<i>' + esc(ic) + '</i>') + '<b>' + esc(wd) + '</b>';
-          g += dr ? '<div class="ivt on' + (sm ? ' sm' : '') + '" data-id="' + esc(dr.id) + '">' + nmh + '<span>✏️ черновик · ' + dr.n + ' поз.</span></div>'
-            : '<div class="ivt' + (sm ? ' sm' : '') + (r.can ? '' : ' off') + (t.n === 0 ? ' nil' : '') + '" data-st="' + st.id + '" data-ty="' + t.key + '">' + nmh +
-              '<span>' + esc(t.sub) + '</span>' + ivCnt(t) + '</div>';
+          g += '<div class="ivt' + (dr && dr.n_changed ? ' on' : '') + (sm ? ' sm' : '') + (r.can ? '' : ' off') + (t.n === 0 ? ' nil' : '') +
+            '" data-st="' + st.id + '" data-ty="' + t.key + '">' + nmh + '<span>' + esc(t.sub) + '</span>' + ivCnt(t) +
+            (dr && dr.n_changed ? '<em class="ivc">✏️ изменено ' + dr.n_changed + '</em>' : '') + '</div>';
         });
-        h = g + '</div>' + h;
+        h += g + '</div>';
       });
       if (bx.innerHTML === h) return;
       bx.innerHTML = h;
-      Array.prototype.forEach.call(bx.querySelectorAll('.ivd, .ivt[data-id]'), function (el) {
-        el.onclick = function () { var id = el.getAttribute('data-id'); try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}; go(function () { showInvd(id); }); };
-      });
       Array.prototype.forEach.call(bx.querySelectorAll('[data-st]'), function (b) {
         b.onclick = function () {
-          if (!r.can) return say('👁 Только смотреть — создавать инвентаризацию вам не дано.');
-          var st = +b.getAttribute('data-st'), ty = b.getAttribute('data-ty') || '', S0 = (r.stores || []).filter(function (x) { return x.id === st; })[0] || {};
-          var T0 = (S0.types || []).filter(function (t) { return t.key === ty; })[0], lbl0 = b.innerHTML;
-          var q = 'Создать инвентаризацию?\n' + (S0.name || '') + (T0 ? ' · ' + T0.name.replace(/^\S+\s/, '') + ' (' + T0.sub + ')' : '') +
-            '\n\n' + (T0 ? 'Только товары этого вида' : 'Все товары склада') + ' ERP, факт = остаток ERP' +
-            (S0.c1 ? ', рядом остаток 1С' : ' (связи с 1С нет)') + '.\nЭто черновик в мини-аппе — в ERP пока ничего не создаётся.';
-          var go_ = function (yes) {
-            if (!yes) return;
-            b.disabled = true; b.innerHTML = '<b>⏳</b><span>Собираю остатки ERP и 1С…</span>';
-            call('/api/invd_new', { store: st, typ: ty }, 125000).then(function (d) {
-              if (!d.ok) { b.disabled = false; b.innerHTML = lbl0; return say(d.text); }
-              haptic('success'); go(function () { showInvd(d.id, d); });
-            }).catch(function (e) { b.disabled = false; b.innerHTML = lbl0; ivErr(e); });
-          };
-          try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+          if (!r.can) return say('👁 Только смотреть — пересчёт вам не дан.');
+          if (b.classList.contains('nil')) return say('Товаров этого вида на складе нет.');
+          var st = +b.getAttribute('data-st'), ty = b.getAttribute('data-ty') || '', lbl0 = b.innerHTML;
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          b.disabled = true; b.innerHTML = ty ? '<b>⏳</b><span>Беру остатки ERP и 1С…</span>' : '⏳ Беру остатки ERP и 1С…';
+          call('/api/invd_new', { store: st, typ: ty }, 125000).then(function (d) {
+            b.disabled = false; b.innerHTML = lbl0;
+            if (!d.ok) return say(d.text);
+            go(function () { showInvd(d.id, d); });
+          }).catch(function (e) { b.disabled = false; b.innerHTML = lbl0; ivErr(e); });
         };
       });
     });
@@ -1266,9 +1258,11 @@
     function draw() {
       var q = find.toLowerCase(), hit = function (r) { return !q || r.name.toLowerCase().indexOf(q) >= 0; };
       var h = subTop('inv', 'Инвентаризация · ' + D.store_name) + '<div class="ivw">' +
-        '<div class="dhead st-iv"><div class="dn">' + (D.erp_doc ? '№' + esc(D.erp_doc) : '✏️ Черновик') + '</div><div class="ds">' +
-        (D.erp_doc ? '📤 в ERP · «Новый»' : 'не в ERP') + '</div></div>' +
-        '<div class="note" style="text-align:left;margin:0 0 8px">' + esc(D.store_name) + ' · начал ' + esc(D.by) + ' ' + esc(D.at.slice(8, 10) + '.' + D.at.slice(5, 7) + ' ' + D.at.slice(11)) +
+        '<div class="dhead st-iv"><div class="dn">' + (D.erp_doc ? '№' + esc(D.erp_doc) : '📋 Подсчёт') + '</div><div class="ds">' +
+        (D.erp_doc ? '📤 в ERP · «Новый»' : 'ещё не в ERP') + '</div></div>' +
+        '<div class="note" style="text-align:left;margin:0 0 8px">' + esc(D.store_name) + ' · остатки ERP на ' +
+        esc(String(D.fresh || D.at).slice(8, 10) + '.' + String(D.fresh || D.at).slice(5, 7) + ' ' + String(D.fresh || D.at).slice(11)) +
+        (D.n_changed ? ' · правки сохраняются сами' : '') +
         '<br>' + (D.has_c1 ? '📗 ' + esc(D.c1_src) : '📕 1С: связи нет — только Перечисление (без Gynomedix)') + '</div>' +
         '<div class="ivsum"><div class="ch"><b>' + D.n_changed + '</b>изменено</div><div class="eq"><b>' + (D.has_c1 ? D.n_eq : '—') + '</b>= 1С</div>' +
         '<div class="ne"><b>' + (D.has_c1 ? D.n_ne : '—') + '</b>≠ 1С</div><div><b>' + D.n + '</b>всего</div></div>' +
@@ -1287,8 +1281,8 @@
           '<div class="note">Документ №' + esc(D.erp_doc) + ' создан в ERP («Новый», остатки не менялись). Проверка — агент Темур, как обычно.<br>' +
           '«Провести» пока тестовая: проведение — после разрешения руководителя.</div>';
       } else if (D.can) {
-        h += '<div class="ivbar"><button id="ivdel">🗑 Удалить</button><button class="go" id="iverp">📤 Создать в ERP · ' + D.n + ' поз.</button></div>' +
-          '<div class="note">Сначала посчитайте и исправьте факт. В ERP документ создаётся один раз — изменить его потом нельзя.</div>';
+        h += '<div class="ivbar"><button class="go" id="iverp">📤 Создать в ERP · ' + D.n + ' поз.' + (D.n_changed ? ' · изменено ' + D.n_changed : '') + '</button></div>' +
+          '<div class="note">Впишите факт, где отличается, — сохраняется сразу. Потом «Создать в ERP»: документ создаётся один раз, изменить его потом нельзя.</div>';
       } else h += '<div class="note">👁 Только смотреть — менять факт не дано</div>';
       h += '</div>';
       if (h === lastH) return;
@@ -1313,14 +1307,6 @@
           }).catch(function (e) { inp.disabled = false; inp.value = old; ivErr(e); });
         };
       });
-      if ($('ivdel')) $('ivdel').onclick = function () {
-        var q = 'Удалить черновик?\nПодсчёт не сохранится. В ERP ничего не было создано.';
-        var go_ = function (yes) {
-          if (!yes) return;
-          call('/api/invd_del', { id: id }, 30000).then(function (d) { say(d.text); if (d.ok) goBack(); }).catch(ivErr);
-        };
-        try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
-      };
       if ($('iverp')) $('iverp').onclick = function () {
         var b = this, q = 'Создать инвентаризацию в ERP?\n' + D.store_name + ' · ' + D.n + ' поз., изменено ' + D.n_changed +
           '.\n\nДокумент «Новый»: остатки НЕ меняются. Изменить его потом нельзя — только отменить.\nДальше — проверка Темура.';
