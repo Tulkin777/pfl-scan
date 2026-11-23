@@ -264,6 +264,12 @@
   .mvsep { display: flex; align-items: center; gap: 8px; margin: 6px 2px 8px; color: var(--hint); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
   .mvsep:before, .mvsep:after { content: ""; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #6b5cf0, transparent); }
   .fchips.mvrow { margin-bottom: 6px; }
+  .fchip[data-f=os] { background: linear-gradient(150deg, #9fb3c8, #4f6880); box-shadow: 0 4px 0 #344658; }   /* 24.11: Основные средства */
+  .osr { display: flex; gap: 8px; align-items: flex-start; background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; }
+  .osr .nn { min-width: 22px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; padding-top: 2px; }
+  .osr .t { flex: 1; min-width: 0; } .osr .t b { display: block; font-size: 14.5px; line-height: 1.25; overflow-wrap: anywhere; }
+  .osr .t small { display: block; color: var(--hint); font-size: 12px; margin-top: 2px; }
+  .osr .cd0 { font-size: 11px; font-weight: 800; color: var(--hint); white-space: nowrap; padding-top: 2px; }
   .fchip[data-f=zp] { background: linear-gradient(150deg, #7fdc9a, #1f9e5a); box-shadow: 0 4px 0 #13703e; }   /* 23.11: Зарплата */
   .fchip[data-f=cert] { background: linear-gradient(150deg, #e7b96a, #a8741c); box-shadow: 0 4px 0 #7a520f; }   /* 23.11: Разрешительные документы */
   .fchip[data-f=ship] { background: linear-gradient(150deg, #c18cff, #8a3fd1); box-shadow: 0 4px 0 #5f2a96; }
@@ -863,9 +869,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd7a36aeb', newBuild = '';
+  var BUILD = 'c7785caa', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795465372' || 0;
+  var BUILD_AT = +'1795465631' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1112,7 +1118,7 @@
       // 23.11.2026 (руководитель): «Инвент. и остаток» — под «Перемещениями», «Склады» сдвинуты вправо
       // 23.11.2026 (руководитель «слишком много кнопок»): Отгрузка · Перемещения · Приходы · Возврат → одна «🚚 Движение»,
       // сами четыре — внутри неё (ряд кнопок под вкладками)
-      var ORD = ['mvt', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp'], all8 = fl.concat(lastTabs2);
+      var ORD = ['mvt', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp', 'os'], all8 = fl.concat(lastTabs2);
       var mvIn = all8.filter(function (t) { return MVT.indexOf(t[0]) >= 0; });
       all8 = all8.filter(function (t) { return MVT.indexOf(t[0]) < 0; });
       if (mvIn.length) {
@@ -3065,12 +3071,58 @@
     }
     load('/api/med', {}, draw);
   }
+  // 24.11.2026 (руководитель): 🏗 Основные средства завода — список из 1С: папки (Производства, Мебель, Компьютер, Транспорт,
+  // Прочие) кнопками по 4 в ряд, поиск, объекты по алфавиту: название, код 1С, вид, заводской номер
+  var osF = '', osQ = '';
+  function showOs(box) {
+    var me = cur;
+    load('/api/os', {}, function (D) {
+      if (cur !== me || !box.isConnected) return;
+      if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var FS = D.folders || [];
+      if (osF && !FS.some(function (f) { return f.name === osF; })) osF = '';
+      function draw() {
+        var q = osQ.toLowerCase();
+        var h = '<div class="msec gpsec" style="margin-top:0">🏗 ОСНОВНЫЕ СРЕДСТВА ЗАВОДА · ' + D.n + '</div>' +
+          '<div class="crt-g gr">' + [['', 'Все', D.n]].concat(FS.map(function (f) { return [f.name, { 'Транспортные средства': 'Транспорт', 'Производства': 'Произв.', 'Компьютер': 'Компьют.' }[f.name] || f.name, f.n]; })).map(function (o) {
+            return '<div class="cg' + (osF === o[0] ? ' on' : '') + '" data-of="' + esc(o[0]) + '">' + esc(o[1]) + '<small>' + o[2] + '</small></div>';
+          }).join('') + '</div>' +
+          '<input class="txt ivfind" id="osfind" placeholder="🔎 Найти по названию, коду, номеру" value="' + esc(osQ) + '">';
+        var n = 0;
+        FS.forEach(function (f) {
+          if (osF && f.name !== osF) return;
+          var rows = f.rows.filter(function (r) { return !q || (r.name + ' ' + r.full + ' ' + r.code + ' ' + r.serial + ' ' + r.maker).toLowerCase().indexOf(q) >= 0; });
+          if (!rows.length) return;
+          h += '<div class="ivsec">' + esc(f.name) + ' · ' + rows.length + '</div>';
+          h += rows.map(function (r) {
+            n++;
+            var sub = [r.grp, r.serial ? 'зав. № ' + r.serial : '', r.maker, r.date ? 'выпуск ' + dmy(r.date) : '', r.note].filter(Boolean).join(' · ');
+            return '<div class="osr"><span class="nn">' + n + '</span><div class="t"><b>' + esc(r.name) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
+              '<span class="cd0">' + esc(r.code) + '</span></div>';
+          }).join('');
+        });
+        if (!n) h += '<div class="empty">' + (D.n ? 'Не найдено' : 'Список из 1С ещё не загружен') + '</div>';
+        h += '<div class="note">Справочник «Основные средства» из 1С (только чтение)' + (D.at ? ', прочитан ' + esc(D.at) : '') + '.' +
+          (D.refresh ? ' <button id="osref" style="margin-top:6px">🔄 Перечитать из 1С</button>' : '') + '</div>';
+        var fo = document.activeElement && document.activeElement.id === 'osfind';
+        box.innerHTML = h;
+        if (fo) { $('osfind').focus(); $('osfind').setSelectionRange(osQ.length, osQ.length); }
+        $('osfind').oninput = function () { osQ = this.value; draw(); };
+        Array.prototype.forEach.call(box.querySelectorAll('[data-of]'), function (el) { el.onclick = function () { osF = el.getAttribute('data-of'); draw(); }; });
+        if ($('osref')) $('osref').onclick = function () {
+          var b = this; b.disabled = true;
+          call('/api/os_refresh', {}, 30000).then(function (x) { say(x.text); }).catch(ivErr);
+        };
+      }
+      draw();
+    });
+  }
   // 23.11.2026 (руководитель): все вкладки главного экрана для «👥 Доступ» — в порядке экрана. Новая вкладка — добавить сюда,
   // тогда она сразу появится в «ВКЛАДКИ ГЛАВНОГО ЭКРАНА» (✅ Показать / ⛔ Скрыть). «Склады» — это две строки (завод и Ташкент).
   var TAB_ACC = [['tab_ship', '🛒', 'Движение · Отгрузка'], ['tab_mv', '🚚', 'Движение · Перемещения'], ['tab_inc', '📥', 'Движение · Приходы'], ['tab_ret', '↩️', 'Движение · Возврат'],
                  ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
                  ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
-                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата']];
+                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
               bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'] };   // 23.11.2026 (руководитель)
@@ -3301,7 +3353,9 @@
       if (certOn) fl.push(['cert', '📜 Разрешения']);   // 23.11.2026 (руководитель): последняя вкладка — сертификаты и разрешения
       var zpOn = !!r.zp;
       if (zpOn) fl.push(['zp', '💰 Зарплата']);   // 23.11.2026 (руководитель): после «Разрешений» — посещение и зарплата завода
-      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) || (mfilter === 'zp' && zpOn) ||
+      var osOn = !!r.os;
+      if (osOn) fl.push(['os', '🏗 Осн. средства']);   // 24.11.2026 (руководитель): основные средства завода — список 1С
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) || (mfilter === 'zp' && zpOn) || (mfilter === 'os' && osOn) ||
           (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       if (mf === 'wh' && !whF.length && !gpOn) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
       lastTabs = fl;
@@ -3318,6 +3372,8 @@
         h += '<div id="certbox" style="margin-top:12px"><div class="spin">Загрузка документов…</div></div>';
       } else if (mf === 'zp') {
         h += '<div id="zpbox" style="margin-top:12px"><div class="spin">Загрузка…</div></div>';
+      } else if (mf === 'os') {
+        h += '<div id="osbox" style="margin-top:12px"><div class="spin">Загрузка…</div></div>';
       } else if (mf === 'wh') {   // 🏬 Склады: две большие кнопки — Склад завода · Склад Ташкента
         var WHT = { zav: ['g', '🏭', 'Склад завода', 'Готовая продукция · Сырьё и упаковка'],
                     tas: ['b', '🏙', 'Склад Ташкента', 'Готовая продукция · Перечисление и Терминал'] };
@@ -3363,6 +3419,7 @@
       });
       if ($('certbox')) showCertTop($('certbox'), r.certp || { cert: true });
       if ($('zpbox')) showZp($('zpbox'));
+      if ($('osbox')) showOs($('osbox'));
       Array.prototype.forEach.call(view.querySelectorAll('[data-wf]'), function (el) {
         el.onclick = function () {
           mfilter = el.getAttribute('data-wf');
@@ -4140,11 +4197,11 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k === 'os' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
       var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
