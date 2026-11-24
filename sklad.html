@@ -1074,9 +1074,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '089375e0', newBuild = '';
+  var BUILD = '71c2ca51', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795498079' || 0;
+  var BUILD_AT = +'1795500575' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3760,7 +3760,9 @@
             r += x.secs.map(function (s) {
               var c = '<div class="zis"><div class="zish">' + s.icon + ' <b>' + esc(s.title) + '</b> · ' + s.n + ' строк' + (s.chg ? ' · изменено ' + s.chg : ' · без изменений') + '</div>' +
                 '<div class="zim">баллы: ' + esc(s.how) + ' = <b>' + s.pts + '</b> → ставка <b>' + fmtq(s.full) + '</b>' + (s.why ? '<br><span class="zw">' + esc(s.why) + '</span>' : '') + '</div>';
-              if (s.shares.length) c += s.shares.map(function (sh) { return '<div class="zisr"><span>👤 ' + esc(sh[0]) + ' <small>· ' + esc(sh[2]) + '</small></span><b>' + fmtq(sh[1]) + '</b></div>'; }).join('');
+              // 24.11.2026: доля по минутам Face ID (пересечение входа/выхода с началом–концом инвентаризации), иначе — поровну
+              if (s.shares.length) c += s.shares.map(function (sh) { return '<div class="zisr"><span>👤 ' + esc(sh[0]) + ' <small>· ' + esc(sh[2]) + (sh[3] != null ? ' · ' + sh[3] + ' мин' : '') + '</small></span><b>' + fmtq(sh[1]) + '</b></div>'; }).join('') +
+                (s.shares.length > 1 || (s.help || []).length ? '<div class="zim">' + (s.by_min ? '⏱ доля — по минутам Face ID × роль' : '⚖️ доля — поровну × роль (нет минут Face ID' + (x.start && x.end ? '' : ' или времени начала и конца') + ')') + '</div>' : '');
               else if (s.no_team) c += '<div class="zim zw">👥 команда не отмечена — сумма никому не начислена</div>';
               if (D.edit && !x.cancelled) c += '<div class="zied" data-doc="' + x.id + '" data-sec="' + s.k + '">' +
                 '<input class="txt" list="zinvppl" placeholder="Ответственный" value="' + esc(s.resp || '') + '" data-f="resp">' +
@@ -3774,7 +3776,7 @@
           return r + '</div>';
         }).join('') : '<div class="empty">' + (D.admin ? 'Инвентаризаций в этом месяце нет' : 'Ваших инвентаризаций в этом месяце нет') + '</div>';
         h += '<div class="note">Нажмите инвентаризацию — расчёт по разделам и кто получает. Оплачивается только пересчёт из мини-аппа («📋 Инвент. → Подсчёт»); раздел — раз в месяц; отменённые — 0. ' +
-          'Несколько человек — по весу (ответственный ×1,2), минуты Face ID по дням пока не подключены.</div>';
+          'Несколько человек — по минутам Face ID внутри «начало–конец» × роль (ответственный ×1,2); склады Ташкента и без времени — поровну.</div>';
       } else if (zinvTab === 'people') {
         h += D.people.length ? D.people.map(function (p, i) {
           return '<div class="zpf"><span class="nn">' + (i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b><small>разделов: ' + p.n + '</small></div><b>' + fmtq(p.sum) + ' сум</b></div>';
