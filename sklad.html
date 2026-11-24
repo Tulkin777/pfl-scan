@@ -766,6 +766,8 @@
   .zied.zt { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 10px; } .zied.zt button { grid-column: 1 / -1; }
   .zied.zt .txt { width: 100%; font-size: 12px; } .zied .txt { min-width: 0; width: 100%; } .zied label { font-size: 11px; color: var(--hint); font-weight: 800; }
   .osg.zit.z4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .osg.zit.z4 .ob b { font-size: 11.5px; }
+  .zlinks { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; } .zlinks .btn2 { border: 0; border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 700;
+    background: var(--tg-theme-secondary-bg-color, #eef1f5); color: var(--tg-theme-text-color, #222); cursor: pointer; } .zpf.cx { opacity: .55; }
   .zic.zs { border-left-color: #2f6fd0; } .zic.zs.nr { border-left-color: #e8920c; }
   .zrf { margin-top: 9px; padding-top: 8px; border-top: 1px dashed #cfd5df; } .zrf select.txt { width: 100%; margin: 3px 0 0; }
   .zrf .zl { display: block; font-size: 11px; color: var(--hint); font-weight: 800; margin: 9px 0 4px; }
@@ -1099,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'a629b358', newBuild = '';
+  var BUILD = 'e8dd0db1', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795508778' || 0;
+  var BUILD_AT = +'1795509435' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3763,21 +3765,43 @@
       var B = $('zinv'); if (!B) return;
       if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       zinvMonth = D.month;
-      if ((zinvTab === 'conf' && !D.admin) || (zinvTab === 'secs' && !D.edit)) zinvTab = 'list';
+      if ((zinvTab === 'conf' && !D.admin) || (zinvTab === 'secs' && !D.edit) || zinvTab === 'people') zinvTab = 'list';
       var y0 = window.scrollY;
       var ppl = '<datalist id="zinvppl">' + (D.people_list || []).map(function (p) { return '<option value="' + esc(p) + '">'; }).join('') + '</datalist>';
-      var h = ppl + '<div class="crt-g gr">' + D.months.map(function (m) {
-        return '<div class="cg' + (m.ym === D.month ? ' on' : '') + '" data-zm="' + m.ym + '">' + esc(m.name.split(' ')[0]) + '<small>' + m.ym.slice(0, 4) + '</small></div>';
-      }).join('') + '</div>';
-      h += '<div class="osg zit' + (D.admin ? ' z4' : '') + '">' + [['list', '📋', 'Инвентаризации', D.docs.length, 'c1'], ['people', '👥', D.admin ? 'По людям' : 'Мой итог', D.people.length, 'c3']]
-        .concat(D.edit ? [['secs', '🗂', 'Разделы', (D.sections || []).filter(function (s) { return s.cur; }).length + '/' + (D.sections || []).length, 'c4']] : [])
-        .concat(D.admin ? [['conf', '⚙️', 'Настройки', '', 'c6']] : []).map(function (t) {
+      // 24.11.2026 (руководитель): две кнопки — «Созданные» и «Подтверждённые»; выбора месяца сверху нет — списки сами по месяцам (месяц · год)
+      var G = D.groups || [], CR = D.created || [];
+      var nOk = G.reduce(function (a, g) { return a + g.docs.length; }, 0);
+      var h = ppl + '<div class="osg zit">' + [['made', '🆕', 'Созданные', CR.length, 'c2'], ['list', '✅', 'Подтверждённые', nOk, 'c1']].map(function (t) {
           return '<div class="ob ' + t[4] + (zinvTab === t[0] ? ' on' : '') + '" data-zt="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (t[3] !== '' ? '<u>' + t[3] + '</u>' : '') + '</div>';
         }).join('') + '</div>';
-      h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>' + (D.admin ? 'начислено за ' : 'ваш бонус за ') + esc((D.months.filter(function (m) { return m.ym === D.month; })[0] || {}).name || D.month) +
-        (D.admin ? ' · оплачено разделов: ' + D.paid_secs : '') + '</span></div>';
-      if (zinvTab === 'list') {
-        h += D.docs.length ? D.docs.map(function (x) {
+      var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+      var MH = function (name, extra) { return '<div class="msec">' + esc(String(name).toUpperCase()) + (extra ? ' · ' + extra : '') + '</div>'; };
+      if (zinvTab === 'made') {
+        var byM = {}, ord = [];
+        CR.forEach(function (c) { var k = String(c.at).slice(0, 7); if (!byM[k]) { byM[k] = []; ord.push(k); } byM[k].push(c); });
+        h += ord.length ? ord.map(function (k) {
+          var nm = (MONN[+k.slice(5, 7)] || k.slice(5, 7)) + ' ' + k.slice(0, 4);
+          return MH(nm, byM[k].length) + byM[k].map(function (c) {
+            return '<div class="zpf' + (c.cx ? ' cx' : '') + '"><span class="nn">' + esc(String(c.at).slice(8, 10) + '.' + String(c.at).slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(c.name) + '</b>' +
+              '<small>' + esc(String(c.at).slice(11, 16)) + ' · ' + esc(c.by) + ' · ' + c.n + ' строк</small></div><b style="font-size:12px;white-space:nowrap">' + esc(c.state) + '</b></div>';
+          }).join('');
+        }).join('') : '<div class="empty">Созданных инвентаризаций пока нет</div>';
+        h += '<div class="note">Созданные — подсчёты в мини-аппе («📋 Инвент. → Подсчёт»). После подтверждения и проведения в ERP инвентаризация появится в «✅ Подтверждённые» с бонусом.</div>';
+      } else if (zinvTab === 'list') {
+        h += G.map(function (g) {
+          var r0 = MH(g.name, g.err ? 'ERP не ответил' : g.docs.length + (g.total ? ' · ' + fmtq(g.total) + ' сум' : ''));
+          if (!g.docs.length) return r0 + (g.err ? '' : '<div class="empty" style="padding:10px">Подтверждённых нет</div>');
+          return r0 + g.docs.map(card).join('') +
+            g.people.map(function (p) { return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b><small>разделов: ' + p.n + '</small></div><b>' + fmtq(p.sum) + ' сум</b></div>'; }).join('') +
+            (g.n_cancel ? '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + g.n_cancel + ' — не оплачиваются</div>' : '');
+        }).join('');
+        h += '<div class="note">Подтверждённые — проведены в ERP. Нажмите — расчёт по разделам и кто получает. Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. ' +
+          'Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
+      }
+      if (zinvTab === 'made' || zinvTab === 'list') h += (D.edit ? '<div class="zlinks">' + '<button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>' : '');
+      else h += '<div class="zlinks"><button class="btn2" data-zt="list">‹ Назад к инвентаризациям</button></div>';
+      function card(x) {
+        {
           var op = zinvOpen[x.id];
           var r = '<div class="zic' + (x.cancelled ? ' cx' : '') + (op ? ' op' : '') + '"><div class="zih" data-zo="' + x.id + '"><div class="t"><b>' + esc(x.name) + '</b>' +
             '<small>' + esc(x.date.slice(8, 10) + '.' + x.date.slice(5, 7) + ' ' + (x.wd || '') + ' ' + x.date.slice(11, 16)) + ' · №' + x.id + ' · ' + x.n + ' строк · ' + esc(x.author) +
@@ -3799,10 +3823,9 @@
             }).join('');
           }
           return r + '</div>';
-        }).join('') : '<div class="empty">' + (D.admin ? 'Инвентаризаций в этом месяце нет' : 'Ваших инвентаризаций в этом месяце нет') + '</div>';
-        h += '<div class="note">Нажмите инвентаризацию — расчёт по разделам и кто получает. Оплачивается только пересчёт из мини-аппа («📋 Инвент. → Подсчёт»); раздел — раз в месяц; отменённые — 0. ' +
-          'Кто получает и за какие дни — по правилу раздела (вкладка «Разделы»). Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
-      } else if (zinvTab === 'secs') {
+        }
+      }
+      if (zinvTab === 'secs') {
         var MN = function (ym) { var m_ = (D.months.filter(function (q) { return q.ym === ym; })[0] || {}).name; return m_ || (ym === D.next_month && D.next_name) || (ym.slice(5) + '.' + ym.slice(0, 4)); };
         h += '<div class="note" style="margin-top:0">У каждого раздела — ответственный и кто помогал (участники группы PFL JARAYON), за какие дни платим. ' +
           'Новая строка действует с выбранного месяца; прошлые остаются ниже как история.</div>';
@@ -3839,7 +3862,7 @@
         }).join('') + (D.admin ? '<div class="zpf on"><span class="nn">Σ</span><div class="t"><b style="text-transform:none">Всего</b></div><b>' + fmtq(D.total) + ' сум</b></div>' : '')
           : '<div class="empty">Пока никому не начислено — отметьте команду разделов</div>';
         h += '<div class="note">Сумма — за месяц, по всем инвентаризациям человека. Суммы людей в группы не отправляются.</div>';
-      } else {
+      } else if (zinvTab === 'conf') {
         var cf = D.conf || {};
         h += '<div class="crt-l">Действует сейчас — с ' + esc(dmy(D.conf_from)) + '</div><div class="zcf">' + ZCF.map(function (f) {
           return '<label><small>' + esc(f[1]) + '</small><input class="txt" inputmode="decimal" data-ck="' + f[0] + '" value="' + esc(f[0] === 'only_mini' ? (cf[f[0]] ? 1 : 0) : cf[f[0]]) + '"></label>';
@@ -4003,11 +4026,11 @@
       bonMonth = D.month;
       var y0 = window.scrollY;
       var ppl = '<datalist id="bonppl">' + (D.people || []).map(function (p) { return '<option value="' + esc(p) + '">'; }).join('') + '</datalist>';
-      var h = ppl + (zpInvOn ? '<div class="zinvbtn" id="zinvgo"><i>📋</i><b>Бонус за инвентаризацию</b><span>склады сырья по разделам · ГП · расчёт по ERP</span></div>' : '') +
+      var h = ppl + (zpInvOn ? '<div class="osg"><div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div></div>' : '')   /* 24.11.2026 (руководитель): виды бонусов — маленькими квадратами, как «Движение» */ +
         '<div class="crt-l">Месяц</div><div class="crt-g gr">' + D.months.slice(0, 8).map(function (m) {
           return '<div class="cg' + (m.ym === D.month ? ' on' : '') + '" data-bm="' + m.ym + '">' + esc(m.name.split(' ')[0]) + '<small>' + m.ym.slice(0, 4) + '</small></div>';
         }).join('') + '</div>' +
-        '<div class="crt-g st3"><div class="cb eq"><b>' + fmtq(D.total_all != null ? D.total_all : D.total) + '</b><span>' + (D.inv && !D.inv.err ? '📋 ' : '') + 'итого, сум</span></div><div class="cb"><b>' + D.n_done + '</b><span>✅ сделано</span></div>' +
+        '<div class="crt-g st3"><div class="cb eq"><b>' + fmtq(D.total) + '</b><span>итого, сум</span></div><div class="cb"><b>' + D.n_done + '</b><span>✅ сделано</span></div>' +
         '<div class="cb"><b>' + (D.n - D.n_done) + '</b><span>ещё не сделано</span></div></div>' +
         '<div class="crt-l">Бонусы · ' + D.n + '</div>';
       h += D.rows.length ? D.rows.map(function (r, i) {
@@ -4020,36 +4043,10 @@
           '<small class="bby">изм. ' + esc(r.by || '') + ' · ' + esc(r.at || '') + '</small></div>';
       }).join('') : '<div class="empty" style="padding:14px">Бонусов за этот месяц пока нет</div>';
       h += '<div class="ivbar"><button class="go" id="bonadd">➕ Добавить бонус</button></div>';
-      // 24.11.2026 (руководитель «Да, делай»): в итоге по сотрудникам — и бонус за инвентаризацию (📋), ниже — подтверждённые инвентаризации месяца
-      var IV = D.inv && !D.inv.err ? D.inv : null;
-      if ((D.per || []).length) h += '<div class="msec">ИТОГО ПО СОТРУДНИКАМ (только ✅' + (IV ? ' и 📋 инвентаризация' : '') + ')</div>' + D.per.map(function (p, i) {
-        var two = IV && p.inv && p.bon;
-        return '<div class="zpf"><span class="nn">' + (i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b>' +
-          (IV ? '<small>' + (two ? '🎁 бонусы ' + fmtq(p.bon) + ' + 📋 инвентаризация ' + fmtq(p.inv) : p.inv ? '📋 инвентаризация' : '🎁 бонусы') + '</small>' : '') + '</div><b>' + fmtq(p.sum) + ' сум</b></div>';
-      }).join('') + '<div class="zpf on"><span class="nn">Σ</span><div class="t"><b style="text-transform:none">Всего за месяц</b>' +
-        (IV ? '<small>🎁 ' + fmtq(D.total) + ' + 📋 ' + fmtq(IV.total) + '</small>' : '') + '</div><b>' + fmtq(D.total_all != null ? D.total_all : D.total) + ' сум</b></div>';
-      if (IV || (D.inv && D.inv.err)) {
-        var mnm = esc(((D.months.filter(function (m) { return m.ym === D.month; })[0] || {}).name || D.month).split(' ')[0].toLowerCase());
-        h += '<div class="msec">📋 ПОДТВЕРЖДЁННЫЕ ИНВЕНТАРИЗАЦИИ · ' + mnm + ' · ' + (IV ? IV.docs.length : '—') + '</div>';
-        if (!IV) h += '<div class="empty" style="padding:10px">' + esc(D.inv.err) + '</div>';
-        else {
-          h += IV.docs.length ? IV.docs.map(function (x) {
-            var why = '';
-            if (!x.total) {   // почему 0 — коротко, без повторов
-              var ws = [];
-              x.secs.forEach(function (s) { var w = String(s.why || '').replace(/^[^\wА-Яа-яЁё−]+/, ''); if (w && ws.indexOf(w) < 0) ws.push(w); });
-              why = ws.join(' · ') || 'не начислено';
-            }
-            var who = [];
-            x.secs.forEach(function (s) { (s.shares || []).forEach(function (sh) { who.push(esc(sh[0]) + ' ' + fmtq(sh[1])); }); });
-            return '<div class="zpf" data-bi="' + x.id + '"><span class="nn">' + esc(x.date.slice(8, 10) + '.' + x.date.slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(x.name) + '</b>' +
-              '<small>' + esc(x.wd || '') + ' · №' + x.id + ' · ' + (x.total ? '👤 ' + (who.join(' · ') || '—') : esc(why)) + '</small></div><b>' + (x.total ? fmtq(x.total) + ' сум' : '0') + '</b></div>';
-          }).join('') : '<div class="empty" style="padding:10px">Проведённых инвентаризаций в этом месяце нет</div>';
-          if (IV.n_cancel) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + IV.n_cancel + ' — не оплачиваются</div>';
-        }
-      }
-      h += '<div class="note">В итог идут только строки с ✅ «Сделано»' + (IV ? ' и начисленный бонус за проведённые инвентаризации (📋, расчёт — кнопка «Бонус за инвентаризацию»; нажмите инвентаризацию — откроется её расчёт)' : '') +
-        '. Меняется сразу, кто и когда изменил — видно под строкой.</div>';
+      if ((D.per || []).length) h += '<div class="msec">ИТОГО ПО СОТРУДНИКАМ (только ✅)</div>' + D.per.map(function (p, i) {
+        return '<div class="zpf"><span class="nn">' + (i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b></div><b>' + fmtq(p.sum) + ' сум</b></div>';
+      }).join('') + '<div class="zpf on"><span class="nn">Σ</span><div class="t"><b style="text-transform:none">Всего за месяц</b></div><b>' + fmtq(D.total) + ' сум</b></div>';
+      h += '<div class="note">В итог идут только строки с ✅ «Сделано». Меняется сразу, кто и когда изменил — видно под строкой.</div>';
       B.innerHTML = h; window.scrollTo(0, y0);
       function send(body) {
         body.month = bonMonth;
@@ -4068,9 +4065,6 @@
       });
       $('bonadd').onclick = function () { send({ op: 'add' }); };
       if ($('zinvgo')) $('zinvgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpInv); };
-      Array.prototype.forEach.call(B.querySelectorAll('[data-bi]'), function (el) {   // подтверждённая инвентаризация → её расчёт
-        el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} zinvMonth = bonMonth; zinvTab = 'list'; zinvOpen[el.getAttribute('data-bi')] = true; go(showZpInv); };
-      });
       Array.prototype.forEach.call(B.querySelectorAll('.bonr'), function (row) {
         var id = row.getAttribute('data-id');
         row.querySelector('.bdel').onclick = function () {
