@@ -1197,9 +1197,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd87390ba', newBuild = '';
+  var BUILD = '7092c24d', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795527772' || 0;
+  var BUILD_AT = +'1795528239' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4400,8 +4400,12 @@
               '<small class="zl">С какого числа</small><input class="txt" type="date" data-zsd="' + p.id + '" value="' + D.today.slice(0, 8) + '01" style="width:100%;margin:4px 0">' +
               '<div class="ivbar"><button class="go" data-zss="' + p.id + '">💾 Сохранить зарплату</button></div>' +
               (sl.slice().reverse().map(function (x) {
+                var fk = p.id + ':' + x.id;   // 24.11.2026 (руководитель): ✏️ — исправить сумму и дату ошибочной строки
+                if (zsFix['s' + fk]) return '<div class="zlog" style="display:block"><small class="zl">Сумма, сум в месяц</small><input class="txt" inputmode="numeric" data-sfxs="' + fk + '" value="' + x.sum + '" style="width:100%;margin-bottom:4px">' +
+                  '<small class="zl">С какого числа</small><input class="txt" type="date" data-sfxd="' + fk + '" value="' + x.from + '" style="width:100%;margin-bottom:4px">' +
+                  '<button class="sm" data-sfxok="' + fk + '">💾 Исправить</button><button class="sm" data-sfxc="' + fk + '">Отмена</button></div>';
                 return '<div class="zlog">' + (x.from > D.today ? '⏭ ' : x.to ? '🗄 ' : '✅ ') + '<b style="color:#17964a">' + fmtq(x.sum) + ' сум</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : 'по сей день') +
-                  '<small>' + esc(x.by) + ' · ' + esc(x.at) + '</small>' + (D.admin ? '<button class="sm" data-zsdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
+                  '<small>' + esc(x.by) + ' · ' + esc(x.at) + '</small><button class="sm" data-sfx="' + fk + '">✏️</button>' + (D.admin ? '<button class="sm" data-zsdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
               }).join('') || '<div class="empty" style="padding:6px">Зарплата ещё не вписана</div>') + '</div>';
           }
           r += '<div class="note">Откуда: ' + esc(SRC[p.src] || p.src) + (p.fid ? ' · Face ID: ' + esc(p.fid) : '') + ' · в списке с ' + dd(p.added) + '</div>';
@@ -4427,6 +4431,15 @@
           if (!(+s > 0)) return say('Напишите зарплату числом (сум в месяц).');
           if (!d) return say('Укажите дату.');
           send({ act: 'sal', id: id, sum: +s, from: d }, nm(id) + ' — зарплата на руку ' + fmtq(+s) + ' сум в месяц с ' + dd(d) + '. Сохранить?', D);
+        };
+      });
+      all('[data-sfx]', function (b) { b.onclick = function () { zsFix['s' + b.getAttribute('data-sfx')] = 1; draw(D); }; });
+      all('[data-sfxc]', function (b) { b.onclick = function () { delete zsFix['s' + b.getAttribute('data-sfxc')]; draw(D); }; });
+      all('[data-sfxok]', function (b) {
+        b.onclick = function () {
+          var k = b.getAttribute('data-sfxok'), s = B.querySelector('[data-sfxs="' + k + '"]').value.replace(/\D/g, ''), d = B.querySelector('[data-sfxd="' + k + '"]').value;
+          if (!(+s > 0)) return say('Напишите зарплату числом.');
+          send({ act: 'salfix', id: k.split(':')[0], row: k.split(':')[1], sum: +s, from: d }, 'Исправить зарплату: ' + fmtq(+s) + ' сум с ' + dd(d) + '?', D);
         };
       });
       all('[data-zsdel]', function (b) {
