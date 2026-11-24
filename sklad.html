@@ -666,6 +666,59 @@
   .osg.os2 .ob { padding: 14px 8px 12px; } .osg.os2 .ob i { font-size: 32px; } .osg.os2 .ob b { font-size: 14px; white-space: normal; line-height: 1.2; }
   .osg.os2 .ob:first-child { grid-column: 1 / -1; }
   .osg.os2 .ob u { font-size: 12px; top: 7px; right: 8px; }
+  /* 24.11.2026 (руководитель): ⚙️ В цехе — движение внутри производства: линия, конвейер этапов, карточки партий, узкое место */
+  .fchip[data-f=pmv] { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 4px 0 #9c4210; }
+  .osg.pml { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 12px; }
+  .osg.pml .ob { padding: 7px 4px 6px; border-radius: 14px; } .osg.pml .ob i { font-size: 18px; } .osg.pml .ob b { font-size: 12px; }
+  .osg.pml .ob u { top: 4px; right: 5px; font-size: 10px; padding: 0 6px; }
+  .osg.pmp { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .osg.pmp .ob { padding: 12px 4px 9px; } .osg.pmp .ob i { font-size: 28px; } .osg.pmp .ob b { font-size: 12.5px; white-space: normal; line-height: 1.15; }
+  .osg.pmp .ob em { position: absolute; top: 6px; left: 7px; font-style: normal; font-size: 10px; font-weight: 900; width: 17px; height: 17px; line-height: 17px;
+                    border-radius: 50%; background: rgba(0,0,0,.22); text-shadow: none; }
+  .osg.pmp .ob u { font-size: 13px; padding: 1px 8px; }
+  .osg .ob small { display: block; font-size: 10.5px; font-weight: 800; margin-top: 3px; opacity: .95; }
+  .osg.pmf { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .osg.pmf .ob { padding: 8px 2px 6px; border-radius: 14px; } .osg.pmf .ob i { font-size: 20px; } .osg.pmf .ob b { font-size: 11.5px; }
+  .osg.pmf .ob u { top: 3px; right: 3px; font-size: 10px; padding: 0 5px; }
+  .pmsec { margin: 16px 2px 8px; font-size: 11.5px; font-weight: 900; letter-spacing: .3px; color: var(--hint); text-transform: uppercase; }
+  .pmc { position: relative; background: var(--bg2); border-radius: 16px; padding: 10px 12px 9px; margin: 0 0 10px; cursor: pointer;
+         border-left: 7px solid #999; box-shadow: 0 3px 0 rgba(0,0,0,.08); }
+  .pmc.zraw { border-left-color: #e8920c; } .pmc.zcook { border-left-color: #1c8f64; } .pmc.zdose { border-left-color: #1f97b0; }
+  .pmc.zpack { border-left-color: #5b48d1; } .pmc.zdone { border-left-color: #3f55c9; } .pmc.zo { border-left-color: #78838f; cursor: default; }
+  .pmh { display: flex; align-items: center; gap: 7px; font-size: 15px; line-height: 1.2; }
+  .pmh .fi { font-size: 20px; } .pmh b { flex: 1; min-width: 0; }
+  .pln { flex: none; font-size: 10.5px; font-weight: 900; color: #fff; border-radius: 8px; padding: 2px 7px; }
+  .pln.per { background: #1c8f64; } .pln.ter { background: #2f6fd0; }
+  .pmm { font-size: 12.5px; color: var(--hint); margin: 4px 0 2px; } .pmm b { color: var(--fg); }
+  .pct { font-weight: 900; color: #17964a; } .pct.lo { color: #d63b3b; }
+  .pmst { font-size: 13px; font-weight: 800; margin: 5px 0 6px; padding: 5px 9px; border-radius: 10px; background: #fff3dc; color: #8f5200; }
+  .pmst.long { background: #fde4e2; color: #b3302b; } .pmst.ok { background: #dcf5e6; color: #0f7a3c; } .pmst.old { background: #fde4e2; color: #b3302b; }
+  .pmn { font-size: 11.5px; color: var(--hint); margin-top: 2px; }
+  .pmbar { display: grid; grid-template-columns: repeat(17, 1fr); gap: 2px; }
+  .pmbar i { height: 7px; border-radius: 3px; background: #e2e6ee; }
+  .pmbar i.f.raw { background: #e8920c; } .pmbar i.f.cook { background: #1c8f64; } .pmbar i.f.dose { background: #1f97b0; }
+  .pmbar i.f.pack { background: #5b48d1; } .pmbar i.f.done { background: #3f55c9; }
+  .pmbar i.cur { animation: pmblink 1.2s ease-in-out infinite; }
+  @keyframes pmblink { 50% { opacity: .35; } }
+  .pmmore { font-size: 11px; color: var(--hint); margin-top: 5px; text-align: right; }
+  .pmtl { margin-top: 9px; border-top: 1px dashed #cfd5df; padding-top: 6px; }
+  .pmtl > div { display: flex; gap: 7px; font-size: 12px; padding: 3px 0; align-items: baseline; }
+  .pmtl .t { flex: none; width: 74px; color: var(--hint); font-variant-numeric: tabular-nums; } .pmtl .w { flex: 1; min-width: 0; }
+  .pmtl .w small { color: var(--hint); } .pmtl .d { flex: none; font-weight: 800; color: var(--hint); }
+  .pmtl .qc .w { color: #b03f68; } .pmtl .cur { font-weight: 900; } .pmtl .cur .d { color: #b3302b; }
+  .pmraw { margin-top: 8px; background: rgba(0,0,0,.035); border-radius: 10px; padding: 6px 9px; }
+  .pmraw .hd { font-size: 12px; font-weight: 900; margin-bottom: 3px; }
+  .pmraw > div:not(.hd) { display: flex; gap: 8px; font-size: 12px; padding: 2px 0; border-bottom: 1px solid rgba(0,0,0,.05); }
+  .pmraw span { flex: 1; min-width: 0; } .pmraw b { flex: none; font-variant-numeric: tabular-nums; }
+  .pmk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pmk > div { background: var(--bg2); border-radius: 14px; padding: 10px 10px 9px; box-shadow: 0 3px 0 rgba(0,0,0,.07); }
+  .pmk b { display: block; font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; } .pmk span { font-size: 11.5px; color: var(--hint); font-weight: 700; }
+  .pmb { background: var(--bg2); border-radius: 14px; padding: 8px 10px; }
+  .pmb .r { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 5px 0; font-size: 12.5px; }
+  .pmb .r .l { font-weight: 800; } .pmb .r .v { font-weight: 800; color: var(--hint); }
+  .pmb .r .bar { grid-column: 1 / -1; height: 9px; border-radius: 5px; background: rgba(0,0,0,.07); overflow: hidden; }
+  .pmb .r .bar i { display: block; height: 100%; border-radius: 5px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.18); }
+  .pmb .r.top .v { color: #d63b3b; }
   .crt-g > div.on { border-color: var(--btn); background: rgba(42,129,230,.14); }
   .crt-g > div.on span, .crt-g .cg.on small { color: var(--btn); }
   .crt-f { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -933,9 +986,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '0ab51708', newBuild = '';
+  var BUILD = '2c9ed147', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795489070' || 0;
+  var BUILD_AT = +'1795489789' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1182,7 +1235,7 @@
       // 23.11.2026 (руководитель): «Инвент. и остаток» — под «Перемещениями», «Склады» сдвинуты вправо
       // 23.11.2026 (руководитель «слишком много кнопок»): Отгрузка · Перемещения · Приходы · Возврат → одна «🚚 Движение»,
       // сами четыре — внутри неё (ряд кнопок под вкладками)
-      var ORD = ['mvt', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp', 'os'], all8 = fl.concat(lastTabs2);
+      var ORD = ['mvt', 'pmv', 'prod', 'inv', 'wh', 'ost', 'cert', 'zp', 'os'], all8 = fl.concat(lastTabs2);   // 24.11: «⚙️ В цехе» — сразу после «Движения»
       var mvIn = all8.filter(function (t) { return MVT.indexOf(t[0]) >= 0; });
       all8 = all8.filter(function (t) { return MVT.indexOf(t[0]) < 0; });
       if (mvIn.length) {
@@ -2547,7 +2600,7 @@
         var WL = Object.keys(WC).sort(function (a, b) { return WC[b] - WC[a]; });
         if (docWho[kind] && !WC[docWho[kind]]) WL.unshift(docWho[kind]);
         if (kind === 'ship' || kind === 'inc') WL = [];   // 22.11.2026 (руководитель): строки поставщиков/клиентов нет — длинно
-        if (kind === 'inc') {   // 🏭 выпуск цеха → ГП завода — маленькая кнопка под плитками
+        if (false && kind === 'inc') {   // 24.11.2026 (руководитель): убрано — «Из производства» есть отдельной вкладкой на главном экране
           var pc = cget(ck('/api/flow' + JSON.stringify({ kind: 'prod' }))) || cget('/api/flow' + JSON.stringify({ kind: 'prod' }));
           var pw = pc ? (pc.rows || []).filter(function (x) { return x.status === 1; }).length : null;
           h += '<div class="prodb" data-prod="1">🏭 Из производства' + (pw ? ' · ⏳ ' + pw : '') + ' ›</div>';
@@ -3211,12 +3264,141 @@
       draw();
     });
   }
+  // 24.11.2026 (руководитель): ⚙️ Движение внутри производства — путь каждой партии по цеху (ERP, только чтение):
+  // склад сырья → ОТК → цех (приготовление) → ОТК → дозирование в тару → ОТК → упаковка → ОТК → склад ГП.
+  // Сверху линия (Все / Перечисление / Терминал), конвейер этапов (нажатие — партии этого этапа), итоги, где партия стоит
+  // дольше всего (узкое место за 30 дн.), формы. Карточка партии: где сейчас, сколько стоит, кто; нажатие — весь путь и сырьё.
+  var pmvLine = '', pmvSt = '', pmvForm = '', pmvOpen = {};
+  var PZ = [['ord', '📝', 'Заказы', 'c6', []], ['raw', '📦', 'Сырьё', 'c2', [1, 2, 3, 4]], ['cook', '⚗️', 'Приготовление', 'c1', [5, 6, 7, 8]],
+            ['dose', '🧴', 'Дозирование', 'c7', [9, 10, 11, 12]], ['pack', '🎁', 'Упаковка', 'c4', [13, 14, 15, 16]], ['done', '✅', 'Выпуск · 7 дн.', 'c8', [17]]];
+  var PQC = [2, 3, 6, 7, 10, 11, 14, 15];   // партия у ОТК (передана на проверку или проверяется)
+  var PHOLD = [['📦', 'Склад сырья', [1], '#e8920c'], ['🔬', 'ОТК — проверки', PQC, '#c9567a'], ['⚗️', 'Цех — приготовление', [4, 5], '#1c8f64'],
+               ['🧴', 'Дозирование в тару', [8, 9], '#1f97b0'], ['🎁', 'Упаковка', [12, 13], '#5b48d1'], ['🏬', 'Передача на склад ГП', [16], '#78838f']];
+  var PFORM = { 'Сироп': ['🍯', 'Сироп'], 'Раствор': ['🧪', 'Раствор'], 'Капля': ['💧', 'Капли'], 'Форма суппазитории': ['🕯', 'Свечи'],
+                'Капсула': ['💊', 'Капсулы'], 'Таблетка': ['⚪', 'Таблетки'], 'Порошок': ['🧂', 'Порошок'] };
+  function pzOf(s) { for (var i = 1; i < PZ.length; i++) if (PZ[i][4].indexOf(s) >= 0) return PZ[i]; return PZ[1]; }
+  function pTime(s) { return s ? Date.parse(String(s).replace(' ', 'T') + (String(s).length <= 16 ? ':00' : '')) : NaN; }
+  function pDur(sec) {
+    if (!(sec >= 0)) return '';
+    if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + ' мин';
+    if (sec < 48 * 3600) return Math.round(sec / 3600 * 10) / 10 + ' ч';
+    return (sec >= 10 * 86400 ? Math.round(sec / 86400) : Math.round(sec / 86400 * 10) / 10) + ' дн.';
+  }
+  function pN(x) { return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function showPmv(box) {
+    var me = cur;
+    load('/api/pmv', {}, function (D) {
+      if (cur !== me || !box.isConnected) return;
+      if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var now = pTime(D.now), day7 = now - 7 * 86400000;
+      function draw() {
+        var y0 = window.scrollY;
+        var inL = function (x) { return !pmvLine || x.line === pmvLine; }, inF = function (x) { return !pmvForm || x.form === pmvForm; };
+        var R = D.rows.filter(inL), O = D.orders.filter(inL);
+        var work = R.filter(function (x) { return x.s < 17; }), done7 = R.filter(function (x) { return x.s === 17 && pTime(x.ended) >= day7; });
+        var cnt = { ord: O.filter(inF).length, done: done7.filter(inF).length };
+        PZ.slice(1, 5).forEach(function (z) { cnt[z[0]] = work.filter(function (x) { return z[4].indexOf(x.s) >= 0 && inF(x); }).length; });
+        if (!pmvSt) pmvSt = (PZ.slice(1, 5).filter(function (z) { return cnt[z[0]]; })[0] || ['done'])[0];
+        var h = '<div class="msec gpsec" style="margin-top:0">⚙️ ДВИЖЕНИЕ ВНУТРИ ПРОИЗВОДСТВА</div>';
+        // линия
+        h += '<div class="osg pml">' + [['', '🏭', 'Все линии', 'c0'], ['per', '2️⃣', 'Перечисление', 'c1'], ['ter', '1️⃣', 'Терминал', 'c3']].map(function (l) {
+          var n = D.rows.filter(function (x) { return (!l[0] || x.line === l[0]) && x.s < 17; }).length;
+          return '<div class="ob ' + l[3] + (pmvLine === l[0] ? ' on' : '') + '" data-pl="' + l[0] + '"><i>' + l[1] + '</i><b>' + l[2] + '</b>' + (n ? '<u>' + n + '</u>' : '') + '</div>';
+        }).join('') + '</div>';
+        // конвейер этапов
+        h += '<div class="pmsec">🔄 ГДЕ СЕЙЧАС ПАРТИИ — нажмите этап</div><div class="osg pmp">' + PZ.map(function (z, i) {
+          var qc = z[4].length && z[0] !== 'done' ? work.filter(function (x) { return z[4].indexOf(x.s) >= 0 && PQC.indexOf(x.s) >= 0 && inF(x); }).length : 0;
+          return '<div class="ob ' + z[3] + (cnt[z[0]] ? '' : ' z') + (pmvSt === z[0] ? ' on' : '') + '" data-ps="' + z[0] + '"><em>' + (i + 1) + '</em><i>' + z[1] + '</i><b>' + z[2] + '</b><u>' + cnt[z[0]] + '</u>' +
+            (qc ? '<small>🔬 у ОТК ' + qc + '</small>' : '') + '</div>';
+        }).join('') + '</div>';
+        // список выбранного этапа
+        var Z = PZ.filter(function (z) { return z[0] === pmvSt; })[0] || PZ[5];
+        h += '<div class="ivsec">' + Z[1] + ' ' + Z[2] + (pmvForm ? ' · ' + (PFORM[pmvForm] || ['', pmvForm])[1] : '') + ' · ' + cnt[Z[0]] + '</div>';
+        if (Z[0] === 'ord') {
+          var oo = O.filter(inF).sort(function (a, b) { return pTime(a.created) - pTime(b.created); });
+          h += oo.map(function (o) {
+            var age = (now - pTime(o.created)) / 1000, F = PFORM[o.form] || ['🏭', o.form];
+            return '<div class="pmc zo"><div class="pmh"><span class="fi">' + F[0] + '</span><b>' + esc(o.name) + '</b><span class="pln ' + o.line + '">' + (o.line === 'per' ? 'ПЕР' : 'ТЕР') + '</span></div>' +
+              '<div class="pmm">Заказ № ' + esc(o.num) + (o.brand ? ' · ' + esc(o.brand) : '') + ' · план <b>' + pN(o.plan) + '</b> шт</div>' +
+              '<div class="pmst' + (age > 30 * 86400 ? ' old' : '') + '">' + (age > 30 * 86400 ? '⚠️ Старый заказ — ' : '📝 Ждёт запуска · ') + pDur(age) + ' · с ' + dmy(o.created) + '</div>' +
+              (o.note && !/^\d\d\.\d\d\.\d{4}$/.test(o.note) ? '<div class="pmn">' + esc(o.note) + '</div>' : '') + '</div>';
+          }).join('') || '<div class="empty">Заказов, ждущих запуска, нет</div>';
+        } else {
+          var L = (Z[0] === 'done' ? done7 : work.filter(function (x) { return Z[4].indexOf(x.s) >= 0; })).filter(inF);
+          L.sort(function (a, b) { return Z[0] === 'done' ? pTime(b.ended) - pTime(a.ended) : pTime(a.since) - pTime(b.since); });
+          h += L.map(pmvCard).join('') || '<div class="empty">' + (Z[0] === 'done' ? 'За 7 дней выпусков нет' : 'На этом этапе партий нет') + '</div>';
+        }
+        // итоги
+        var plan7 = done7.reduce(function (a, x) { return a + x.plan; }, 0), fact7 = done7.reduce(function (a, x) { return a + x.fact; }, 0);
+        var all30 = R.filter(function (x) { return x.s === 17 && x.started && x.ended; });
+        var avgB = all30.length ? all30.reduce(function (a, x) { return a + (pTime(x.ended) - pTime(x.started)) / 1000; }, 0) / all30.length : NaN;
+        h += '<div class="pmsec">📊 ИТОГИ' + (pmvLine ? ' · ' + (pmvLine === 'per' ? 'ПЕРЕЧИСЛЕНИЕ' : 'ТЕРМИНАЛ') : '') + '</div><div class="pmk">' +
+          '<div><b>' + work.length + '</b><span>🔄 партий в работе</span></div>' +
+          '<div><b>' + pN(fact7) + '</b><span>📦 шт выпущено за 7 дн. · ' + done7.length + ' парт.</span></div>' +
+          '<div><b>' + (plan7 ? Math.round(fact7 / plan7 * 100) + '%' : '—') + '</b><span>🎯 факт к плану за 7 дн.</span></div>' +
+          '<div><b>' + (avgB === avgB ? pDur(avgB) : '—') + '</b><span>⏱ партия от запуска до склада ГП (30 дн.)</span></div></div>';
+        // узкое место
+        var HS = PHOLD.map(function (g) {
+          var t = all30.reduce(function (a, x) { return a + x.steps.filter(function (s) { return g[2].indexOf(s[0]) >= 0; }).reduce(function (b, s) { return b + s[2]; }, 0); }, 0);
+          return [g, all30.length ? t / all30.length : 0];
+        });
+        var mx = Math.max.apply(null, HS.map(function (x) { return x[1]; }).concat([1]));
+        h += '<div class="pmsec">⏱ ГДЕ ПАРТИЯ СТОИТ ДОЛЬШЕ ВСЕГО · в среднем, ' + all30.length + ' парт. за 30 дн.</div><div class="pmb">' + HS.map(function (x) {
+          var top = x[1] === mx && mx > 1;
+          return '<div class="r' + (top ? ' top' : '') + '"><span class="l">' + x[0][0] + ' ' + x[0][1] + '</span><span class="v">' + pDur(x[1]) + (top ? ' · узкое место' : '') + '</span>' +
+            '<span class="bar"><i style="width:' + Math.max(2, Math.round(x[1] / mx * 100)) + '%;background:' + x[0][3] + '"></i></span></div>';
+        }).join('') + '</div>';
+        // формы
+        var FC = {};
+        R.forEach(function (x) { var f = x.form || 'Прочее'; FC[f] = FC[f] || [0, 0]; FC[f][0]++; if (x.s === 17) FC[f][1] += x.fact; });
+        var FK = Object.keys(FC).sort(function (a, b) { return FC[b][0] - FC[a][0]; });
+        h += '<div class="pmsec">🧪 ПО ФОРМАМ · 30 дн. — нажмите, чтобы отобрать</div><div class="osg pmf">' + FK.map(function (f, i) {
+          var F = PFORM[f] || ['🏭', f];
+          return '<div class="ob c' + (i % 8 + 1) + (pmvForm === f ? ' on' : '') + '" data-pf="' + esc(f) + '"><i>' + F[0] + '</i><b>' + esc(F[1]) + '</b><u>' + FC[f][0] + '</u><small>' + pN(FC[f][1]) + ' шт</small></div>';
+        }).join('') + '</div>';
+        h += '<div class="note">Из ERP (только чтение): заказы производства, журнал этапов цеха, рецептуры · ' + esc(D.at) + '. Обновляется раз в минуту.</div>';
+        box.innerHTML = h; window.scrollTo(0, y0);
+        Array.prototype.forEach.call(box.querySelectorAll('[data-pl]'), function (el) { el.onclick = function () { haptic('light'); pmvLine = el.getAttribute('data-pl'); pmvSt = ''; draw(); }; });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-ps]'), function (el) { el.onclick = function () { haptic('light'); pmvSt = el.getAttribute('data-ps'); draw(); }; });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-pf]'), function (el) { el.onclick = function () { haptic('light'); var f = el.getAttribute('data-pf'); pmvForm = pmvForm === f ? '' : f; draw(); }; });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-pid]'), function (el) { el.onclick = function () { var k = el.getAttribute('data-pid'); pmvOpen[k] = !pmvOpen[k]; draw(); }; });
+      }
+      function pmvCard(x) {
+        var z = pzOf(x.s), F = PFORM[x.form] || ['🏭', x.form], qc = PQC.indexOf(x.s) >= 0, op = pmvOpen[x.id];
+        var stay = x.s < 17 ? (now - pTime(x.since)) / 1000 : NaN;
+        var h = '<div class="pmc z' + z[0] + (op ? ' op' : '') + '" data-pid="' + x.id + '"><div class="pmh"><span class="fi">' + F[0] + '</span><b>' + esc(x.name) + '</b>' +
+          '<span class="pln ' + x.line + '">' + (x.line === 'per' ? 'ПЕР' : 'ТЕР') + '</span></div>' +
+          '<div class="pmm">№ ' + esc(x.num) + (x.brand ? ' · ' + esc(x.brand) : '') + ' · план <b>' + pN(x.plan) + '</b> шт' +
+          (x.s === 17 ? ' · факт <b>' + pN(x.fact) + '</b>' + (x.plan ? ' <span class="pct' + (x.fact < x.plan ? ' lo' : '') + '">' + Math.round(x.fact / x.plan * 100) + '%</span>' : '') : '') +
+          (x.defect ? ' · брак ' + pN(x.defect) : '') + '</div>';
+        h += x.s < 17
+          ? '<div class="pmst' + (stay > 24 * 3600 ? ' long' : '') + '">' + (qc ? '🔬 ' : z[1] + ' ') + esc(x.state) + ' · <b>' + pDur(stay) + '</b>' + (x.who ? ' · ' + esc(x.who) : '') + '</div>'
+          : '<div class="pmst ok">✅ На складе ГП ' + esc(x.ended.slice(8, 10) + '.' + x.ended.slice(5, 7) + ' ' + x.ended.slice(11, 16)) + ' · путь ' + pDur((pTime(x.ended) - pTime(x.started)) / 1000) + '</div>';
+        h += '<div class="pmbar">' + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map(function (s) {
+          return '<i class="' + pzOf(s)[0] + (s <= x.s ? ' f' : '') + (s === x.s && x.s < 17 ? ' cur' : '') + '"></i>';
+        }).join('') + '</div>';
+        if (op) {
+          h += '<div class="pmtl">' + x.steps.map(function (s, i) {
+            var last = i === x.steps.length - 1 && x.s < 17;
+            return '<div class="' + (PQC.indexOf(s[0]) >= 0 ? 'qc' : '') + (last ? ' cur' : '') + '"><span class="t">' + esc(s[1].slice(8, 10) + '.' + s[1].slice(5, 7) + ' ' + s[1].slice(11, 16)) + '</span>' +
+              '<span class="w">' + esc((D.states || {})[s[0]] || '') + (s[3] ? ' <small>· ' + esc(s[3]) + '</small>' : '') + '</span>' +
+              '<span class="d">' + (last ? pDur(stay) : s[2] ? pDur(s[2]) : '') + '</span></div>';
+          }).join('') + '</div>';
+          if (x.raw && x.raw.length) h += '<div class="pmraw"><div class="hd">🧾 Сырьё и упаковка по рецептуре · ' + x.raw.length + '</div>' + x.raw.map(function (r) {
+            return '<div><span>' + esc(r[0]) + '</span><b>' + (r[1] >= 100 ? pN(r[1]) : String(Math.round(r[1] * 1000) / 1000).replace('.', ',')) + ' ' + esc(r[2]) + '</b></div>';
+          }).join('') + '</div>';
+        } else h += '<div class="pmmore">👆 весь путь' + (x.raw && x.raw.length ? ' и сырьё' : '') + '</div>';
+        return h + '</div>';
+      }
+      draw();
+    });
+  }
   // 23.11.2026 (руководитель): все вкладки главного экрана для «👥 Доступ» — в порядке экрана. Новая вкладка — добавить сюда,
   // тогда она сразу появится в «ВКЛАДКИ ГЛАВНОГО ЭКРАНА» (✅ Показать / ⛔ Скрыть). «Склады» — это две строки (завод и Ташкент).
   var TAB_ACC = [['tab_ship', '🛒', 'Движение · Отгрузка'], ['tab_mv', '🚚', 'Движение · Перемещения'], ['tab_inc', '📥', 'Движение · Приходы'], ['tab_ret', '↩️', 'Движение · Возврат'],
                  ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
                  ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
-                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства']];
+                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '⚙️', 'Движение внутри производства']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
               bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'] };   // 23.11.2026 (руководитель)
@@ -3449,7 +3631,9 @@
       if (zpOn) fl.push(['zp', '💰 Зарплата']);   // 23.11.2026 (руководитель): после «Разрешений» — посещение и зарплата завода
       var osOn = !!r.os;
       if (osOn) fl.push(['os', '🏗 Осн. средства']);   // 24.11.2026 (руководитель): основные средства завода — список 1С
-      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) || (mfilter === 'zp' && zpOn) || (mfilter === 'os' && osOn) ||
+      var pmvOn = !!r.pmv;
+      if (pmvOn) fl.push(['pmv', '⚙️ В цехе']);   // 24.11.2026 (руководитель): движение внутри производства — после «Движения»
+      if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) || (mfilter === 'zp' && zpOn) || (mfilter === 'os' && osOn) || (mfilter === 'pmv' && pmvOn) ||
           (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       if (mf === 'wh' && !whF.length && !gpOn) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
       lastTabs = fl;
@@ -3468,6 +3652,8 @@
         h += '<div id="zpbox" style="margin-top:12px"><div class="spin">Загрузка…</div></div>';
       } else if (mf === 'os') {
         h += '<div id="osbox" style="margin-top:12px"><div class="spin">Загрузка…</div></div>';
+      } else if (mf === 'pmv') {
+        h += '<div id="pmvbox" style="margin-top:12px"><div class="spin">Загрузка из ERP…</div></div>';
       } else if (mf === 'wh') {   // 🏬 Склады: две большие кнопки — Склад завода · Склад Ташкента
         var WHT = { zav: ['g', '🏭', 'Склад завода', 'Готовая продукция · Сырьё и упаковка'],
                     tas: ['b', '🏙', 'Склад Ташкента', 'Готовая продукция · Перечисление и Терминал'] };
@@ -3514,6 +3700,7 @@
       if ($('certbox')) showCertTop($('certbox'), r.certp || { cert: true });
       if ($('zpbox')) showZp($('zpbox'));
       if ($('osbox')) showOs($('osbox'));
+      if ($('pmvbox')) showPmv($('pmvbox'));
       Array.prototype.forEach.call(view.querySelectorAll('[data-wf]'), function (el) {
         el.onclick = function () {
           mfilter = el.getAttribute('data-wf');
@@ -4291,11 +4478,11 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k === 'os' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k === 'os' || k === 'pmv' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
       var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
