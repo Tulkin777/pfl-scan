@@ -1210,9 +1210,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'a1b70865', newBuild = '';
+  var BUILD = '8d7920fb', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795533637' || 0;
+  var BUILD_AT = +'1795533795' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4645,20 +4645,23 @@
     h += '<div class="zisum"><b>' + (C.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>к оплате сверхурочно: ' + F(D.min.net) + ' мин' + (C.hour ? ' × ' + fmtq(C.hour) + ' сум/час' : '') + '</span></div>';
     var th = function (t, sub) { return '<th>' + t + (sub ? '<small>' + sub + '</small>' : '') + '</th>'; };
     h += '<div class="ottw"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Бонус за партию', 'сум') + th('Без брака', 'сум') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Без брака', 'сум') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '</td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small></td>' +
               (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td><td>' + F(p.shift) + '</td>' +
               '<td class="' + (p.diff < 0 ? 'neg' : '') + '">' + (p.diff < 0 ? '−' + F(-p.diff) : '0') + '</td><td class="' + (p.late ? 'neg' : '') + '">' + F(p.late) + '</td>' +
               '<td>' + F(p.min) + '<small>' + F(p.m) + ' + ' + F(p.e) + ' + ' + F(p.w) + '</small></td><td class="pos"><b>' + F(p.net) + '</b></td>') + (C.hour ? '<td><b>' + fmtq(p.sum) + '</b></td>' : '') +
+              // 24.11.2026 (руководитель): зарплата из «👔 Должностей» — между сверхурочными и бонусом за партию
+              '<td>' + (p.salary ? '<b style="color:#138a43">' + fmtq(p.salary) + '</b>' : '<span style="opacity:.5">—</span>') + '</td>' +
               '<td>' + (p.batch ? '<b>' + fmtq(p.batch) + '</b><small>' + p.batch_n + ' партий</small>' : '0') + '</td>' +
               '<td>' + (p.qual ? '<b>' + fmtq(p.qual) + '</b>' + (p.qual_cut ? '<small class="neg">−' + p.qual_cut + ' %</small>' : '') : '0') + '</td></tr>' +
-              (op ? '<tr class="otd"><td colspan="' + (C.hour ? 12 : 11) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
+              (op ? '<tr class="otd"><td colspan="' + (C.hour ? 13 : 12) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
                 (p.noout ? '<br>⚠️ дней без отметки выхода: ' + p.noout + ' (минуты этих дней не посчитаны)' : '') + '</td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
-          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td></tr>' +
+          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
+          '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.qual || 0); }, 0)) + '</b></td></tr>' +
           '</tbody></table></div>';
     if (D.batch_cnt) h += '<div class="zbcsum"><b>' + fmtq(D.batch_total || 0) + ' сум</b><span>🏭 бонус за партии · ' + esc(mname.toLowerCase()) + ' · вышло партий по ERP: <b>' + D.batch_cnt.all +
       '</b> (Перечисление ' + D.batch_cnt.per + ', Терминал ' + D.batch_cnt.ter + ')' +
