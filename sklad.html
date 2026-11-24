@@ -1005,7 +1005,8 @@
   .tile.p { --d: #6a2b91; --s: rgba(142,68,173,.35); background: linear-gradient(150deg, #b46ee0, #7f39ad); }
   .tile.y { --d: #a77306; --s: rgba(212,160,23,.35); background: linear-gradient(150deg, #ffc94a, #e09a10); }
   .tile.k { --d: #b02d63; --s: rgba(220,60,120,.35); background: linear-gradient(150deg, #ff7eb0, #d9437f); }
-  #zs button.sm { width: auto; display: inline-block; flex: 0 0 auto; margin: 4px 4px 0 0; border: 0; border-radius: 9px; padding: 7px 11px; font-size: 13px; font-weight: 600; background: var(--bg2, #eef1f6); color: var(--fg, #1f2a44); box-shadow: 0 2px 0 rgba(0,0,0,.12); cursor: pointer; }   /* 24.11.2026: 👔 Должности */
+  #zsp .zlog small { display: block; } #zsp .zlog { line-height: 1.4; }   /* 24.11.2026: ⭐ Специальные бонусы */
+  #zs button.sm, #zsp button.sm { width: auto; display: inline-block; flex: 0 0 auto; margin: 4px 4px 0 0; border: 0; border-radius: 9px; padding: 7px 11px; font-size: 13px; font-weight: 600; background: var(--bg2, #eef1f6); color: var(--fg, #1f2a44); box-shadow: 0 2px 0 rgba(0,0,0,.12); cursor: pointer; }   /* 24.11.2026: 👔 Должности */
   #zs .tile.on { transform: translateY(-2px); outline: 2px solid #fff; }
   #zs .zpf .t small, #zs .zlog small { display: block; }
   #zs .zsh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -1210,9 +1211,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '48c88614', newBuild = '';
+  var BUILD = '2b532398', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795536110' || 0;
+  var BUILD_AT = +'1795536719' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4647,7 +4648,7 @@
     h += '<div class="zisum"><b>' + (C.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>к оплате сверхурочно: ' + F(D.min.net) + ' мин' + (C.hour ? ' × ' + fmtq(C.hour) + ' сум/час' : '') + '</span></div>';
     var th = function (t, sub) { return '<th>' + t + (sub ? '<small>' + sub + '</small>' : '') + '</th>'; };
     h += '<div class="ottw"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Отрабо&shy;тано', 'в смену + надбавка, мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Отрабо&shy;тано', 'в смену + надбавка, мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы', 'сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '</td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small></td>' +
@@ -4663,15 +4664,18 @@
               '<td>' + (p.salary ? '<b style="color:#138a43">' + fmtq(p.salary) + '</b>' : '<span style="opacity:.5">—</span>') + '</td>' +
               '<td>' + (p.batch ? '<b>' + fmtq(p.batch) + '</b><small>' + p.batch_n + ' партий</small>' : '0') + '</td>' +
               '<td>' + (p.qual ? '<b>' + fmtq(p.qual) + '</b>' + (p.qual_cut ? '<small class="neg">−' + p.qual_cut + ' %</small>' : '') : '0') + '</td>' +
+              // 24.11.2026 (руководитель): ⭐ специальные бонусы — сумма всех действующих в месяце
+              '<td>' + (p.spec ? '<b style="color:#c46a00">' + fmtq(p.spec) + '</b>' + (p.spec_n > 1 ? '<small>' + p.spec_n + ' бонуса</small>' : '') : '0') + '</td>' +
               // 24.11.2026 (руководитель): инвентаризация по субботам — сумма; должен был (в правиле раздела), а нет — ✖
               IS.map(function (d) { var v = (p.inv || {})[d] || 0; return '<td>' + (v ? '<b>' + fmtq(v) + '</b>' : d > TD ? '<span style="opacity:.4">впереди</span>' : p.inv_need ? '<span class="neg">✖</span>' : '—') + '</td>'; }).join('') +
               '<td>' + (p.inv_other ? fmtq(p.inv_other) : '—') + '</td><td>' + (p.inv_total ? '<b>' + fmtq(p.inv_total) + '</b>' : '0') + '</td></tr>' +
-              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 15 : 14) + IS.length + 2) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
+              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 16 : 15) + IS.length + 2) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
                 (p.noout ? '<br>⚠️ дней без отметки выхода: ' + p.noout + ' (минуты этих дней не посчитаны)' : '') + '</td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
           '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + F(D.work_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.qual || 0); }, 0)) + '</b></td>' +
+          '<td><b>' + fmtq(D.spec_total || 0) + '</b></td>' +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_other || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_total || 0); }, 0)) + '</b></td></tr>' +
           '</tbody></table></div>';
@@ -4820,18 +4824,114 @@
     }
     load('/api/zp_qual', { month: zqMonth }, draw);
   }
+  // 24.11.2026 (руководитель): 🏭 Завод → ⭐ Специальные бонусы — ежемесячные бонусы сотрудникам: кому, сумма в месяц,
+  // за что, с какого месяца (дальше каждый месяц сама, пока не остановят). У человека может быть несколько. Итог — в таблице зарплаты.
+  var zspMonth = '', zspEd = '';
+  function showZpSpec() {
+    var me = cur;
+    view.innerHTML = subTop('zp', 'Бонусы · Завод · Специальные') + '<div id="zsp"><div class="spin">Загрузка…</div></div>';
+    bindTabs();
+    var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    var ML = function (k) { return k ? MONN[+k.slice(5, 7)].toLowerCase() + ' ' + k.slice(0, 4) : ''; };
+    var MGN = ['', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    var MG = function (k) { return k ? MGN[+k.slice(5, 7)] + ' ' + k.slice(0, 4) : ''; };   // «с ноября 2026»
+    function send(body, ask, D) {
+      var go_ = function (yes) {
+        if (!yes) return;
+        body.month = zspMonth;
+        call('/api/zp_spec_set', body, 30000).then(function (q) {
+          if (!q.ok) return say(q.text);
+          haptic(q.ok_act ? 'success' : 'warning'); if (!q.ok_act) return say(q.text);
+          zspEd = ''; draw(q);
+        }).catch(ivErr);
+      };
+      try { tg.showConfirm(ask.slice(0, 250), go_); } catch (e) { go_(confirm(ask)); }
+    }
+    function draw(D) {
+      if (cur !== me) return;
+      var B = $('zsp'); if (!B) return;
+      if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      zspMonth = D.month;
+      var y0 = window.scrollY, mname = ML(D.month);
+      var ms = [];
+      var nxt = function (k) { var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } return y + '-' + (m < 10 ? '0' : '') + m; };
+      var last = nxt(D.cur > D.month ? D.cur : D.month);   // октябрь 2026 … следующий месяц
+      for (var k = '2026-10'; k <= last; k = nxt(k)) ms.push(k);
+      var h = '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.map(function (k) {
+        return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-pm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
+      h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>⭐ специальные бонусы · ' + esc(mname) + ' · ' + D.n + ' шт</span></div>';
+      // новый бонус
+      var opts = D.people.filter(function (p) { return !p.gone; }).map(function (p) { return '<option value="' + esc(p.id) + '">' + (p.no ? p.no + '. ' : '') + esc(p.who) + (p.pos ? ' · ' + esc(p.pos) : '') + '</option>'; }).join('');
+      h += '<div class="msec">➕ НОВЫЙ БОНУС</div><div class="zpf" style="display:block">' +
+        '<small class="zl">Кому</small><select class="txt" id="spp" style="width:100%;margin:4px 0"><option value="">— выберите сотрудника —</option>' + opts + '</select>' +
+        '<small class="zl">Сумма в месяц, сум</small><input class="txt" id="sps" inputmode="numeric" placeholder="сум" style="width:100%;margin:4px 0">' +
+        '<small class="zl">За что</small><input class="txt" id="spw" placeholder="например: наставник новых, ответственный за линию" style="width:100%;margin:4px 0">' +
+        '<div style="display:flex;gap:8px"><div style="flex:1"><small class="zl">С какого месяца</small><input class="txt" type="month" id="spf" value="' + D.month + '" style="width:100%;margin:4px 0"></div>' +
+        '<div style="flex:1"><small class="zl">По какой (пусто — каждый месяц)</small><input class="txt" type="month" id="spt" style="width:100%;margin:4px 0"></div></div>' +
+        '<div class="ivbar"><button class="go" id="spadd">💾 Добавить бонус</button></div></div>';
+      // по людям — действующие в этом месяце
+      var withB = D.people.filter(function (p) { return p.items.length; });
+      h += '<div class="msec">⭐ ' + esc(mname.toUpperCase()) + ' · ПО СОТРУДНИКАМ · ' + withB.length + '</div>';
+      var row = function (x, showWho) {
+        if (zspEd === x.id) return '<div class="zlog" style="display:block">' +
+          '<select class="txt" data-ep style="width:100%;margin-bottom:4px">' + D.people.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === x.pid ? ' selected' : '') + '>' + esc(p.who) + '</option>'; }).join('') + '</select>' +
+          '<input class="txt" data-es inputmode="numeric" value="' + x.sum + '" style="width:100%;margin-bottom:4px">' +
+          '<input class="txt" data-ew value="' + esc(x.why) + '" style="width:100%;margin-bottom:4px">' +
+          '<div style="display:flex;gap:8px"><input class="txt" type="month" data-ef value="' + x.from + '" style="flex:1"><input class="txt" type="month" data-et value="' + (x.to || '') + '" style="flex:1"></div>' +
+          '<button class="sm" data-esave="' + x.id + '">💾 Сохранить</button> <button class="sm" data-ecan>Отмена</button></div>';
+        return '<div class="zlog">' + (x.on === false ? '🗄 ' : '⭐ ') + (showWho ? '<b>' + esc(x.who) + '</b> · ' : '') + '<b style="color:#c46a00">' + fmtq(x.sum) + ' сум</b> · ' + esc(x.why) +
+          '<small>с ' + esc(MG(x.from)) + (x.to ? ' по ' + esc(ML(x.to)) : ' · каждый месяц') + ' · ' + esc(x.by) + ' ' + esc(x.at) + '</small>' +
+          '<button class="sm" data-sed="' + x.id + '">✏️</button>' + (x.to ? '<button class="sm" data-sres="' + x.id + '">▶️ Снова каждый месяц</button>' : '<button class="sm" data-sstop="' + x.id + '">⏹ Остановить со след. месяца</button>') +
+          '<button class="sm" data-sdel="' + x.id + '">🗑</button></div>';
+      };
+      h += withB.map(function (p) {
+        return '<div class="zpf" style="display:block"><div style="display:flex;align-items:center;gap:8px"><span class="nn">' + (p.no || '—') + '</span><div class="t" style="flex:1"><b style="text-transform:none">' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small></div>' +
+          '<b style="color:#c46a00">' + fmtq(p.sum) + '</b></div>' + p.items.map(function (x) { return row(x, false); }).join('') + '</div>';
+      }).join('') || '<div class="empty" style="padding:10px">В этом месяце специальных бонусов нет</div>';
+      var off = (D.all || []).filter(function (x) { return !x.on; });
+      if (off.length) h += '<div class="msec">НЕ ДЕЙСТВУЮТ В ЭТОМ МЕСЯЦЕ · ' + off.length + '</div>' + off.map(function (x) { return row(x, true); }).join('');
+      h += '<div class="note">Бонус действует каждый месяц, начиная с «с какого месяца», пока его не изменят или не остановят. У одного человека может быть несколько бонусов — в таблице зарплаты (колонка «Спец. бонусы») стоит их сумма.</div>';
+      h += '<div class="msec">ЖУРНАЛ</div>' + ((D.log || []).map(function (l) { return '<div class="zlog">' + esc(l.at) + ' · ' + esc(l.by) + ' · ' + esc(l.text) + '</div>'; }).join('') || '<div class="empty" style="padding:8px">Пока изменений нет</div>');
+      B.innerHTML = h; window.scrollTo(0, y0);
+      var all = function (s, f) { Array.prototype.forEach.call(B.querySelectorAll(s), f); };
+      var nm = function (pid) { return (D.people.filter(function (p) { return p.id === pid; })[0] || {}).who || ''; };
+      all('[data-pm]', function (el) { el.onclick = function () { load('/api/zp_spec', { month: el.getAttribute('data-pm') }, draw); }; });
+      $('spadd').onclick = function () {
+        var pid = $('spp').value, s = $('sps').value.replace(/\D/g, ''), w = $('spw').value.trim(), f = $('spf').value, t = $('spt').value;
+        if (!pid) return say('Выберите сотрудника.');
+        if (!(+s > 0)) return say('Напишите сумму в месяц.');
+        if (!w) return say('Напишите, за что бонус.');
+        if (!f) return say('Укажите, с какого месяца.');
+        send({ act: 'add', pid: pid, sum: +s, why: w, from: f, to: t }, nm(pid) + ' — ' + fmtq(+s) + ' сум в месяц за «' + w + '» с ' + ML(f) + (t ? ' по ' + ML(t) : ', каждый месяц') + '. Добавить?', D);
+      };
+      all('[data-sed]', function (b) { b.onclick = function () { zspEd = b.getAttribute('data-sed'); draw(D); }; });
+      all('[data-ecan]', function (b) { b.onclick = function () { zspEd = ''; draw(D); }; });
+      all('[data-esave]', function (b) {
+        b.onclick = function () {
+          var r = b.parentNode, s = r.querySelector('[data-es]').value.replace(/\D/g, ''), w = r.querySelector('[data-ew]').value.trim();
+          var f = r.querySelector('[data-ef]').value, t = r.querySelector('[data-et]').value, pid = r.querySelector('[data-ep]').value;
+          send({ act: 'edit', id: b.getAttribute('data-esave'), pid: pid, sum: +s, why: w, from: f, to: t }, 'Исправить: ' + nm(pid) + ' — ' + fmtq(+s) + ' сум за «' + w + '» с ' + MG(f) + (t ? ' по ' + ML(t) : '') + '?', D);
+        };
+      });
+      all('[data-sstop]', function (b) { b.onclick = function () { send({ act: 'stop', id: b.getAttribute('data-sstop'), stop_from: D.next_month }, 'Остановить бонус с ' + MG(D.next_month) + '? ' + mname + ' ещё платится.', D); }; });
+      all('[data-sres]', function (b) { b.onclick = function () { send({ act: 'resume', id: b.getAttribute('data-sres') }, 'Снова платить этот бонус каждый месяц?', D); }; });
+      all('[data-sdel]', function (b) { b.onclick = function () { send({ act: 'del', id: b.getAttribute('data-sdel') }, 'Удалить этот бонус совсем (ошибочный)? Во всех месяцах его не будет.', D); }; });
+    }
+    load('/api/zp_spec', { month: zspMonth }, draw);
+  }
   // 24.11.2026 (руководитель): 🎁 Бонусы → сначала место: 🏭 Завод (внутри — инвентаризация, за партию, сверхурочные); офис — позже
   function showZpBonusZav() {
     view.innerHTML = subTop('zp', 'Бонусы · Завод') + '<div id="bzav"></div>';
     bindTabs();
     var tl = (zpInvOn ? '<div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div>' : '') +
-      (isAdmin ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div><div class="ob c2" id="zotgo"><i>⏰</i><b>Сверхурочные</b></div><div class="ob c7" id="zqgo"><i>✅</i><b>Без брака</b></div>' : '');
+      (isAdmin ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div><div class="ob c2" id="zotgo"><i>⏰</i><b>Сверхурочные</b></div><div class="ob c7" id="zqgo"><i>✅</i><b>Без брака</b></div><div class="ob c5" id="zspgo"><i>⭐</i><b>Специальные</b></div>' : '');
     $('bzav').innerHTML = tl ? '<div class="osg">' + tl + '</div>' : '<div class="empty">Бонусов завода вам пока не дано</div>';
     var hp = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} };
     if ($('zinvgo')) $('zinvgo').onclick = function () { hp(); go(showZpInv); };
     if ($('zbgo')) $('zbgo').onclick = function () { hp(); go(showZpBatch); };
     if ($('zotgo')) $('zotgo').onclick = function () { hp(); go(showZpOt); };
     if ($('zqgo')) $('zqgo').onclick = function () { hp(); go(showZpQual); };
+    if ($('zspgo')) $('zspgo').onclick = function () { hp(); go(showZpSpec); };
   }
   // 23.11.2026 (руководитель): 🎁 Бонусы — строки «кому · за что · ✅ сделано · сумма», итог считается сам
   // (только строки с ✅): по сотруднику и за месяц. Каждое изменение сохраняется сразу.
