@@ -1101,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ad6ccd07', newBuild = '';
+  var BUILD = '04fdab92', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795511227' || 0;
+  var BUILD_AT = +'1795511709' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3751,7 +3751,7 @@
   // склады сырья — 3 раздела (сырьё, упаковка, тара), ГП — один; ставка раздела = выход (2 000 × баллы, до 100 000) +
   // 400 000 × баллы ÷ 260, не больше 500 000; только пересчёт из мини-аппа; раздел — 1 раз в месяц; отменённые — 0.
   // Руководитель видит всё и меняет настройки (с даты, журнал); сотрудник — только свои строки; «отмечать команду» — по доступу.
-  var zinvMonth = '', zinvTab = 'list', zinvOpen = {}, zpInvOn = false, zinvGrp = '', zinvSub = '';
+  var zinvMonth = '', zinvTab = 'list', zinvOpen = {}, zpInvOn = false, zinvPath = [];
   var ZCF = [['pw', '⚖️ Взвешивание, балл за строку'], ['pc', '🔢 Пересчёт, балл за строку'], ['pg', '📦 Готовая продукция, балл'],
              ['tara_pcs', '🫙 Тара: +1 балл за каждые … шт'], ['exit_pt', 'Выход: сум за балл'], ['exit_max', 'Выход: не больше, сум'],
              ['top', 'Доплата до, сум'], ['etalon', 'Эталон, баллов'], ['cap', 'Потолок на раздел, сум'], ['resp', 'Ответственный ×'],
@@ -3776,10 +3776,12 @@
       var madeM = {};
       CR.forEach(function (c) { var k = String(c.at).slice(0, 7); if (k.length === 7) madeM[k] = (madeM[k] || 0) + 1; });
       var nOk = Object.keys(OKM).reduce(function (a, k) { return a + (OKM[k] || 0); }, 0);
-      var h = ppl + '<div class="osg zit">' + [['made', '🆕', 'Созданные', CR.length, 'c2'], ['list', '✅', 'Подтверждённые', nOk, 'c1']].map(function (t) {
+      var TOP = !zinvPath.length;   // 24.11.2026 (руководитель): нажал кнопку — верхние кнопки исчезают, «‹ Назад» — на шаг вверх
+      var h = ppl;
+      if (TOP) h += '<div class="osg zit">' + [['made', '🆕', 'Созданные', CR.length, 'c2'], ['list', '✅', 'Подтверждённые', nOk, 'c1']].map(function (t) {
           return '<div class="ob ' + t[4] + (zinvTab === t[0] ? ' on' : '') + '" data-zt="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (t[3] !== '' ? '<u>' + t[3] + '</u>' : '') + '</div>';
         }).join('') + '</div>';
-      if (zinvTab === 'made' || zinvTab === 'list') {
+      if (TOP && (zinvTab === 'made' || zinvTab === 'list')) {
         // 24.11.2026 (руководитель): годы 2026–2029, месяцы — с ноября 2026 (задним числом не нужно), все месяцы года по порядку
         var CNT = zinvTab === 'made' ? madeM : OKM, yr = D.month.slice(0, 4);
         var mOf = function (y) { var a = []; for (var i = 1; i <= 12; i++) { var k = y + '-' + (i < 10 ? '0' : '') + i; if (k >= ZINV_START) a.push(k); } return a; };
@@ -3792,39 +3794,47 @@
         }).join('') + '</div>';
       }
       var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
-      // 24.11.2026 (руководитель): список месяца — по кнопкам: 🏙 Ташкент · 🏭 Завод (внутри: 📦 Готовая продукция · 🧪 Сырьё)
-      var GRP = function (st) { st = +st; return st === 1 || st === 2 ? ['zav', 'raw'] : st === 5 || st === 6 ? ['zav', 'gp'] : ['tas', '']; };
+      // 24.11.2026 (руководитель): список месяца — шагами: 🏙 Ташкент / 🏭 Завод → (завод) 📦 ГП / 🧪 Сырьё → Перечисление / Терминал → список
+      var CLS = function (st) { st = +st; return { g: st === 1 || st === 2 || st === 5 || st === 6 ? 'zav' : 'tas', s: st === 1 || st === 2 ? 'raw' : st === 5 || st === 6 ? 'gp' : '',
+                                                   l: st === 2 || st === 4 || st === 6 || st === 7 ? 'per' : 'ter' }; };
+      var PNM = { tas: '🏙 Ташкент', zav: '🏭 Завод', gp: '📦 Готовая продукция', raw: '🧪 Сырьё', per: 'Перечисление', ter: 'Терминал' };
+      var inPath = function (x) { var c = CLS(x.store), q = zinvPath;
+        return (!q[0] || c.g === q[0]) && (q[0] !== 'zav' || !q[1] || c.s === q[1]) && (!q[q[0] === 'zav' ? 2 : 1] || c.l === q[q[0] === 'zav' ? 2 : 1]); };
+      var FIN = zinvPath.length === (zinvPath[0] === 'zav' ? 3 : 2);
       function grpPick(arr) {
-        var n = { tas: 0, zav: 0, gp: 0, raw: 0 };
-        arr.forEach(function (x) { var g = GRP(x.store); n[g[0]]++; if (g[1]) n[g[1]]++; });
-        h += '<div class="osg zit">' + [['tas', '🏙', 'Ташкент', n.tas, 'c3'], ['zav', '🏭', 'Завод', n.zav, 'c1']].map(function (t) {
-          return '<div class="ob ' + t[4] + (zinvGrp === t[0] ? ' on' : '') + '" data-zgr="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b><u>' + t[3] + '</u></div>'; }).join('') + '</div>';
-        if (zinvGrp === 'zav') h += '<div class="osg zit">' + [['gp', '📦', 'Готовая продукция', n.gp, 'c2'], ['raw', '🧪', 'Сырьё', n.raw, 'c7']].map(function (t) {
-          return '<div class="ob ' + t[4] + (zinvSub === t[0] ? ' on' : '') + '" data-zs="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b><u>' + t[3] + '</u></div>'; }).join('') + '</div>';
-        if (!zinvGrp || (zinvGrp === 'zav' && !zinvSub)) { h += '<div class="empty" style="padding:10px">' + (zinvGrp ? 'Выберите: Готовая продукция или Сырьё' : 'Выберите: Ташкент или Завод') + '</div>'; return null; }
-        return arr.filter(function (x) { var g = GRP(x.store); return g[0] === zinvGrp && (zinvGrp === 'tas' || g[1] === zinvSub); });
+        var opts = !zinvPath.length ? [['tas', '🏙', 'Ташкент', 'c3'], ['zav', '🏭', 'Завод', 'c1']]
+          : zinvPath[0] === 'zav' && zinvPath.length === 1 ? [['gp', '📦', 'Готовая продукция', 'c2'], ['raw', '🧪', 'Сырьё', 'c7']]
+          : [['per', '2️⃣', 'Перечисление', 'c4'], ['ter', '1️⃣', 'Терминал', 'c8']];
+        if (zinvPath.length) h += '<div class="zlinks"><button class="btn2" data-zback="1">‹ Назад</button></div>' +
+          MH(MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4) + ' · ' + (zinvTab === 'made' ? 'созданные' : 'подтверждённые'), zinvPath.map(function (k) { return PNM[k]; }).join(' · '));
+        var mine_ = arr.filter(inPath);
+        if (FIN) return mine_;
+        h += '<div class="osg zit">' + opts.map(function (t) {
+          var n = mine_.filter(function (x) { var save = zinvPath; zinvPath = save.concat([t[0]]); var ok = inPath(x); zinvPath = save; return ok; }).length;
+          return '<div class="ob ' + t[3] + '" data-zgr="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b><u>' + n + '</u></div>'; }).join('') + '</div>';
+        return null;
       }
-      var GNM = function () { return zinvGrp === 'tas' ? 'Ташкент' : zinvSub === 'gp' ? 'Завод · Готовая продукция' : zinvSub === 'raw' ? 'Завод · Сырьё' : ''; };
+      var GNM = function () { return FIN ? zinvPath.map(function (k) { return PNM[k]; }).join(' · ') : ''; };
       if (zinvTab === 'made') {
         var list_ = grpPick(CR.filter(function (c) { return String(c.at).slice(0, 7) === D.month; }));
         if (list_ === null) list_ = [];
-        if (GNM()) h += MH(mname + ' · ' + GNM(), list_.length) + (list_.length ? list_.map(function (c) {
+        if (FIN) h += (list_.length ? list_.map(function (c) {
           return '<div class="zpf' + (c.cx ? ' cx' : '') + '"><span class="nn">' + esc(String(c.at).slice(8, 10) + '.' + String(c.at).slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(c.name) + '</b>' +
             '<small>' + esc(String(c.at).slice(11, 16)) + ' · ' + esc(c.by) + ' · ' + c.n + ' строк</small></div><b style="font-size:12px;white-space:nowrap">' + esc(c.state) + '</b></div>';
         }).join('') : '<div class="empty" style="padding:10px">Здесь в этом месяце созданных нет</div>');
-        h += '<div class="note">Созданные — подсчёты в мини-аппе («📋 Инвент. → Подсчёт»). После подтверждения и проведения в ERP инвентаризация появится в «✅ Подтверждённые» с бонусом.</div>';
+        if (TOP) h += '<div class="note">Созданные — подсчёты в мини-аппе («📋 Инвент. → Подсчёт»). После подтверждения и проведения в ERP инвентаризация появится в «✅ Подтверждённые» с бонусом.</div>';
       } else if (zinvTab === 'list') {
         var okd = grpPick(D.docs.filter(function (x) { return !x.cancelled; })), ncx = D.docs.length - D.docs.filter(function (x) { return !x.cancelled; }).length;
         if (okd === null) okd = [];
-        if (GNM()) h += MH(mname + ' · ' + GNM(), okd.length + (okd.reduce(function (a, x) { return a + (x.total || 0); }, 0) ? ' · ' + fmtq(okd.reduce(function (a, x) { return a + (x.total || 0); }, 0)) + ' сум' : '')) +
+        if (FIN) h += (okd.reduce(function (a, x) { return a + (x.total || 0); }, 0) ? '<div class="note" style="margin-top:0">Итого: <b>' + fmtq(okd.reduce(function (a, x) { return a + (x.total || 0); }, 0)) + ' сум</b></div>' : '') +
           (okd.length ? okd.map(card).join('') : '<div class="empty" style="padding:10px">Здесь в этом месяце подтверждённых нет</div>');
-        if (D.people.length) h += '<div class="crt-l">Кому за ' + esc(mname.toLowerCase()) + '</div>' + D.people.map(function (p) {
+        if (TOP && D.people.length) h += '<div class="crt-l">Кому за ' + esc(mname.toLowerCase()) + '</div>' + D.people.map(function (p) {
           return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b><small>разделов: ' + p.n + '</small></div><b>' + fmtq(p.sum) + ' сум</b></div>'; }).join('');
-        if (ncx) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + ncx + ' — не оплачиваются</div>';
-        h += '<div class="note">Подтверждённые — проведены в ERP. Нажмите — расчёт по разделам и кто получает' + (D.can_fix ? '; там же ✏️ изменить людей или 🗑 удалить бонус (сохраняется после подтверждения)' : '') + '. ' +
+        if (TOP && ncx) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + ncx + ' — не оплачиваются</div>';
+        if (TOP) h += '<div class="note">Подтверждённые — проведены в ERP. Нажмите — расчёт по разделам и кто получает' + (D.can_fix ? '; там же ✏️ изменить людей или 🗑 удалить бонус (сохраняется после подтверждения)' : '') + '. ' +
           'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
       }
-      if (zinvTab === 'made' || zinvTab === 'list') h += (D.edit ? '<div class="zlinks">' + '<button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>' : '');
+      if (zinvTab === 'made' || zinvTab === 'list') h += (TOP && D.edit ? '<div class="zlinks">' + '<button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>' : '');
       else h += '<div class="zlinks"><button class="btn2" data-zt="list">‹ Назад к инвентаризациям</button></div>';
       function card(x) {
         {
@@ -3915,8 +3925,8 @@
       }
       B.innerHTML = h; window.scrollTo(0, y0);
       Array.prototype.forEach.call(B.querySelectorAll('[data-zm]'), function (el) { el.onclick = function () { load('/api/zp_inv', { month: el.getAttribute('data-zm') }, draw); }; });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-zgr]'), function (el) { el.onclick = function () { haptic('light'); var g = el.getAttribute('data-zgr'); zinvGrp = zinvGrp === g ? '' : g; zinvSub = ''; draw(D); }; });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-zs]'), function (el) { el.onclick = function () { haptic('light'); var g = el.getAttribute('data-zs'); zinvSub = zinvSub === g ? '' : g; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zgr]'), function (el) { el.onclick = function () { haptic('light'); zinvPath = zinvPath.concat([el.getAttribute('data-zgr')]); draw(D); window.scrollTo(0, 0); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zback]'), function (el) { el.onclick = function () { haptic('light'); zinvPath = zinvPath.slice(0, -1); draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zy]'), function (el) {   // год → последний месяц этого года, где что-то есть
         el.onclick = function () {
           var y = el.getAttribute('data-zy'), now = new Date(), cm = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
@@ -3945,7 +3955,7 @@
           fixSend(fk, { mode: 'set', resp: resp, help: help }, 'Сохранить изменение?\n' + resp + (help.length ? ' + ' + help.join(', ') : ''));
         };
       });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-zt]'), function (el) { el.onclick = function () { haptic('light'); zinvTab = el.getAttribute('data-zt'); draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zt]'), function (el) { el.onclick = function () { haptic('light'); zinvTab = el.getAttribute('data-zt'); zinvPath = []; draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zo]'), function (el) { el.onclick = function () { var k = el.getAttribute('data-zo'); zinvOpen[k] = !zinvOpen[k]; draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('.zrf[data-key]'), function (f) {   // только формы «Разделов» (у правки документа своя кнопка)
         var one = function (attr) {   // две галочки — выбрана одна
