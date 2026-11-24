@@ -665,7 +665,28 @@
   .osg.os2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .osg.os2 .ob { padding: 14px 8px 12px; } .osg.os2 .ob i { font-size: 32px; } .osg.os2 .ob b { font-size: 14px; white-space: normal; line-height: 1.2; }
   .osg.os2 .ob:first-child { grid-column: 1 / -1; }
+  .osg.os2.os3 .ob:first-child { grid-column: auto; }   /* виды оборудования — ровно по два */
+  .osg.os2.os3 .ob:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .osg.os2 .ob u { font-size: 12px; top: 7px; right: 8px; }
+  /* 24.11.2026 (руководитель): ⚖️ Расхождение 1С ↔ ERP — наверху инвентаризации, важно, но не режет глаз:
+     глубокий сине-фиолетовый фон со светом, статус — мягкая плашка (зелёная — сходится, янтарная — есть расхождения) */
+  .osthero { position: relative; overflow: hidden; border-radius: 20px; padding: 14px 14px 12px; margin: 0 0 14px; cursor: pointer; color: #fff;
+             background: radial-gradient(120% 90% at 100% 0%, rgba(120,170,255,.45), rgba(120,170,255,0) 60%), linear-gradient(150deg, #34407a, #1d2350);
+             box-shadow: 0 5px 0 #121735, 0 12px 24px rgba(29,35,80,.28); transition: transform .12s, box-shadow .12s; }
+  .osthero:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 45%; pointer-events: none;
+                    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0)); }
+  .osthero:active { transform: translateY(4px); box-shadow: 0 1px 0 #121735; }
+  .osthero .oh1 { display: flex; align-items: center; gap: 11px; }
+  .osthero .oi { flex: none; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px;
+                 background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+  .osthero .ot { flex: 1; min-width: 0; } .osthero .ot small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: #aebcff; }
+  .osthero .ot b { display: block; font-size: 18px; font-weight: 900; line-height: 1.2; }
+  .osthero .bd { flex: none; min-width: 46px; height: 46px; border-radius: 23px; padding: 0 10px; display: flex; align-items: center; justify-content: center;
+                 font-size: 22px; font-weight: 900; background: #fff; color: #1d2350; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  .osthero .c { margin-top: 11px; padding: 8px 11px; border-radius: 12px; font-size: 13.5px; font-weight: 800; background: rgba(255,255,255,.12); }
+  .osthero.ok .c { background: rgba(79,214,138,.22); color: #c9f7dc; } .osthero.ok .bd { color: #17964a; }
+  .osthero.bad .c { background: rgba(255,191,85,.24); color: #ffe2a8; } .osthero.bad .bd { background: #ffbf55; color: #4a2c00; }
+  .osthero .oh2 { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #aebcff; }
   /* 24.11.2026 (руководитель): ⚙️ В цехе — движение внутри производства: линия, конвейер этапов, карточки партий, узкое место */
   .fchip[data-f=pmv] { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 4px 0 #9c4210; }
   .osg.pml { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 12px; }
@@ -986,9 +1007,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '2c9ed147', newBuild = '';
+  var BUILD = '2494b0bf', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795489789' || 0;
+  var BUILD_AT = +'1795490095' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1514,13 +1535,16 @@
         return;
       }
       if (!s.city) {
-        h = '<div class="mgrid"' + (box ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
+        // 24.11.2026 (руководитель): «⚖️ Расхождение 1С ↔ ERP» — самое важное, наверху: от него зависит вся инвентаризация
+        // (нет расхождений — остальное верно). Спокойный тёмно-синий «стеклянный» блок, статус — цветной плашкой
+        h = (ostOk ? '<div class="osthero ostt' + (ostN === 0 ? ' ok' : ostN ? ' bad' : '') + '"' + (box ? ' style="margin-top:14px"' : '') + '>' +
+            '<div class="oh1"><span class="oi">⚖️</span><div class="ot"><small>Сначала проверьте</small><b>Расхождение 1С ↔ ERP</b></div>' +
+            '<div class="bd">' + (ostN == null ? '…' : ostN) + '</div></div>' +
+            '<div class="c">' + (ostN ? ostN + ' не сходится — откройте и разберите' : ostN === 0 ? '✅ Всё сходится — остальная инвентаризация верна' : 'проверяю…') + '</div>' +
+            '<div class="oh2">От этого зависит вся инвентаризация: сходится — остатки по складам ниже верные ›</div></div>' : '') +
+          '<div class="mgrid"' + (box && !ostOk ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
           return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
-        }).join('') +
-          // 23.11.2026 (руководитель): «📦 Остаток готовой продукции» перенесён во вкладку «🏬 Склады»;
-          // «⚖️ Расхождение 1С ↔ ERP» — число расхождений прямо на плитке, внутри — список
-          (ostOk ? '<div class="tile cat k wide gpt ostt"><div class="bd' + (ostN ? '' : ' z') + '">' + (ostN == null ? '…' : ostN) + '</div><div class="e">⚖️</div>' +
-            '<div class="n">Расхождение 1С ↔ ERP</div><div class="c">' + (ostN ? ostN + ' не сходится' : ostN === 0 ? 'всё сходится' : 'проверяю…') + '</div></div>' : '') + '</div>' +
+        }).join('') + '</div>' +
           // 23.11.2026 (вариант 10): подсчёты до ERP с итогом проверки Темура — здесь же, над документами ERP
           '<div class="invdraft"></div>' +
           // 23.11.2026 (руководитель): созданные инвентаризации и проверка — сразу здесь, на первом экране
@@ -1552,8 +1576,8 @@
         load2('/api/ost', {}, function (q) {
           var t = V.querySelector('.ostt'); if (!t || !q || !q.gate) return;
           var n = q.gate.length;
-          t.querySelector('.bd').textContent = n; t.querySelector('.bd').className = 'bd' + (n ? '' : ' z');
-          t.querySelector('.c').textContent = n ? n + ' не сходится' : 'всё сходится';
+          t.querySelector('.bd').textContent = n; t.classList.toggle('ok', !n); t.classList.toggle('bad', !!n);
+          t.querySelector('.c').textContent = n ? n + ' не сходится — откройте и разберите' : '✅ Всё сходится — остальная инвентаризация верна';
         });
       }
       if (V.querySelector('.invdraft')) load2('/api/invd_all', {}, function (q) {
@@ -3200,8 +3224,23 @@
     ['sec', 'Связь и охрана', '📹', 'c5', /камер|видеонаблюд|домофон|коммутатор|контроля доступа|турникет|рация|телефон|radiotelefon|огнетуш/],
     ['home', 'Бытовая техника', '❄️', 'c7', /кондиционер|кандиционер|кулер|холодильник|микроволнов|\btv\b|водонагреват|дозатор/],
     ['furn', 'Мебель', '🪑', 'c2', /стол|стул|кресл|шкаф|доск|мебел|сейф|тумб/],
-    ['pc', 'Компьютеры и оргтехника', '💻', 'c8', /компьют|компют|ноутбук|моноблок|принтер|мфу|монитор|планшет|lenovo|^hp|h61|\bups\b|ибп|стабилизатор|блок питания/],
+    ['pc', 'Компьютеры и оргтехника', '💻', 'c8', /компьют|компют|ноутбук|моноблок|принтер|мфу|многофункцион|монитор|планшет|lenovo|^hp|h61|\bups\b|ибп|стабилизатор|блок питания/],
     ['prod', 'Производственное оборудование', '🏭', 'c1', null]];   // всё остальное — оборудование цеха
+  // 24.11.2026 (руководитель): внутри «Производственного оборудования» — свои кнопки по видам, список только после выбора вида
+  var osS = '';
+  var OSP = [   // порядок проверки важен
+    ['line', 'Линии розлива и фасовки', '🏭', 'c8', /линия разлива|автоматическая линия/],
+    ['mix', 'Смешивание и ёмкости', '⚗️', 'c1', /смесит|реактор|ёмкост|емкост|гранулят|измельч/],
+    ['water', 'Вода и воздух', '💧', 'c7', /вод|компрессор|фильтр|филтр|фильтор/],
+    ['dry', 'Сушка', '🔥', 'c2', /сушил|drying/],
+    ['pack', 'Упаковка и маркировка', '📦', 'c4', /упаковоч|блистер|запайк|опечат|этикет/],
+    ['caps', 'Капсулы и таблетки', '💊', 'c5', /капсул|таблет|пресс|пуансон|полиров/],
+    ['other', 'Прочее оборудование', '🧰', 'c6', null]];
+  function osSub(r) {
+    var s = (r.name + ' ' + (r.full || '')).toLowerCase();
+    for (var i = 0; i < OSP.length; i++) if (OSP[i][4] && OSP[i][4].test(s)) return OSP[i][0];
+    return 'other';
+  }
   function osType(r, folder) {
     var s = (r.name + ' ' + (r.full || '')).toLowerCase();
     if (folder === 'Транспортные средства') return 'car';
@@ -3234,17 +3273,34 @@
               return '<div class="ob ' + o[3] + (CNT[o[0]] ? '' : ' z') + '" data-of="' + o[0] + '"><i>' + o[2] + '</i><b>' + esc(o[1]) + '</b><u>' + (CNT[o[0]] || 0) + '</u></div>';
             }).join('') + '</div>' + note;
           Array.prototype.forEach.call(box.querySelectorAll('[data-of]'), function (el) {
-            el.onclick = function () { haptic('light'); osF = el.getAttribute('data-of'); osQ = ''; draw(); window.scrollTo(0, 0); };
+            el.onclick = function () { haptic('light'); osF = el.getAttribute('data-of'); osS = ''; osQ = ''; draw(); window.scrollTo(0, 0); };
           });
           bindRef();
           return;
         }
-        // шаг 2: список выбранного типа
-        var q = osQ.toLowerCase(), n = 0;
         var rows = ALL.filter(function (x) { return x.t === osF; }).map(function (x) { return x.r; });
+        var S = osF === 'prod' ? OSP.filter(function (o) { return o[0] === osS; })[0] : null;
+        if (osF === 'prod' && !S) {   // шаг 2 (только оборудование цеха): кнопки видов, списка нет
+          osS = ''; osQ = '';
+          var SC = {}; rows.forEach(function (r) { var k = osSub(r); SC[k] = (SC[k] || 0) + 1; });
+          box.innerHTML = '<div class="navb"><div class="bk" id="osBack"><i>⬅</i>Назад</div><div class="nt"><small>Основные средства</small><b>' +
+            T[2] + ' ' + esc(T[1]) + ' · ' + rows.length + '</b></div></div>' +
+            '<div class="osg os2 os3">' + OSP.filter(function (o) { return SC[o[0]]; }).map(function (o) {
+              return '<div class="ob ' + o[3] + '" data-os="' + o[0] + '"><i>' + o[2] + '</i><b>' + esc(o[1]) + '</b><u>' + SC[o[0]] + '</u></div>';
+            }).join('') + '</div>' + note;
+          Array.prototype.forEach.call(box.querySelectorAll('[data-os]'), function (el) {
+            el.onclick = function () { haptic('light'); osS = el.getAttribute('data-os'); osQ = ''; draw(); window.scrollTo(0, 0); };
+          });
+          $('osBack').onclick = function () { haptic('light'); osF = ''; draw(); window.scrollTo(0, 0); };
+          bindRef();
+          return;
+        }
+        // шаг 3 (или 2): список выбранного типа / вида
+        if (S) rows = rows.filter(function (r) { return osSub(r) === osS; });
+        var q = osQ.toLowerCase(), n = 0;
         var shown = rows.filter(function (r) { return !q || (r.name + ' ' + r.full + ' ' + r.code + ' ' + r.serial + ' ' + r.maker).toLowerCase().indexOf(q) >= 0; });
-        var h = '<div class="navb"><div class="bk" id="osBack"><i>⬅</i>Назад</div><div class="nt"><small>Основные средства</small><b>' +
-          T[2] + ' ' + esc(T[1]) + ' · ' + rows.length + '</b></div></div>' +
+        var h = '<div class="navb"><div class="bk" id="osBack"><i>⬅</i>Назад</div><div class="nt"><small>Основные средства' + (S ? ' › ' + esc(T[1]) : '') + '</small><b>' +
+          (S ? S[2] + ' ' + esc(S[1]) : T[2] + ' ' + esc(T[1])) + ' · ' + rows.length + '</b></div></div>' +
           '<input class="txt ivfind" id="osfind" placeholder="🔎 Найти по названию, коду, номеру" value="' + esc(osQ) + '">';
         h += shown.map(function (r) {
           n++;
@@ -3258,7 +3314,7 @@
         box.innerHTML = h;
         if (fo) { $('osfind').focus(); $('osfind').setSelectionRange(osQ.length, osQ.length); }
         $('osfind').oninput = function () { osQ = this.value; draw(); };
-        $('osBack').onclick = function () { haptic('light'); osF = ''; draw(); window.scrollTo(0, 0); };
+        $('osBack').onclick = function () { haptic('light'); if (S) osS = ''; else osF = ''; osQ = ''; draw(); window.scrollTo(0, 0); };
         bindRef();
       }
       draw();
