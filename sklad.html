@@ -1210,9 +1210,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5c4cdc0c', newBuild = '';
+  var BUILD = 'a1b70865', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795532425' || 0;
+  var BUILD_AT = +'1795533637' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4297,7 +4297,9 @@
           if (!T.ok) { Z.innerHTML = '<div class="empty">' + esc(T.text || 'Нет данных') + '</div>'; return; }
           var mn = MONN[+T.month.slice(5, 7)] + ' ' + T.month.slice(0, 4);
           var x = '<div class="crt-g gr">' + (T.months.length ? T.months : [T.month]).map(function (m) { return '<div class="cg' + (m === T.month ? ' on' : '') + '" data-tm="' + m + '">' + esc(MONN[+m.slice(5, 7)]) + '<small>' + m.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
-          x += T.have ? otTable(T, T.conf || {}, mn, op) : '<div class="empty">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — 📋 Посещение → 📎 Загрузить.</div>';
+          // 24.11.2026 (руководитель): таблица есть всегда — бонусы месяца (за партию, без брака) видны и без отчёта посещения
+          if (!T.have) x += '<div class="note" style="margin-top:0">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — минуты появятся после загрузки (📋 Посещение → 📎 Загрузить). Бонусы месяца — уже в таблице.</div>';
+          x += otTable(T, T.conf || {}, mn, op);
           x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
           Z.innerHTML = x;
           Array.prototype.forEach.call(Z.querySelectorAll('[data-tm]'), function (el) { el.onclick = function () { load('/api/zp_ot', { month: el.getAttribute('data-tm') }, dr); }; });
