@@ -766,7 +766,10 @@
   /* 24.11.2026: отгрузка — строка без места и почему нет «Взял» */
   .slpl.nopl { background: #fde4e2 !important; color: #b3302b !important; }
   .vznote { margin: 8px 0 2px; padding: 8px 10px; border-radius: 12px; background: #fff3dc; color: #8f5200; font-size: 12.5px; font-weight: 700; line-height: 1.35; }
-  .vznote b { color: #b3302b; } .vznote.g { background: #eef0f4; color: #5b6476; }
+  .vznote b { color: #b3302b; }
+  .tterow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; } .tterow .vzcard { margin: 0; }
+  .ttundo { border: 0; border-radius: 12px; padding: 0 10px; font-weight: 800; font-size: 12px; background: #eef0f4; color: #5b6476; cursor: pointer; }
+  .vzcard.ttake { background: linear-gradient(150deg, #7fb6ff, #2a64c4) !important; box-shadow: 0 4px 0 #1b4590 !important; } .vznote.g { background: #eef0f4; color: #5b6476; }
   /* 24.11.2026 (руководитель): 🎁 Бонусы → 📋 Инвентаризация */
   .zinvbtn { position: relative; overflow: hidden; border-radius: 18px; padding: 13px 14px 12px 70px; margin: 0 0 12px; color: #fff; cursor: pointer;
              background: linear-gradient(150deg, #a99bff, #5b48d1); box-shadow: 0 5px 0 #3e3094; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
@@ -1124,9 +1127,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '32d483a6', newBuild = '';
+  var BUILD = 'ca544b59', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795512240' || 0;
+  var BUILD_AT = +'1795513118' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2825,6 +2828,13 @@
         load2('/api/ship_places_all', {}, function () { if (!hadPl && document.body.contains(box)) { hadPl = true; showDocs(kind, box); } });
       }
       // 23.11.2026 (руководитель): «✅ Взял» прямо на карточке списка — места и партии видны, заходить в документ не нужно
+      Array.prototype.forEach.call(box.querySelectorAll('[data-tt]'), function (b) {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          var x = rows.filter(function (y) { return String(y.id) === b.getAttribute('data-ttid'); })[0];
+          if (x) terAct(x, b.getAttribute('data-tt'), b);
+        };
+      });
       Array.prototype.forEach.call(box.querySelectorAll('[data-vz]'), function (b) {
         b.onclick = function (ev) {
           ev.stopPropagation();
@@ -3818,65 +3828,67 @@
       var madeM = {};
       CR.forEach(function (c) { var k = String(c.at).slice(0, 7); if (k.length === 7) madeM[k] = (madeM[k] || 0) + 1; });
       var nOk = Object.keys(OKM).reduce(function (a, k) { return a + (OKM[k] || 0); }, 0);
-      var TOP = !zinvPath.length;   // 24.11.2026 (руководитель): нажал кнопку — верхние кнопки исчезают, «‹ Назад» — на шаг вверх
-      var h = ppl;
-      if (TOP) h += '<div class="osg zit">' + [['made', '🆕', 'Созданные', CR.length, 'c2'], ['list', '✅', 'Подтверждённые', nOk, 'c1']].map(function (t) {
-          return '<div class="ob ' + t[4] + (zinvTab === t[0] ? ' on' : '') + '" data-zt="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (t[3] !== '' ? '<u>' + t[3] + '</u>' : '') + '</div>';
-        }).join('') + '</div>';
-      if (TOP && (zinvTab === 'made' || zinvTab === 'list')) {
-        // 24.11.2026 (руководитель): годы 2026–2029, месяцы — с ноября 2026 (задним числом не нужно), все месяцы года по порядку
-        var CNT = zinvTab === 'made' ? madeM : OKM, yr = D.month.slice(0, 4);
-        var mOf = function (y) { var a = []; for (var i = 1; i <= 12; i++) { var k = y + '-' + (i < 10 ? '0' : '') + i; if (k >= ZINV_START) a.push(k); } return a; };
-        h += '<div class="crt-l">Год</div><div class="crt-g gr">' + ['2026', '2027', '2028', '2029'].map(function (y) {
-          var n = mOf(y).reduce(function (a, k) { return a + (CNT[k] || 0); }, 0);
-          return '<div class="cg' + (y === yr ? ' on' : '') + '" data-zy="' + y + '">' + y + '<small>' + (n || '') + '</small></div>';
-        }).join('') + '</div>';
-        h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + mOf(yr).map(function (k) {
-          return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-zm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + (CNT[k] || '') + '</small></div>';
-        }).join('') + '</div>';
-      }
-      var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
-      // 24.11.2026 (руководитель): список месяца — шагами: 🏙 Ташкент / 🏭 Завод → (завод) 📦 ГП / 🧪 Сырьё → Перечисление / Терминал → список
+      // 24.11.2026 (руководитель): шаги — 🏙 Ташкент / 🏭 Завод → (Завод) 📦 ГП / 🧪 Сырьё → 🆕 Созданные / ✅ Подтверждённые →
+      // Перечисление / Терминал → год, месяц и список. Нажал — верхнее исчезает; шаг назад — большая «⬅ Назад».
       var CLS = function (st) { st = +st; return { g: st === 1 || st === 2 || st === 5 || st === 6 ? 'zav' : 'tas', s: st === 1 || st === 2 ? 'raw' : st === 5 || st === 6 ? 'gp' : '',
                                                    l: st === 2 || st === 4 || st === 6 || st === 7 ? 'per' : 'ter' }; };
-      var PNM = { tas: '🏙 Ташкент', zav: '🏭 Завод', gp: '📦 Готовая продукция', raw: '🧪 Сырьё', per: 'Перечисление', ter: 'Терминал' };
-      var inPath = function (x) { var c = CLS(x.store), q = zinvPath;
-        return (!q[0] || c.g === q[0]) && (q[0] !== 'zav' || !q[1] || c.s === q[1]) && (!q[q[0] === 'zav' ? 2 : 1] || c.l === q[q[0] === 'zav' ? 2 : 1]); };
-      var FIN = zinvPath.length === (zinvPath[0] === 'zav' ? 3 : 2);
-      function grpPick(arr) {
-        var opts = !zinvPath.length ? [['tas', '🏙', 'Ташкент', 'c3'], ['zav', '🏭', 'Завод', 'c1']]
-          : zinvPath[0] === 'zav' && zinvPath.length === 1 ? [['gp', '📦', 'Готовая продукция', 'c2'], ['raw', '🧪', 'Сырьё', 'c7']]
-          : [['per', '2️⃣', 'Перечисление', 'c4'], ['ter', '1️⃣', 'Терминал', 'c8']];
-        if (zinvPath.length) h += MH(MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4) + ' · ' + (zinvTab === 'made' ? 'созданные' : 'подтверждённые'), zinvPath.map(function (k) { return PNM[k]; }).join(' · '));
-        var mine_ = arr.filter(inPath);
-        if (FIN) return mine_;
-        h += '<div class="osg zit">' + opts.map(function (t) {
-          var n = mine_.filter(function (x) { var save = zinvPath; zinvPath = save.concat([t[0]]); var ok = inPath(x); zinvPath = save; return ok; }).length;
-          return '<div class="ob ' + t[3] + '" data-zgr="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b><u>' + n + '</u></div>'; }).join('') + '</div>';
-        return null;
-      }
-      var GNM = function () { return FIN ? zinvPath.map(function (k) { return PNM[k]; }).join(' · ') : ''; };
-      if (zinvTab === 'made') {
-        var list_ = grpPick(CR.filter(function (c) { return String(c.at).slice(0, 7) === D.month; }));
-        if (list_ === null) list_ = [];
-        if (FIN) h += (list_.length ? list_.map(function (c) {
-          return '<div class="zpf' + (c.cx ? ' cx' : '') + '"><span class="nn">' + esc(String(c.at).slice(8, 10) + '.' + String(c.at).slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(c.name) + '</b>' +
-            '<small>' + esc(String(c.at).slice(11, 16)) + ' · ' + esc(c.by) + ' · ' + c.n + ' строк</small></div><b style="font-size:12px;white-space:nowrap">' + esc(c.state) + '</b></div>';
-        }).join('') : '<div class="empty" style="padding:10px">Здесь в этом месяце созданных нет</div>');
-        if (TOP) h += '<div class="note">Созданные — подсчёты в мини-аппе («📋 Инвент. → Подсчёт»). После подтверждения и проведения в ERP инвентаризация появится в «✅ Подтверждённые» с бонусом.</div>';
-      } else if (zinvTab === 'list') {
-        var okd = grpPick(D.docs.filter(function (x) { return !x.cancelled; })), ncx = D.docs.length - D.docs.filter(function (x) { return !x.cancelled; }).length;
-        if (okd === null) okd = [];
-        if (FIN) h += (okd.reduce(function (a, x) { return a + (x.total || 0); }, 0) ? '<div class="note" style="margin-top:0">Итого: <b>' + fmtq(okd.reduce(function (a, x) { return a + (x.total || 0); }, 0)) + ' сум</b></div>' : '') +
-          (okd.length ? okd.map(card).join('') : '<div class="empty" style="padding:10px">Здесь в этом месяце подтверждённых нет</div>');
-        if (TOP && D.people.length) h += '<div class="crt-l">Кому за ' + esc(mname.toLowerCase()) + '</div>' + D.people.map(function (p) {
-          return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b><small>разделов: ' + p.n + '</small></div><b>' + fmtq(p.sum) + ' сум</b></div>'; }).join('');
-        if (TOP && ncx) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + ncx + ' — не оплачиваются</div>';
-        if (TOP) h += '<div class="note">Подтверждённые — проведены в ERP. Нажмите — расчёт по разделам и кто получает' + (D.can_fix ? '; там же ✏️ изменить людей или 🗑 удалить бонус (сохраняется после подтверждения)' : '') + '. ' +
-          'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
-      }
-      if (zinvTab === 'made' || zinvTab === 'list') h += (TOP && D.edit ? '<div class="zlinks">' + '<button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>' : '');
-      else h += '<div class="zlinks"><button class="btn2" data-zt="list">‹ Назад к инвентаризациям</button></div>';
+      var PNM = { tas: '🏙 Ташкент', zav: '🏭 Завод', gp: '📦 Готовая продукция', raw: '🧪 Сырьё', per: 'Перечисление', ter: 'Терминал', made: '🆕 Созданные', list: '✅ Подтверждённые' };
+      var PP = zinvPath, iT = PP[0] === 'zav' ? 2 : 1, iL = iT + 1, FIN = PP.length === iL + 1, FLOW = zinvTab === 'made' || zinvTab === 'list';
+      if (PP.length > iT) zinvTab = PP[iT];
+      var fits = function (x, upto) { var c = CLS(x.store);
+        return (!PP[0] || c.g === PP[0]) && (PP[0] !== 'zav' || !PP[1] || c.s === PP[1]) && (upto <= iL || !PP[iL] || c.l === PP[iL]); };
+      var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
+      var h = ppl;
+      if (FLOW) {
+        var arrM = CR.filter(function (c) { return String(c.at).slice(0, 7) === D.month; }), arrL = D.docs.filter(function (x) { return !x.cancelled; });
+        if (PP.length) h += MH(PP.map(function (k) { return PNM[k]; }).join(' · '));
+        if (!FIN) {
+          var step = PP.length, opts;
+          if (step === 0) opts = [['tas', '🏙', 'Ташкент', 'c3'], ['zav', '🏭', 'Завод', 'c1']];
+          else if (PP[0] === 'zav' && step === 1) opts = [['gp', '📦', 'Готовая продукция', 'c2'], ['raw', '🧪', 'Сырьё', 'c7']];
+          else if (step === iT) opts = [['made', '🆕', 'Созданные', 'c2'], ['list', '✅', 'Подтверждённые', 'c1']];
+          else opts = [['per', '2️⃣', 'Перечисление', 'c4'], ['ter', '1️⃣', 'Терминал', 'c8']];
+          h += '<div class="osg zit">' + opts.map(function (t) {
+            var n = '';
+            if (step === iT) n = (t[0] === 'made' ? arrM : arrL).filter(function (x) { return fits(x, iT); }).length;
+            else if (step === iL) { var src = zinvTab === 'made' ? arrM : arrL; n = src.filter(function (x) { return fits(x, iT) && CLS(x.store).l === t[0]; }).length; }
+            return '<div class="ob ' + t[3] + '" data-zgr="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (n !== '' ? '<u>' + n + '</u>' : '') + '</div>'; }).join('') + '</div>';
+          if (step >= iT) h += '<div class="note" style="margin-top:0">Числа — за ' + esc(mname.toLowerCase()) + '.</div>';
+          if (!step) {
+            h += '<div class="note">Выберите место, потом «Созданные» или «Подтверждённые», Перечисление или Терминал, затем год и месяц — откроется список. ' +
+              'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
+            if (D.edit) h += '<div class="zlinks"><button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>';
+          }
+        } else {
+          // 24.11.2026 (руководитель): годы 2026–2029, месяцы — с ноября 2026 (задним числом не нужно)
+          var yr = D.month.slice(0, 4);
+          var mOf = function (y) { var a = []; for (var i = 1; i <= 12; i++) { var k = y + '-' + (i < 10 ? '0' : '') + i; if (k >= ZINV_START) a.push(k); } return a; };
+          h += '<div class="crt-l">Год</div><div class="crt-g gr">' + ['2026', '2027', '2028', '2029'].map(function (y) {
+            return '<div class="cg' + (y === yr ? ' on' : '') + '" data-zy="' + y + '">' + y + '</div>'; }).join('') + '</div>';
+          h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + mOf(yr).map(function (k) {
+            return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-zm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '</div>'; }).join('') + '</div>';
+          if (zinvTab === 'made') {
+            var list_ = arrM.filter(function (x) { return fits(x, 9); });
+            h += MH(mname, list_.length) + (list_.length ? list_.map(function (c) {
+              return '<div class="zpf' + (c.cx ? ' cx' : '') + '"><span class="nn">' + esc(String(c.at).slice(8, 10) + '.' + String(c.at).slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(c.name) + '</b>' +
+                '<small>' + esc(String(c.at).slice(11, 16)) + ' · ' + esc(c.by) + ' · ' + c.n + ' строк</small></div><b style="font-size:12px;white-space:nowrap">' + esc(c.state) + '</b></div>';
+            }).join('') : '<div class="empty" style="padding:10px">В этом месяце созданных нет</div>');
+            h += '<div class="note">Созданные — подсчёты в мини-аппе («📋 Инвент. → Подсчёт»). После подтверждения и проведения в ERP появятся в «✅ Подтверждённые» с бонусом.</div>';
+          } else {
+            var okd = arrL.filter(function (x) { return fits(x, 9); });
+            var ncx = D.docs.filter(function (x) { return x.cancelled && fits(x, 9); }).length;
+            var tot = okd.reduce(function (a, x) { return a + (x.total || 0); }, 0);
+            h += MH(mname, okd.length + (tot ? ' · ' + fmtq(tot) + ' сум' : '')) + (okd.length ? okd.map(card).join('') : '<div class="empty" style="padding:10px">В этом месяце подтверждённых нет</div>');
+            var who = {};
+            okd.forEach(function (x) { x.secs.forEach(function (s) { (s.shares || []).forEach(function (sh) { who[sh[0]] = (who[sh[0]] || 0) + sh[1]; }); }); });
+            var wk = Object.keys(who).sort(function (a, b) { return who[b] - who[a]; });
+            if (wk.length) h += '<div class="crt-l">Кому</div>' + wk.map(function (w) {
+              return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(w) + '</b></div><b>' + fmtq(who[w]) + ' сум</b></div>'; }).join('');
+            if (ncx) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + ncx + ' — не оплачиваются</div>';
+            h += '<div class="note">Нажмите инвентаризацию — расчёт по разделам и кто получает' + (D.can_fix ? '; там же ✏️ изменить людей или 🗑 удалить бонус (сохраняется после подтверждения)' : '') + '.</div>';
+          }
+        }
+      } else h += '<div class="zlinks"><button class="btn2" data-zt="list">‹ Назад к инвентаризациям</button></div>';
       function card(x) {
         {
           var op = zinvOpen[x.id];
@@ -3968,7 +3980,9 @@
       Array.prototype.forEach.call(B.querySelectorAll('[data-zm]'), function (el) { el.onclick = function () { load('/api/zp_inv', { month: el.getAttribute('data-zm') }, draw); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zgr]'), function (el) { el.onclick = function () { haptic('light'); zinvPath = zinvPath.concat([el.getAttribute('data-zgr')]); draw(D); window.scrollTo(0, 0); }; });
       // 24.11.2026 (руководитель): шаг назад — большой «⬅ Назад» сверху (отдельной кнопки нет)
-      backHook = function () { if (cur !== me || !zinvPath.length || (zinvTab !== 'made' && zinvTab !== 'list')) return false; zinvPath = zinvPath.slice(0, -1); draw(D); return true; };
+      backHook = function () { if (cur !== me) return false;
+        if (zinvTab === 'secs' || zinvTab === 'conf') { zinvTab = 'list'; zinvPath = []; draw(D); return true; }
+        if (!zinvPath.length) return false; zinvPath = zinvPath.slice(0, -1); draw(D); return true; };
       Array.prototype.forEach.call(B.querySelectorAll('[data-zy]'), function (el) {   // год → последний месяц этого года, где что-то есть
         el.onclick = function () {
           var y = el.getAttribute('data-zy'), now = new Date(), cm = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
@@ -4779,6 +4793,19 @@
             // 24.11.2026 (руководитель «почему нет «Взял»»): строку не нашли на местах склада — показать, а не молчать
             : plcOk(p) && p.mode === 'noted' ? '<br><span class="slpl nopl">❗ нет на местах склада</span>' : '') + '</span></div>';
       }).join('') + '</div>';
+    // 24.11.2026 (руководитель): Терминал Ташкент — «✅ Взял» без списания → «отгружено»; «🚚 Отгружено» — бот списывает с мест → архив.
+    // Продажу в ERP бот не проводит (команды нет) — проводят в ERP как раньше.
+    var isTer = x.st === 3 || x.st === 8, cant = p && p.can === false;
+    if (isTer && x.picked && x.step !== 'arch') {
+      h += '<div class="vznote g">✅ Взял: ' + esc(x.picked.by || '') + ' · ' + esc(x.picked.raw || x.picked.at || '') + ' — с мест ещё не списано</div>' +
+        (cant ? '' : '<div class="tterow"><button class="main vzcard" data-tt="shs" data-ttid="' + esc(x.id) + '">🚚 Отгружено — списать с мест</button>' +
+        '<button class="ttundo" data-tt="shu" data-ttid="' + esc(x.id) + '">↩️ Отменить «Взял»</button></div>');
+      return h;
+    }
+    if (isTer && st === 'new' && !cant) {
+      h += '<button class="main vzcard ttake" data-tt="shp" data-ttid="' + esc(x.id) + '">✅ Взял — товар у меня (пока без списания)</button>';
+      return h;
+    }
     if (st === 'ok' && plcOk(p) && p.can && p.mode !== 'hint' && !(p.mode === 'noted' && !p.ready))
       h += '<button class="main vzcard" data-vz="' + esc(x.id) + '">✅ Взял — списать с этих мест</button>';
     else if (st === 'ok' && plcOk(p) && p.mode === 'noted' && !p.ready) {
@@ -4814,6 +4841,39 @@
       box.innerHTML = vzHtml(p, st) || (p && p.text ? '<div class="note">' + esc(p.text) + '</div>' : '');
       bind(p);
     }).catch(function () {});
+  }
+  // Терминал Ташкент: нажать кнопку окна документа бота склада (shp — Взял, shs — Отгружено, shu — отменить Взял);
+  // если окна документа ещё нет — сначала открыть его (shd), потом нажать
+  function terAct(x, act, b) {
+    var lbl = b.textContent, wh = (plcOf(x.id) || {}).wh || x.to_wh || 'ter_tas';
+    var Q = { shp: 'Взял товар по документу ' + x.id + '?\nС мест бота пока НЕ списывается — документ перейдёт в «отгружено».',
+              shs: 'Отгружено по документу ' + x.id + '?\nБот склада спишет товар с мест, документ уйдёт в архив.\nПродажу в ERP проводят в ERP, как раньше.',
+              shu: 'Отменить «Взял» по документу ' + x.id + '? Документ вернётся в «создано».' }[act];
+    var R = function (s) { return new RegExp(':' + s + ':' + x.id + '(:\\d+)?$'); };
+    var btnIn = function (w, re) {
+      var hit = null;
+      [w].concat((w && w.more) || []).forEach(function (m) { ((m && m.kb) || []).forEach(function (row) { row.forEach(function (k) { if (!hit && re.test(k.callback_data || k.data || '')) hit = { d: k.callback_data || k.data, key: m.key }; }); }); });
+      return hit;
+    };
+    var txt = function (r) { return ((r && r.answers) || []).map(function (a) { return a.text; }).join('\n') || (r && r.text) || ''; };
+    var bad = function (s) { b.disabled = false; b.textContent = lbl; haptic('warning'); say(s); };
+    var press = function (k) { return call('/api/kc_press', { wh: wh, data: k.d, key: k.key || '' }, 125000); };
+    var done = function (r) {
+      haptic('success'); say(txt(r) || 'Готово'); b.textContent = '✅ Сделано';
+      delete mem[ck('/api/flow' + JSON.stringify({ kind: 'ship' }))]; setTimeout(function () { showMenu(); }, 600);
+    };
+    var go_ = function (yes) {
+      if (!yes) return;
+      b.disabled = true; b.textContent = '⏳ Выполняю у бота склада…';
+      call('/api/kc_win', { wh: wh }, 15000).then(function (w) {
+        var k = btnIn(w, R(act));
+        if (k) return press(k).then(done);
+        var o = btnIn(w, R('shd'));
+        if (!o) return bad('В окне склада этого документа нет — обновите экран.');
+        return press(o).then(function (r) { var k2 = btnIn(r.win, R(act)); if (!k2) return bad(txt(r) || 'Бот склада не показал эту кнопку — откройте «Склад «откуда»».'); return press(k2).then(done); });
+      }).catch(function (e) { bad((e && e.text) || 'Ошибка связи — попробуйте ещё раз.'); });
+    };
+    try { tg.showConfirm(Q, go_); } catch (e) { go_(confirm(Q)); }
   }
   function vzyal(x, p, b, lbl, st) {
     var wh = p.wh, R = function (s) { return new RegExp(':' + s + ':' + x.id + '(:\\d+)?$'); };
