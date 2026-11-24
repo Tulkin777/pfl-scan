@@ -823,6 +823,7 @@
   .ott th { font-size: 11.5px; background: rgba(0,0,0,.04); text-align: center; white-space: normal; } .ott th small, .ott td small { display: block; font-size: 10.5px; opacity: .65; font-weight: 400; }
   .ott tr.ottot td { background: rgba(217,119,6,.12); font-weight: 800; font-size: 14px; }   /* 24.11.2026: итог бонуса за партии */
   .zqc { display: flex; gap: 4px; flex-wrap: wrap; } .zqc .zck { font-size: 12px; padding: 4px 6px; }
+  .ott td.pctc { background: #fff4d6; color: #8a5a00; } .ott td.pctc b { font-size: 13.5px; }
   .ott td.no { font-size: 16px; font-weight: 800; text-align: center; } .ott td.nf { text-align: center; color: #999; font-style: italic; }
   .ott td.nm { text-align: left; white-space: normal; min-width: 150px; } .ott .neg { color: #c62828; } .ott .pos { color: #1b7f3b; } .ott tr[data-ow] { cursor: pointer; }
   .ott tr.otd td { text-align: left; white-space: normal; font-size: 12px; background: rgba(0,0,0,.03); }
@@ -1211,9 +1212,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e6bcaa3f', newBuild = '';
+  var BUILD = '083ac273', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795541500' || 0;
+  var BUILD_AT = +'1795541645' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4648,11 +4649,13 @@
     h += '<div class="zisum"><b>' + (C.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>к оплате сверхурочно: ' + F(D.min.net) + ' мин' + (C.hour ? ' × ' + fmtq(C.hour) + ' сум/час' : '') + '</span></div>';
     var th = function (t, sub) { return '<th>' + t + (sub ? '<small>' + sub + '</small>' : '') + '</th>'; };
     h += '<div class="ottw"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Отрабо&shy;тано', 'в смену + надбавка, мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы', 'сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('В смену от нормы', '%') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Отрабо&shy;тано', 'в смену + надбавка, мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы', 'сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '</td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small></td>' +
-              (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td><td>' + F(p.shift) + '</td>' +
+              (p.nofid ? '<td colspan="8" class="nf">нет в отчёте посещения (Face ID) за этот месяц</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td><td>' + F(p.shift) + '</td>' +
+              // 24.11.2026 (руководитель): % отработанного в смену от нормы — выделено, дальше пойдёт в расчёты
+              '<td class="pctc"><b>' + (p.norm ? (Math.round(p.shift / p.norm * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>' +
               '<td class="' + (p.diff < 0 ? 'neg' : '') + '">' + (p.diff < 0 ? '−' + F(-p.diff) : '0') + '</td><td class="' + (p.late ? 'neg' : '') + '">' + F(p.late) + '</td>' +
               '<td>' + F(p.min) + '<small>' + F(p.m) + ' + ' + F(p.e) + ' + ' + F(p.w) + '</small></td><td class="pos"><b>' + F(p.net) + '</b></td>') + (C.hour ? '<td><b>' + fmtq(p.sum) + '</b></td>' : '') +
               // 24.11.2026 (руководитель): надбавка сверхурочно = итог сверхурочно × (зарплата ÷ норма) × (1 + %)
@@ -4672,11 +4675,14 @@
               // 24.11.2026 (руководитель): стоимость надбавки = надбавка (мин) × стоимость минуты (зарплата ÷ норма месяца)
               '<td>' + (p.ot_min && p.ot_rate ? '<b style="color:#c46a00">' + fmtq(Math.round(p.ot_min * p.ot_rate)) + '</b><small>' + F(p.ot_min) + ' мин × ' + fmtq(Math.round(p.ot_rate * 100) / 100) + '</small>'
                 : (p.ot_min && !p.salary ? '<span style="opacity:.5">нет зарплаты</span>' : '0')) + '</td></tr>' +
-              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 17 : 16) + IS.length + 2) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
+              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 18 : 17) + IS.length + 2) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
                 (p.noout ? '<br>⚠️ дней без отметки выхода: ' + p.noout + ' (минуты этих дней не посчитаны)' : '') + '</td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
-          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + F(D.work_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
+          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="3"></td>' +
+          // 24.11.2026: итог % — вся смена всех ÷ вся норма всех (кто есть в отчёте посещения)
+          (function () { var a = 0, b = 0; D.people.forEach(function (p) { if (!p.nofid) { a += p.shift || 0; b += p.norm || 0; } }); return '<td class="pctc"><b>' + (b ? (Math.round(a / b * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>'; })() +
+          '<td colspan="' + (C.hour ? 5 : 4) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + F(D.work_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.qual || 0); }, 0)) + '</b></td>' +
           '<td><b>' + fmtq(D.spec_total || 0) + '</b></td>' +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
