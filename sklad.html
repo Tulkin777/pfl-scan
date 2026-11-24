@@ -820,6 +820,9 @@
   .osg.zit.z4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .osg.zit.z4 .ob b { font-size: 11.5px; }
   /* 24.11.2026 (руководитель): таблица зарплаты — удобная прокрутка влево-вправо: ползунок, ◀ ▶, мышью, колесо, стрелки;
      № и имя закреплены слева, шапка — сверху; тени у краёв показывают, что есть ещё колонки */
+  /* 24.11.2026 (руководитель): месяцы — в два ряда по 6, ячейки меньше; годы — в один ряд */
+  .crt-g.zym6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; } .crt-g.zym6 .cg { padding: 6px 2px; font-size: 12px; min-width: 0; } .crt-g.zym6 .cg small { font-size: 9.5px; }
+  .osg.zyy5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; } .osg.zyy5 .ob { padding: 8px 2px 7px; } .osg.zyy5 .ob i { font-size: 20px; } .osg.zyy5 .ob b { font-size: 12.5px; }
   .ottbox { position: relative; margin: 6px 0; }
   .ottw { overflow: auto; max-height: 72vh; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); overscroll-behavior-x: contain; cursor: grab; outline: none; }
   .ottw.drag { cursor: grabbing; user-select: none; } .ottw.drag * { pointer-events: none; }
@@ -1237,9 +1240,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5c835968', newBuild = '';
+  var BUILD = '47d17963', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795543023' || 0;
+  var BUILD_AT = +'1795543262' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4327,13 +4330,13 @@
           var Z = $('zptab'); if (!Z || cur !== me) return;
           var x = '';
           if (st.step === 'y') {
-            x += '<div class="crt-l">Год</div><div class="osg">' + ['2026', '2027', '2028', '2029', '2030'].map(function (y, i) {
+            x += '<div class="crt-l">Год</div><div class="osg zyy5">' + ['2026', '2027', '2028', '2029', '2030'].map(function (y, i) {
               return '<div class="ob ' + ['c1', 'c3', 'c4', 'c2', 'c7'][i] + (y === st.y ? ' on' : '') + '" data-zy="' + y + '"><i>📅</i><b>' + y + '</b></div>'; }).join('') + '</div>';
             x += '<div class="note" style="margin-top:0">Выберите год — откроются его 12 месяцев.</div>';
           } else {
-            x += '<div class="crt-l">' + st.y + ' · месяц</div><div class="crt-g gr">' + MONN.slice(1).map(function (n, i) {
+            x += '<div class="crt-l">' + st.y + ' · месяц</div><div class="crt-g gr zym6">' + MONN.slice(1).map(function (n, i) {
               var k = st.y + '-' + ('0' + (i + 1)).slice(-2);
-              return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '">' + esc(n) + '<small>' + st.y + '</small></div>'; }).join('') + '</div>';
+              return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '" title="' + esc(n) + '">' + ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i] +'<small>' + st.y + '</small></div>'; }).join('') + '</div>';
             var T = st.T;
             if (!T) x += '<div class="spin">Считаю…</div>';
             else if (!T.ok) x += '<div class="empty">' + esc(T.text || 'Нет данных') + '</div>';
