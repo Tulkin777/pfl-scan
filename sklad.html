@@ -703,6 +703,8 @@
   .zavg .zb.rs { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 5px 0 #9c4210, 0 12px 22px rgba(217,97,31,.25); }
   .zavg .zb.pr { background: linear-gradient(150deg, #7fb6ff, #3f55c9); box-shadow: 0 5px 0 #2b3b94, 0 12px 22px rgba(63,85,201,.25); }
   .pmk.rsk { margin: 2px 0 12px; } .pmk.rsk b { font-size: 19px; }
+  .pmk.rsk .rsm { grid-column: 1 / -1; background: linear-gradient(150deg, #e9fbf0, #d3f3e0); box-shadow: 0 3px 0 #b5e2c6; }
+  .pmk.rsk .rsm b { color: #0f7a3c; } .rsr .rm b.sm { color: #0f7a3c; }
   .osg.rskind { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 10px; }
   .osg.rskind .ob { padding: 8px 4px 7px; border-radius: 14px; } .osg.rskind .ob i { font-size: 20px; } .osg.rskind .ob b { font-size: 13px; }
   .osg.rskind .ob u { top: 4px; right: 5px; font-size: 10.5px; padding: 0 6px; }
@@ -1040,9 +1042,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '179172ae', newBuild = '';
+  var BUILD = 'ad074091', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795494446' || 0;
+  var BUILD_AT = +'1795495025' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3504,12 +3506,12 @@
   function showZav(box) {
     if (zavPart === 'proc' || zavPart === 'rsx') {
       box.innerHTML = '<div class="navb"><div class="bk" id="zavBack"><i>⬅</i>Назад</div><div class="nt"><small>Завод</small><b>' +
-        (zavPart === 'proc' ? '⚙️ Процессы — путь партий по цеху' : '💸 Расходы — сырьё и упаковка') + '</b></div></div><div id="zavin"><div class="spin">Загрузка из ERP…</div></div>';
+        (zavPart === 'proc' ? '⚙️ Процессы — путь партий по цеху' : '🧪 Расход сырья и упаковки') + '</b></div></div><div id="zavin"><div class="spin">Загрузка из ERP…</div></div>';
       $('zavBack').onclick = function () { haptic('light'); zavPart = ''; showZav(box); window.scrollTo(0, 0); };
       return zavPart === 'proc' ? showPmv($('zavin')) : showRsx($('zavin'));
     }
     box.innerHTML = '<div class="msec gpsec" style="margin-top:0">🏭 ЗАВОД</div><div class="zavg">' +
-      '<div class="zb rs" data-zp="rsx"><i>💸</i><b>Расходы</b><span>Сырьё и упаковка со склада сырья — сколько ушло, на какие партии, на сколько хватит остатка</span><em id="zbr">…</em></div>' +
+      '<div class="zb rs" data-zp="rsx"><i>🧪</i><b>Расход сырья</b><span>Сырьё и упаковка со склада сырья — сколько ушло, на какие партии, на сколько хватит остатка</span><em id="zbr">…</em></div>' +
       '<div class="zb pr" data-zp="proc"><i>⚙️</i><b>Процессы</b><span>Где сейчас каждая партия: склад сырья → ОТК → цех → дозирование → упаковка → склад ГП</span><em id="zbp">…</em></div></div>';
     Array.prototype.forEach.call(box.querySelectorAll('[data-zp]'), function (el) {
       el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} zavPart = el.getAttribute('data-zp'); showZav(box); window.scrollTo(0, 0); };
@@ -3531,7 +3533,11 @@
     load('/api/rsx', {}, function (D) {
       if (cur !== me || !box.isConnected) return;
       if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
-      var now = pTime(D.now), today = D.now.slice(0, 10);
+      var now = pTime(D.now), today = D.now.slice(0, 10), money = !!D.money;
+      // 24.11.2026 (руководитель): суммы — только с доступом «💵 Расход сырья в деньгах»: количество × себестоимость единицы на складе сырья (ERP)
+      var cpOf = function (e) { var c = D.mats[e[0]].cp || {}; return +(c[e[1]] || c['2'] || c['1'] || 0); };
+      var sumOf = function (L) { return L.reduce(function (a, e) { return a + e[3] * cpOf(e); }, 0); };
+      var som = function (v) { return v >= 1e6 ? String(Math.round(v / 1e5) / 10).replace('.', ',') + ' млн сум' : pN(v) + ' сум'; };
       function draw() {
         var y0 = window.scrollY, from = rsxPer === 1 ? pTime(today + ' 00:00') : now - rsxPer * 86400000;
         var inLine = function (e) { return !rsxLine || (rsxLine === 'per' ? e[1] === 2 : e[1] === 1); };
@@ -3551,7 +3557,8 @@
         E.forEach(function (e) { bset[e[4] + ':' + e[1] + ':' + (e[4] < 0 ? e[2] : '')] = 1; var m = D.mats[e[0]]; if (m.unit === 'кг') kg += e[3]; else if (m.unit === 'гр') kg += e[3] / 1000; else if (m.unit === 'шт') pcs += e[3]; });
         h += '<div class="pmk rsk"><div><b>' + Object.keys(bset).length + '</b><span>🏭 партий списали сырьё</span></div>' +
           '<div><b>' + Object.keys(KC['']).length + '</b><span>🧾 позиций сырья и упаковки</span></div>' +
-          '<div><b>' + rQ(kg) + ' кг</b><span>🧪 сырья ушло (кг)</span></div><div><b>' + pN(pcs) + ' шт</b><span>📦 упаковки ушло (шт)</span></div></div>';
+          '<div><b>' + rQ(kg) + ' кг</b><span>🧪 сырья ушло (кг)</span></div><div><b>' + pN(pcs) + ' шт</b><span>📦 упаковки ушло (шт)</span></div>' +
+          (money ? '<div class="rsm"><b>💵 ' + som(sumOf(Ek)) + '</b><span>сырьё и упаковка на сумму' + (rsxKind ? ' (' + (rsxKind === 'raw' ? 'только сырьё' : 'только упаковка') + ')' : '') + ' · по себестоимости ERP</span></div>' : '') + '</div>';
         h += '<div class="osg rskind">' + [['', '🧾', 'Всё', 'c6'], ['raw', '🧪', 'Сырьё', 'c7'], ['pack', '📦', 'Упаковка', 'c4']].map(function (k) {
           return '<div class="ob ' + k[3] + (rsxKind === k[0] ? ' on' : '') + '" data-rk="' + k[0] + '"><i>' + k[1] + '</i><b>' + k[2] + '</b><u>' + Object.keys(KC[k[0]]).length + '</u></div>';
         }).join('') + '</div>';
@@ -3577,7 +3584,7 @@
             var dc = days === days ? (days < 14 ? 'lo' : days < 45 ? 'mid' : 'ok') : '';
             var r = '<div class="rsr' + (op ? ' op' : '') + '" data-ro="m' + x.pid + '"><div class="rh"><span class="ki">' + (rsxIsPack(m) ? '📦' : '🧪') + '</span><b>' + esc(m.name) + '</b>' +
               '<span class="rv">' + rQ(x.sum) + ' <small>' + esc(m.unit) + '</small></span></div>' +
-              '<div class="rm">' + x.ev.length + ' парт. · остаток ' + rQ(bal) + ' ' + esc(m.unit) + (dc ? ' · <span class="dl ' + dc + '">хватит ≈ ' + (days > 365 ? 'больше года' : Math.round(days) + ' дн.') + '</span>' : '') + '</div>';
+              '<div class="rm">' + (money && sumOf(x.ev) ? '<b class="sm">💵 ' + som(sumOf(x.ev)) + '</b> · ' : '') + x.ev.length + ' парт. · остаток ' + rQ(bal) + ' ' + esc(m.unit) + (dc ? ' · <span class="dl ' + dc + '">хватит ≈ ' + (days > 365 ? 'больше года' : Math.round(days) + ' дн.') + '</span>' : '') + '</div>';
             if (op) r += '<div class="rsl">' + x.ev.slice().reverse().map(function (e) {
               var b = D.batches[e[4]];
               return '<div><span class="t">' + esc(e[2].slice(8, 10) + '.' + e[2].slice(5, 7) + ' ' + e[2].slice(11, 16)) + '</span><span class="w">' + (b ? esc(b.name) + ' <small>№' + esc(b.num) + '</small>' : '<small>без партии ERP</small>') +
@@ -3597,10 +3604,10 @@
             var op = rsxOpen[x.k], F = x.b ? x.b.fact : 0;
             var r = '<div class="rsr bt' + (op ? ' op' : '') + '" data-ro="' + x.k + '"><div class="rh"><span class="ki">🏭</span><b>' + (x.b ? esc(x.b.name) : 'Без партии ERP') + '</b>' +
               '<span class="pln ' + (x.st === 2 ? 'per' : 'ter') + '">' + (x.st === 2 ? 'ПЕР' : 'ТЕР') + '</span></div>' +
-              '<div class="rm">' + esc(x.d.slice(8, 10) + '.' + x.d.slice(5, 7) + ' ' + x.d.slice(11, 16)) + (x.b ? ' · № ' + esc(x.b.num) + ' · выпущено <b>' + pN(F) + '</b> шт' : '') + ' · ' + x.ev.length + ' поз. списано</div>';
+              '<div class="rm">' + esc(x.d.slice(8, 10) + '.' + x.d.slice(5, 7) + ' ' + x.d.slice(11, 16)) + (x.b ? ' · № ' + esc(x.b.num) + ' · выпущено <b>' + pN(F) + '</b> шт' : '') + ' · ' + x.ev.length + ' поз. списано' + (money && sumOf(x.ev) ? '<br><b class="sm">💵 ' + som(sumOf(x.ev)) + '</b>' + (F ? ' · на 1 шт ≈ ' + pN(sumOf(x.ev) / F) + ' сум' : '') : '') + '</div>';
             if (op) r += '<div class="rsl">' + x.ev.slice().sort(function (a, b) { return D.mats[a[0]].name.localeCompare(D.mats[b[0]].name, 'ru'); }).map(function (e) {
               var m = D.mats[e[0]];
-              return '<div><span class="w">' + (rsxIsPack(m) ? '📦 ' : '🧪 ') + esc(m.name) + '</span><b>' + rQ(e[3]) + ' ' + esc(m.unit) + '</b></div>';
+              return '<div><span class="w">' + (rsxIsPack(m) ? '📦 ' : '🧪 ') + esc(m.name) + (money && cpOf(e) ? ' <small>· ' + som(e[3] * cpOf(e)) + '</small>' : '') + '</span><b>' + rQ(e[3]) + ' ' + esc(m.unit) + '</b></div>';
             }).join('') + '</div>';
             return r + '</div>';
           }).join('') || '<div class="empty">За этот период расхода нет</div>';
@@ -3625,7 +3632,7 @@
   var TAB_ACC = [['tab_ship', '🛒', 'Движение · Отгрузка'], ['tab_mv', '🚚', 'Движение · Перемещения'], ['tab_inc', '📥', 'Движение · Приходы'], ['tab_ret', '↩️', 'Движение · Возврат'],
                  ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
                  ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
-                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '🏭', 'Завод — расходы сырья и процессы цеха']];
+                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '🏭', 'Завод — расход сырья и процессы цеха'], ['rsx_sum', '💵', 'Завод · расход сырья в деньгах (сум)']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
               bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'] };   // 23.11.2026 (руководитель)
@@ -4705,11 +4712,11 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k === 'os' || k === 'pmv' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k === 'os' || k === 'pmv' || k === 'rsx_sum' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key === 'rsx_sum' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
       var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
