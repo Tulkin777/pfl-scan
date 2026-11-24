@@ -1000,6 +1000,9 @@
   #zs button.sm { width: auto; display: inline-block; flex: 0 0 auto; margin: 4px 4px 0 0; border: 0; border-radius: 9px; padding: 7px 11px; font-size: 13px; font-weight: 600; background: var(--bg2, #eef1f6); color: var(--fg, #1f2a44); box-shadow: 0 2px 0 rgba(0,0,0,.12); cursor: pointer; }   /* 24.11.2026: 👔 Должности */
   #zs .tile.on { transform: translateY(-2px); outline: 2px solid #fff; }
   #zs .zpf .t small, #zs .zlog small { display: block; }
+  #zs .zsh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  #zs .zsp { display: inline-block; font-size: 15px; font-weight: 800; line-height: 1.2; padding: 4px 10px; border-radius: 10px; border: 1.5px solid; }
+  #zs .zsp.zs0 { color: #8a93a6; background: #f1f3f7; border-color: #c9ced9; font-weight: 600; font-size: 13px; }
   .tile.w { --d: #6b7385; --s: rgba(100,110,130,.3); background: linear-gradient(150deg, #aab3c4, #7d879b); }
   .tile.new { animation: pop 1.2s ease-out; }
   @keyframes pop { 0% { filter: brightness(1.5); } 100% { filter: none; } }
@@ -1156,9 +1159,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'fa7b25c2', newBuild = '';
+  var BUILD = '1d442bc3', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795524725' || 0;
+  var BUILD_AT = +'1795525492' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4248,6 +4251,17 @@
   // Face ID — новые сами, 1С поиском, вручную); должность пишется своими словами + дата начала; смена — новой строкой,
   // старая остаётся в истории с датами. Позже — бонусы по должностям.
   var zsF = '*', zsOpen = {}, zsAdd = '', zsQ = '', zsFix = {};
+  // цвет должности: у каждой должности свой цвет (по порядку списка должностей, разные — разными цветами); [текст, фон плашки]
+  var ZS_PAL = [['#1f62c9', '#e3eeff'], ['#17964a', '#ddf5e6'], ['#c46a00', '#fff0dc'], ['#7f39ad', '#f1e4fa'], ['#c0285e', '#ffe3ee'],
+                ['#0b7f8a', '#dcf4f6'], ['#8a6d00', '#fff7cc'], ['#3b4fb8', '#e6e9ff'], ['#8a4b22', '#f6e8dd'], ['#c62828', '#ffe4e4'],
+                ['#4d7a12', '#ecf6dc'], ['#4a5568', '#e9edf2']];
+  var zsTitles = [];
+  function zsCol(t, onlyText) {
+    var s = String(t || '').toLowerCase().trim(), i = zsTitles.indexOf(s);
+    if (i < 0) { i = 0; for (var j = 0; j < s.length; j++) i = (i * 31 + s.charCodeAt(j)) >>> 0; }
+    var c = ZS_PAL[i % ZS_PAL.length];
+    return onlyText ? c[0] : 'color:' + c[0] + ';background:' + c[1] + ';border-color:' + c[0];
+  }
   function showZpStaff() {
     var me = cur;
     view.innerHTML = subTop('zp', 'Расчёт · Должности') + '<div id="zs"><div class="spin">Загрузка…</div></div>';
@@ -4272,12 +4286,14 @@
       var B = $('zs'); if (!B) return;
       if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       var y0 = window.scrollY;
+      zsTitles = (D.titles || []).map(function (t) { return String(t).toLowerCase().trim(); });
       var work = D.people.filter(function (p) { return !p.gone_now; }), gone = D.people.filter(function (p) { return p.gone_now; });
       if (zsF !== '*' && !(zsF === '~' ? gone.length : D.groups.some(function (g) { return (g[0] || '-') === zsF; }))) zsF = '*';   // должности больше нет — «Все»
       var h = '<div class="crt-l">Должности · работают ' + work.length + '</div><div class="crt-g gr">' +
         [['*', 'Все', work.length]].concat(D.groups.map(function (g) { return [g[0] || '-', g[0] || '🆕 Без должности', g[1]]; }))
           .concat(gone.length ? [['~', '🚪 Не работают', gone.length]] : []).map(function (g) {
-            return '<div class="cg' + (zsF === g[0] ? ' on' : '') + '" data-zf="' + esc(g[0]) + '">' + esc(g[1]) + '<small>' + g[2] + '</small></div>'; }).join('') + '</div>';
+            var c_ = g[0] !== '*' && g[0] !== '-' && g[0] !== '~' ? ' style="color:' + zsCol(g[0], 1) + ';font-weight:700"' : '';
+            return '<div class="cg' + (zsF === g[0] ? ' on' : '') + '" data-zf="' + esc(g[0]) + '"' + c_ + '>' + esc(g[1]) + '<small>' + g[2] + '</small></div>'; }).join('') + '</div>';
       h += '<input class="txt" id="zsq" placeholder="🔎 Найти по имени" value="' + esc(zsQ) + '" style="width:100%;margin:6px 0">';
       h += '<div class="mgrid" style="margin-bottom:8px"><div class="tile cat g' + (zsAdd === 'man' ? ' on' : '') + '" data-za="man"><div class="e">➕</div><div class="n">Добавить вручную</div><div class="c">кого нет в 1С и Face ID</div></div>' +
         '<div class="tile cat b' + (zsAdd === '1c' ? ' on' : '') + '" data-za="1c"><div class="e">🔎</div><div class="n">Добавить из 1С</div><div class="c">поиск по ' + (D.c1 || []).length + ' сотрудникам</div></div></div>';
@@ -4294,11 +4310,14 @@
       h += '<div class="msec">' + (zsF === '*' ? 'ВСЕ СОТРУДНИКИ ЗАВОДА' : zsF === '~' ? 'НЕ РАБОТАЮТ' : zsF === '-' ? 'БЕЗ ДОЛЖНОСТИ' : esc(zsF.toUpperCase())) + ' · ' + list.length + '</div>';
       h += list.map(function (p) {
         var op = zsOpen[p.id];
-        var sub = p.cur ? '👔 <span style="font-weight:700">' + esc(p.cur) + '</span> · с ' + dd(p.cur_from) : '🆕 без должности' + (p.hint ? ' · в ведомости: ' + esc(p.hint) : '');
-        if (p.next) sub += '<br>⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
-        if (p.gone) sub += '<br>🚪 не работает с ' + dd(p.gone.from);
-        var r = '<div class="zpf" style="display:block' + (p.gone_now ? ';opacity:.6' : '') + '"><div data-zo="' + p.id + '" style="display:flex;align-items:center;gap:8px"><div class="t" style="flex:1"><b style="text-transform:none">' + esc(p.name) + '</b>' +
-          '<small>' + sub + '</small>' + (p.c1 && p.c1 !== p.name ? '<small style="opacity:.7">1С: ' + esc(p.c1) + '</small>' : '') + '</div><b>' + (op ? '▲' : '▼') + '</b></div>';
+        // 24.11.2026 (руководитель): должность — крупной цветной плашкой рядом с именем; у одной должности один цвет
+        var pill = p.cur ? '<span class="zsp" style="' + zsCol(p.cur) + '">' + esc(p.cur) + '</span>' : '<span class="zsp zs0">🆕 без должности</span>';
+        var sub = p.cur ? 'с ' + dd(p.cur_from) : (p.hint ? 'в ведомости: ' + esc(p.hint) : '');
+        if (p.next) sub += (sub ? '<br>' : '') + '⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
+        if (p.gone) sub += (sub ? '<br>' : '') + '🚪 не работает с ' + dd(p.gone.from);
+        var r = '<div class="zpf" style="display:block' + (p.gone_now ? ';opacity:.6' : '') + '"><div data-zo="' + p.id + '" style="display:flex;align-items:center;gap:8px"><div class="t" style="flex:1">' +
+          '<div class="zsh"><b style="text-transform:none">' + esc(p.name) + '</b>' + pill + '</div>' +
+          (sub ? '<small>' + sub + '</small>' : '') + (p.c1 && p.c1 !== p.name ? '<small style="opacity:.7">1С: ' + esc(p.c1) + '</small>' : '') + '</div><b>' + (op ? '▲' : '▼') + '</b></div>';
         if (op) {
           r += '<div style="margin-top:8px"><small class="zl">' + (p.pos.length ? '🔄 Сменить должность (прежняя останется в истории)' : '👔 Должность') + '</small>' +
             '<input class="txt" list="zstl" data-zt="' + p.id + '" placeholder="Напишите должность" style="width:100%;margin:4px 0">' +
@@ -4310,7 +4329,7 @@
             if (fx) return '<div class="zlog" style="display:block"><input class="txt" data-fxt="' + p.id + ':' + x.id + '" value="' + esc(x.title) + '" style="width:100%;margin-bottom:4px">' +
               '<input class="txt" type="date" data-fxd="' + p.id + ':' + x.id + '" value="' + x.from + '" style="width:100%;margin-bottom:4px">' +
               '<button class="sm" data-fxs="' + p.id + ':' + x.id + '">💾 Исправить</button> <button class="sm" data-fxc="' + p.id + ':' + x.id + '">Отмена</button></div>';
-            return '<div class="zlog">' + (x.to ? '🗄 ' : '✅ ') + '<b>' + esc(x.title) + '</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : 'по сей день') +
+            return '<div class="zlog">' + (x.to ? '🗄 ' : '✅ ') + '<b style="color:' + zsCol(x.title, 1) + '">' + esc(x.title) + '</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : 'по сей день') +
               '<br><small>' + esc(x.by) + ' · ' + esc(x.at) + '</small> <button class="sm" data-fx="' + p.id + ':' + x.id + '">✏️</button>' +
               (D.admin ? ' <button class="sm" data-fdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
           }).join('') || '<div class="empty" style="padding:8px">Должность ещё не вписана</div>');
