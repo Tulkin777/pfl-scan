@@ -1197,9 +1197,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7092c24d', newBuild = '';
+  var BUILD = '37faa517', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795528239' || 0;
+  var BUILD_AT = +'1795529028' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4598,56 +4598,67 @@
     }
     load('/api/zp_batch', { month: zbMonth }, draw);
   }
-  // 24.11.2026 (руководитель): 🎁 Бонусы → ⏰ Сверхурочные — ранний приход (до 08:50), после смены (после 18:00) и выходные,
-  // по табелю Камола из отчёта посещения; сумма = часы × ставка за час (ставит руководитель с месяца).
+  // 24.11.2026 (руководитель): 🏭 Завод → ⏰ Сверхурочные — наверху правила (начало и конец работы, рабочие дни пн…вс, ставка за час);
+  // всё, что вне этого времени и в нерабочие дни — сверхурочно. Входы/выходы — Face ID (отчёт посещения).
   var otMonth = '', otOpen = {};
   function showZpOt() {
     var me = cur;
-    view.innerHTML = subTop('zp', 'Бонусы · Сверхурочные') + '<div id="zot"><div class="spin">Читаю табель…</div></div>';
+    view.innerHTML = subTop('zp', 'Бонусы · Завод · Сверхурочные') + '<div id="zot"><div class="spin">Считаю по отчёту посещения…</div></div>';
     bindTabs();
     var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    var WDN = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var HM = function (m) { m = +m || 0; return m >= 60 ? Math.floor(m / 60) + ' ч ' + ('0' + m % 60).slice(-2) + ' мин' : m + ' мин'; };
     function draw(D) {
       if (cur !== me) return;
       var B = $('zot'); if (!B) return;
       if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       otMonth = D.month;
-      var y0 = window.scrollY, mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
-      var h = '<div class="crt-l">Месяц (есть табель)</div><div class="crt-g gr">' + (D.months.length ? D.months : [D.month]).map(function (k) {
+      var y0 = window.scrollY, mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4), C = D.conf || {}, wk = C.days || [];
+      // правила — сверху
+      var h = '<div class="msec">ПРАВИЛА · ' + esc(mname.toUpperCase()) + '</div>' +
+        '<div class="zpf" style="flex-wrap:wrap"><div class="t"><b style="text-transform:none">🕘 Начало работы</b></div><input class="txt" type="time" id="otst" style="width:110px" value="' + esc(C.start) + '"></div>' +
+        '<div class="zpf" style="flex-wrap:wrap"><div class="t"><b style="text-transform:none">🕕 Конец работы</b></div><input class="txt" type="time" id="otend" style="width:110px" value="' + esc(C.end) + '"></div>' +
+        '<small class="zl">Рабочие дни (отмеченные; остальные дни — сверхурочно)</small><div class="zd2">' + WDN.map(function (n, i) {
+          return '<label class="zck big"><input type="checkbox" data-wd="' + i + '"' + (wk.indexOf(i) >= 0 ? ' checked' : '') + '> ' + n + '</label>'; }).join('') + '</div>' +
+        '<div class="zpf" style="flex-wrap:wrap"><div class="t"><b style="text-transform:none">💵 Ставка за 1 час сверхурочно</b><small>одна для всех · сумма = минуты ÷ 60 × ставка</small></div>' +
+        '<input class="txt" id="othour" inputmode="numeric" style="width:120px" placeholder="сум" value="' + (C.hour || '') + '"></div>' +
+        '<small class="zl">С какого месяца</small><div class="zd2"><label class="zck big"><input type="checkbox" data-otm="' + D.month + '" checked> с этого — ' + esc(mname) + '</label>' +
+        '<label class="zck big"><input type="checkbox" data-otm="' + D.next_month + '"> со следующего</label></div><div class="ivbar"><button class="go" id="otsave">💾 Сохранить правила</button></div>' +
+        '<div class="note" style="margin-top:0">Сверхурочно: в рабочий день — приход раньше ' + esc(C.start) + ' и уход позже ' + esc(C.end) + '; в нерабочий день (' +
+        esc(WDN.filter(function (n, i) { return wk.indexOf(i) < 0; }).join(', ') || 'нет') + ') и в праздники — всё время от входа до выхода. День без отметки выхода — не считается.</div>';
+      h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + (D.months.length ? D.months : [D.month]).map(function (k) {
         return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-om="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
       if (!D.have) {
-        h += '<div class="empty">Табеля за ' + esc(mname.toLowerCase()) + ' ещё нет. Загрузите отчёт посещения: 💵 Расчёт зарплаты → 📋 Посещение → 📎 Загрузить — Камол сделает табель.</div>';
+        h += '<div class="empty">Отчёта посещения за ' + esc(mname.toLowerCase()) + ' ещё нет. Загрузите: 💵 Расчёт зарплаты → 📋 Посещение → 📎 Загрузить.</div>';
       } else {
-        h += '<div class="crt-g st3"><div class="cb eq"><b>' + HM(D.min.m) + '</b><span>☀️ рано утром (до 08:50)</span></div>' +
-          '<div class="cb"><b>' + HM(D.min.e) + '</b><span>🌙 после смены (после 18:00)</span></div><div class="cb"><b>' + HM(D.min.w) + '</b><span>📅 в выходные</span></div></div>';
-        h += '<div class="zisum"><b>' + (D.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>сверхурочные · ' + esc(mname.toLowerCase()) + (D.hour ? ' · ' + fmtq(D.hour) + ' сум за час' : '') + '</span></div>';
+        h += '<div class="crt-g st3"><div class="cb eq"><b>' + HM(D.min.m) + '</b><span>☀️ раньше начала</span></div>' +
+          '<div class="cb"><b>' + HM(D.min.e) + '</b><span>🌙 позже конца</span></div><div class="cb"><b>' + HM(D.min.w) + '</b><span>📅 нерабочие дни</span></div></div>';
+        h += '<div class="zisum"><b>' + (C.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>сверхурочные · ' + esc(mname.toLowerCase()) + '</span></div>';
         h += D.people.map(function (p, i) {
           var op = otOpen[p.who];
           return '<div class="zpf" data-ow="' + esc(p.who) + '" style="flex-wrap:wrap"><span class="nn">' + (i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b>' +
             '<small>' + (p.pos ? esc(p.pos) + ' · ' : '') + '☀️ ' + HM(p.m) + ' · 🌙 ' + HM(p.e) + ' · 📅 ' + HM(p.w) + '</small>' +
             (op ? '<small>' + p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') + '</small>' : '') +
-            '</div><b>' + HM(p.min) + (D.hour ? '<br>' + fmtq(p.sum) + ' сум' : '') + '</b></div>';
+            '</div><b>' + HM(p.min) + (C.hour ? '<br>' + fmtq(p.sum) + ' сум' : '') + '</b></div>';
         }).join('');
       }
-      h += '<div class="msec">СТАВКА ЗА 1 ЧАС СВЕРХУРОЧНО</div><div class="zpf"><div class="t"><b style="text-transform:none">Сум за час</b><small>сумма = минуты ÷ 60 × ставка</small></div>' +
-        '<input class="txt" id="othour" inputmode="numeric" style="width:120px" value="' + (D.hour || '') + '"></div>' +
-        '<small class="zl">С какого месяца</small><div class="zd2"><label class="zck big"><input type="checkbox" data-otm="' + D.month + '" checked> с этого — ' + esc(mname) + '</label>' +
-        '<label class="zck big"><input type="checkbox" data-otm="' + D.next_month + '"> со следующего</label></div><div class="ivbar"><button class="go" id="otsave">💾 Сохранить ставку</button></div>';
-      h += '<div class="note">Сверхурочно: пришёл раньше 08:50, ушёл позже 18:00, работал в субботу, воскресенье или праздник. Минуты — из табеля Камола по отчёту посещения (Face ID). Нажмите человека — дни и откуда минуты.</div>';
       h += '<div class="msec">ЖУРНАЛ</div>' + ((D.log || []).map(function (l) { return '<div class="zlog">' + esc(l.at) + ' · ' + esc(l.by) + ' · ' + esc(l.text) + '</div>'; }).join('') || '<div class="empty" style="padding:8px">Пока изменений нет</div>');
       B.innerHTML = h; window.scrollTo(0, y0);
       Array.prototype.forEach.call(B.querySelectorAll('[data-om]'), function (el) { el.onclick = function () { load('/api/zp_ot', { month: el.getAttribute('data-om') }, draw); }; });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-ow]'), function (el) { el.onclick = function (ev) { if (ev.target.closest('input')) return; var k = el.getAttribute('data-ow'); otOpen[k] = !otOpen[k]; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-ow]'), function (el) { el.onclick = function () { var k = el.getAttribute('data-ow'); otOpen[k] = !otOpen[k]; draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-otm]'), function (i) {
         i.onchange = function () { Array.prototype.forEach.call(B.querySelectorAll('[data-otm]'), function (j) { j.checked = j === i; }); };
       });
       $('otsave').onclick = function () {
-        var b = this, v = $('othour').value.replace(/\s/g, ''), fi = B.querySelector('[data-otm]:checked'), frm = fi ? fi.getAttribute('data-otm') : D.month;
-        var q_ = 'Ставка сверхурочно: ' + (v || 0) + ' сум за час, с ' + frm + '. Сохранить?';
+        var b = this, fi = B.querySelector('[data-otm]:checked'), frm = fi ? fi.getAttribute('data-otm') : D.month;
+        var days = Array.prototype.map.call(B.querySelectorAll('[data-wd]:checked'), function (i) { return +i.getAttribute('data-wd'); });
+        var conf = { start: $('otst').value, end: $('otend').value, days: days, hour: $('othour').value.replace(/\s/g, '') || 0 };
+        var q_ = 'Правила сверхурочных с ' + frm + ':\nработа ' + conf.start + '–' + conf.end + ', рабочие дни: ' + days.map(function (i) { return WDN[i]; }).join(', ') +
+          '\nставка ' + conf.hour + ' сум за час. Сохранить?';
         var go_ = function (yes) {
           if (!yes) return;
           b.disabled = true;
-          call('/api/zp_ot_set', { month: otMonth, from: frm, hour: v }, 30000).then(function (q) {
+          call('/api/zp_ot_set', { month: otMonth, from: frm, conf: conf }, 30000).then(function (q) {
             b.disabled = false; if (!q.ok) return say(q.text); haptic('success'); say('Сохранено: ' + q.text); draw(q);
           }).catch(function (e) { b.disabled = false; ivErr(e); });
         };
@@ -4655,6 +4666,18 @@
       };
     }
     load('/api/zp_ot', { month: otMonth }, draw);
+  }
+  // 24.11.2026 (руководитель): 🎁 Бонусы → сначала место: 🏭 Завод (внутри — инвентаризация, за партию, сверхурочные); офис — позже
+  function showZpBonusZav() {
+    view.innerHTML = subTop('zp', 'Бонусы · Завод') + '<div id="bzav"></div>';
+    bindTabs();
+    var tl = (zpInvOn ? '<div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div>' : '') +
+      (isAdmin ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div><div class="ob c2" id="zotgo"><i>⏰</i><b>Сверхурочные</b></div>' : '');
+    $('bzav').innerHTML = tl ? '<div class="osg">' + tl + '</div>' : '<div class="empty">Бонусов завода вам пока не дано</div>';
+    var hp = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} };
+    if ($('zinvgo')) $('zinvgo').onclick = function () { hp(); go(showZpInv); };
+    if ($('zbgo')) $('zbgo').onclick = function () { hp(); go(showZpBatch); };
+    if ($('zotgo')) $('zotgo').onclick = function () { hp(); go(showZpOt); };
   }
   // 23.11.2026 (руководитель): 🎁 Бонусы — строки «кому · за что · ✅ сделано · сумма», итог считается сам
   // (только строки с ✅): по сотруднику и за месяц. Каждое изменение сохраняется сразу.
@@ -4670,12 +4693,9 @@
       // 24.11.2026 (руководитель): в «Бонусах» — только виды бонусов квадратами; месяц, суммы и «Добавить» — внутри каждого вида.
       // Новый вид бонуса — новый квадрат здесь. Ручные строки (zp_bonus.json) не удалены — просто не показываются.
       if (true) {
-        var tl = (zpInvOn ? '<div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div>' : '') +
-          (isAdmin ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div><div class="ob c2" id="zotgo"><i>⏰</i><b>Сверхурочные</b></div>' : '');   // 24.11.2026: новое — пока только руководителю
-        B.innerHTML = tl ? '<div class="osg">' + tl + '</div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
-        if ($('zinvgo')) $('zinvgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpInv); };
-        if ($('zbgo')) $('zbgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpBatch); };
-        if ($('zotgo')) $('zotgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpOt); };
+        // 24.11.2026 (руководитель): сначала место — 🏭 Завод (инвентаризация, за партию, сверхурочные внутри); 🏢 Офис — когда появятся бонусы офиса
+        B.innerHTML = (zpInvOn || isAdmin) ? '<div class="osg"><div class="ob c1" id="bzavgo"><i>🏭</i><b>Завод</b></div></div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
+        if ($('bzavgo')) $('bzavgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpBonusZav); };
         return;
       }
       bonMonth = D.month;
