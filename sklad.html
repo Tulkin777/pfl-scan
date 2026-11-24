@@ -997,6 +997,9 @@
   .tile.p { --d: #6a2b91; --s: rgba(142,68,173,.35); background: linear-gradient(150deg, #b46ee0, #7f39ad); }
   .tile.y { --d: #a77306; --s: rgba(212,160,23,.35); background: linear-gradient(150deg, #ffc94a, #e09a10); }
   .tile.k { --d: #b02d63; --s: rgba(220,60,120,.35); background: linear-gradient(150deg, #ff7eb0, #d9437f); }
+  #zs button.sm { width: auto; display: inline-block; flex: 0 0 auto; margin: 4px 4px 0 0; border: 0; border-radius: 9px; padding: 7px 11px; font-size: 13px; font-weight: 600; background: var(--bg2, #eef1f6); color: var(--fg, #1f2a44); box-shadow: 0 2px 0 rgba(0,0,0,.12); cursor: pointer; }   /* 24.11.2026: 👔 Должности */
+  #zs .tile.on { transform: translateY(-2px); outline: 2px solid #fff; }
+  #zs .zpf .t small, #zs .zlog small { display: block; }
   .tile.w { --d: #6b7385; --s: rgba(100,110,130,.3); background: linear-gradient(150deg, #aab3c4, #7d879b); }
   .tile.new { animation: pop 1.2s ease-out; }
   @keyframes pop { 0% { filter: brightness(1.5); } 100% { filter: none; } }
@@ -1153,9 +1156,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6f8c603c', newBuild = '';
+  var BUILD = 'fa7b25c2', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795523990' || 0;
+  var BUILD_AT = +'1795524725' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4156,7 +4159,8 @@
                  ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '🏭', 'Завод — расход сырья и процессы цеха'], ['rsx_sum', '💵', 'Завод · расход сырья в деньгах (сум)'], ['c1sync', '🔄', 'Синхронизация 1С (вся) на главном экране']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
-              bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'] };   // 23.11.2026 (руководитель)
+              bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'],   // 23.11.2026 (руководитель)
+              staff: ['k', '👔', 'Должности', 'сотрудники завода · история'] };   // 24.11.2026 (руководитель)
   function showZp(box) {
     var me = cur;
     load('/api/zp', {}, function (D) {
@@ -4194,9 +4198,9 @@
       if (k === 'dav' && D.dav_up) h += '<div class="ivbar"><button class="go" id="zpup">📎 Загрузить отчёт посещения</button></div>' +
         '<div class="note" style="margin-top:0">Бот документов попросит файл Excel из iVMS-4200 в личке, агент Камол сразу разберёт посещение и табель.</div>';
       if (k === 'pay') {   // 24.11.2026: внутри расчёта — кнопки «Посещение» и «Табель в минутах»
-        var sub = ['dav', 'tab'].filter(function (q) { return D.parts[q]; });
-        if (sub.length) h += '<div class="mgrid" style="margin-bottom:10px">' + sub.map(function (q) { var t2 = ZPT[q];
-          return '<div class="tile cat ' + t2[0] + (sub.length === 1 ? ' wide' : '') + '" data-zsub="' + q + '"><div class="e">' + t2[1] + '</div><div class="n">' + t2[2] + '</div><div class="c">' + t2[3] + '</div></div>'; }).join('') + '</div>';
+        var sub = ['dav', 'tab', 'staff'].filter(function (q) { return q === 'staff' ? D.staff : D.parts[q]; });   // 24.11.2026: + 👔 Должности
+        if (sub.length) h += '<div class="mgrid" style="margin-bottom:10px">' + sub.map(function (q, qi) { var t2 = ZPT[q];
+          return '<div class="tile cat ' + t2[0] + (sub.length % 2 === 1 && qi === sub.length - 1 ? ' wide' : '') + '" data-zsub="' + q + '"><div class="e">' + t2[1] + '</div><div class="n">' + t2[2] + '</div><div class="c">' + t2[3] + '</div></div>'; }).join('') + '</div>';
       }
       var parts = k === 'pay' ? ['pay', 'ved'] : [k];
       parts.forEach(function (p) {
@@ -4222,7 +4226,7 @@
         };
       });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zsub]'), function (el) {
-        el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} var q = el.getAttribute('data-zsub'); go(function () { showZpPart(q); }); };
+        el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} var q = el.getAttribute('data-zsub'); go(function () { if (q === 'staff') showZpStaff(); else showZpPart(q); }); };
       });
       if ($('zpup')) $('zpup').onclick = function () {
         var b = this; b.disabled = true; b.textContent = '⏳';
@@ -4239,6 +4243,151 @@
         };
       });
     });
+  }
+  // 24.11.2026 (руководитель «Да, делай»): 💵 Расчёт зарплаты завода → 👔 Должности. Сотрудники завода (ведомость Камола,
+  // Face ID — новые сами, 1С поиском, вручную); должность пишется своими словами + дата начала; смена — новой строкой,
+  // старая остаётся в истории с датами. Позже — бонусы по должностям.
+  var zsF = '*', zsOpen = {}, zsAdd = '', zsQ = '', zsFix = {};
+  function showZpStaff() {
+    var me = cur;
+    view.innerHTML = subTop('zp', 'Расчёт · Должности') + '<div id="zs"><div class="spin">Загрузка…</div></div>';
+    bindTabs();
+    var dd = function (s) { return s ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4) : ''; };
+    var SRC = { ved: 'ведомость Камола', faceid: 'Face ID', '1c': 'из 1С', manual: 'вручную' };
+    function send(body, ask, D) {
+      var go_ = function (yes) {
+        if (!yes) return;
+        call('/api/zp_staff_set', body, 30000).then(function (q) {
+          if (!q.ok) return say(q.text);
+          haptic(q.ok_act ? 'success' : 'warning'); if (!q.ok_act) say(q.text); else if (body.act === 'add' || body.act === 'add1c') { zsAdd = ''; say(q.text); }
+          if (q.ok_act) zsFix = {};
+          draw(q);
+        }).catch(ivErr);
+      };
+      if (!ask) return go_(true);
+      try { tg.showConfirm(ask.slice(0, 250), go_); } catch (e) { go_(confirm(ask)); }
+    }
+    function draw(D) {
+      if (cur !== me) return;
+      var B = $('zs'); if (!B) return;
+      if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var y0 = window.scrollY;
+      var work = D.people.filter(function (p) { return !p.gone_now; }), gone = D.people.filter(function (p) { return p.gone_now; });
+      if (zsF !== '*' && !(zsF === '~' ? gone.length : D.groups.some(function (g) { return (g[0] || '-') === zsF; }))) zsF = '*';   // должности больше нет — «Все»
+      var h = '<div class="crt-l">Должности · работают ' + work.length + '</div><div class="crt-g gr">' +
+        [['*', 'Все', work.length]].concat(D.groups.map(function (g) { return [g[0] || '-', g[0] || '🆕 Без должности', g[1]]; }))
+          .concat(gone.length ? [['~', '🚪 Не работают', gone.length]] : []).map(function (g) {
+            return '<div class="cg' + (zsF === g[0] ? ' on' : '') + '" data-zf="' + esc(g[0]) + '">' + esc(g[1]) + '<small>' + g[2] + '</small></div>'; }).join('') + '</div>';
+      h += '<input class="txt" id="zsq" placeholder="🔎 Найти по имени" value="' + esc(zsQ) + '" style="width:100%;margin:6px 0">';
+      h += '<div class="mgrid" style="margin-bottom:8px"><div class="tile cat g' + (zsAdd === 'man' ? ' on' : '') + '" data-za="man"><div class="e">➕</div><div class="n">Добавить вручную</div><div class="c">кого нет в 1С и Face ID</div></div>' +
+        '<div class="tile cat b' + (zsAdd === '1c' ? ' on' : '') + '" data-za="1c"><div class="e">🔎</div><div class="n">Добавить из 1С</div><div class="c">поиск по ' + (D.c1 || []).length + ' сотрудникам</div></div></div>';
+      if (zsAdd === 'man') h += '<div class="zpf" style="display:block"><b>➕ Новый сотрудник</b>' +
+        '<input class="txt" id="zan" placeholder="Имя и фамилия" style="width:100%;margin:6px 0">' +
+        '<input class="txt" id="zat" list="zstl" placeholder="Должность (можно потом)" style="width:100%;margin-bottom:6px">' +
+        '<small class="zl">Начало работы</small><input class="txt" type="date" id="zad" value="' + D.today + '" style="width:100%;margin-bottom:6px">' +
+        '<div class="ivbar"><button class="go" id="zasave">💾 Добавить</button></div></div>';
+      if (zsAdd === '1c') {
+        h += '<div class="zpf" style="display:block"><b>🔎 Сотрудник из 1С</b><input class="txt" id="zs1" placeholder="Начните писать фамилию" style="width:100%;margin:6px 0"><div id="zs1l"></div></div>';
+      }
+      var list = zsF === '~' ? gone : work.filter(function (p) { return zsF === '*' || (zsF === '-' ? !p.cur : p.cur === zsF); });
+      if (zsQ) list = list.filter(function (p) { return [p.name, p.c1, p.fid].join(' ').toLowerCase().indexOf(zsQ.toLowerCase()) >= 0; });
+      h += '<div class="msec">' + (zsF === '*' ? 'ВСЕ СОТРУДНИКИ ЗАВОДА' : zsF === '~' ? 'НЕ РАБОТАЮТ' : zsF === '-' ? 'БЕЗ ДОЛЖНОСТИ' : esc(zsF.toUpperCase())) + ' · ' + list.length + '</div>';
+      h += list.map(function (p) {
+        var op = zsOpen[p.id];
+        var sub = p.cur ? '👔 <span style="font-weight:700">' + esc(p.cur) + '</span> · с ' + dd(p.cur_from) : '🆕 без должности' + (p.hint ? ' · в ведомости: ' + esc(p.hint) : '');
+        if (p.next) sub += '<br>⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
+        if (p.gone) sub += '<br>🚪 не работает с ' + dd(p.gone.from);
+        var r = '<div class="zpf" style="display:block' + (p.gone_now ? ';opacity:.6' : '') + '"><div data-zo="' + p.id + '" style="display:flex;align-items:center;gap:8px"><div class="t" style="flex:1"><b style="text-transform:none">' + esc(p.name) + '</b>' +
+          '<small>' + sub + '</small>' + (p.c1 && p.c1 !== p.name ? '<small style="opacity:.7">1С: ' + esc(p.c1) + '</small>' : '') + '</div><b>' + (op ? '▲' : '▼') + '</b></div>';
+        if (op) {
+          r += '<div style="margin-top:8px"><small class="zl">' + (p.pos.length ? '🔄 Сменить должность (прежняя останется в истории)' : '👔 Должность') + '</small>' +
+            '<input class="txt" list="zstl" data-zt="' + p.id + '" placeholder="Напишите должность" style="width:100%;margin:4px 0">' +
+            (p.hint && !p.pos.length ? '<button class="sm" data-zh="' + p.id + '" data-v="' + esc(p.hint) + '" style="margin-bottom:6px">взять «' + esc(p.hint) + '» из ведомости</button>' : '') +
+            '<small class="zl">С какого числа</small><input class="txt" type="date" data-zd="' + p.id + '" value="' + D.today + '" style="width:100%;margin:4px 0">' +
+            '<div class="ivbar"><button class="go" data-zsv="' + p.id + '">💾 Сохранить должность</button></div>';
+          r += '<div class="msec" style="margin-top:8px">ИСТОРИЯ ДОЛЖНОСТЕЙ · ' + p.pos.length + '</div>' + (p.pos.slice().reverse().map(function (x) {
+            var fx = zsFix[p.id + ':' + x.id];
+            if (fx) return '<div class="zlog" style="display:block"><input class="txt" data-fxt="' + p.id + ':' + x.id + '" value="' + esc(x.title) + '" style="width:100%;margin-bottom:4px">' +
+              '<input class="txt" type="date" data-fxd="' + p.id + ':' + x.id + '" value="' + x.from + '" style="width:100%;margin-bottom:4px">' +
+              '<button class="sm" data-fxs="' + p.id + ':' + x.id + '">💾 Исправить</button> <button class="sm" data-fxc="' + p.id + ':' + x.id + '">Отмена</button></div>';
+            return '<div class="zlog">' + (x.to ? '🗄 ' : '✅ ') + '<b>' + esc(x.title) + '</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : 'по сей день') +
+              '<br><small>' + esc(x.by) + ' · ' + esc(x.at) + '</small> <button class="sm" data-fx="' + p.id + ':' + x.id + '">✏️</button>' +
+              (D.admin ? ' <button class="sm" data-fdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
+          }).join('') || '<div class="empty" style="padding:8px">Должность ещё не вписана</div>');
+          r += '<div class="note">Откуда: ' + esc(SRC[p.src] || p.src) + (p.fid ? ' · Face ID: ' + esc(p.fid) : '') + ' · в списке с ' + dd(p.added) + '</div>';
+          r += '<div class="ivbar" style="flex-wrap:wrap;gap:6px">' + (p.gone ? '<button class="sm" data-zback="' + p.id + '">↩️ Снова работает</button>'
+            : '<button class="sm" data-zgone="' + p.id + '">🚪 Не работает с даты выше</button>') +
+            '<button class="sm" data-zren="' + p.id + '">✏️ Имя</button>' +
+            (D.admin && (p.src === 'manual' || p.src === '1c') ? '<button class="sm" data-zdelp="' + p.id + '">🗑 Убрать из списка</button>' : '') + '</div>' +
+            '<input class="txt" data-zrn="' + p.id + '" value="' + esc(p.name) + '" style="width:100%;margin-top:4px;display:none"></div>';
+        }
+        return r + '</div>';
+      }).join('') || '<div class="empty" style="padding:10px">Никого нет</div>';
+      h += '<datalist id="zstl">' + (D.titles || []).map(function (t) { return '<option value="' + esc(t) + '">'; }).join('') + '</datalist>';
+      h += '<div class="note">Должность — ваша, может отличаться от 1С. Смена — новая строка с даты, прежняя закрывается днём раньше и остаётся в истории. ✏️ — исправить ошибку в строке. Новые люди из Face ID появляются сами. В 1С и ERP ничего не пишется.</div>';
+      h += '<div class="msec">ЖУРНАЛ ИЗМЕНЕНИЙ</div>' + ((D.log || []).slice(0, 20).map(function (l) { return '<div class="zlog">' + esc(l.at) + ' · ' + esc(l.by) + ' · ' + esc(l.name) + ' · ' + esc(l.text) + '</div>'; }).join('') || '<div class="empty" style="padding:8px">Пока изменений нет</div>');
+      B.innerHTML = h; window.scrollTo(0, y0);
+      var all = function (sel, fn) { Array.prototype.forEach.call(B.querySelectorAll(sel), fn); };
+      var nm = function (id) { return (D.people.filter(function (p) { return p.id === id; })[0] || {}).name || ''; };
+      all('[data-zf]', function (el) { el.onclick = function () { zsF = el.getAttribute('data-zf'); draw(D); }; });
+      all('[data-zo]', function (el) { el.onclick = function () { var k = el.getAttribute('data-zo'); zsOpen[k] = !zsOpen[k]; draw(D); }; });
+      all('[data-za]', function (el) { el.onclick = function () { var k = el.getAttribute('data-za'); zsAdd = zsAdd === k ? '' : k; draw(D); }; });
+      $('zsq').oninput = function () { zsQ = this.value; var c = this.selectionStart; draw(D); var i = $('zsq'); i.focus(); try { i.setSelectionRange(c, c); } catch (e) {} };
+      if ($('zasave')) $('zasave').onclick = function () {
+        var n = $('zan').value.trim(), t = $('zat').value.trim(), d = $('zad').value;
+        if (n.length < 2) return say('Напишите имя сотрудника.');
+        send({ act: 'add', name: n, title: t, from: d }, 'Добавить: ' + n + (t ? ' — ' + t + ' с ' + dd(d) : '') + '?', D);
+      };
+      if ($('zs1')) {
+        var c1draw = function () {
+          var q = $('zs1').value.trim().toLowerCase(), L = $('zs1l');
+          if (q.length < 2) { L.innerHTML = '<small class="zl">Напишите 2 буквы и больше</small>'; return; }
+          var have = {}; D.people.forEach(function (p) { have[(p.c1 || p.name).toLowerCase()] = 1; });
+          var m = (D.c1 || []).filter(function (n) { return n.toLowerCase().indexOf(q) >= 0; }).slice(0, 15);
+          L.innerHTML = m.map(function (n) { return '<div class="zlog" data-c1="' + esc(n) + '">' + (have[n.toLowerCase()] ? '✅ ' : '➕ ') + esc(n) + '</div>'; }).join('') || '<small class="zl">Не найдено</small>';
+          Array.prototype.forEach.call(L.querySelectorAll('[data-c1]'), function (el) {
+            el.onclick = function () { var n = el.getAttribute('data-c1'); if (have[n.toLowerCase()]) return say('Уже есть в списке.'); send({ act: 'add1c', name: n }, 'Добавить из 1С: ' + n + '?', D); };
+          });
+        };
+        $('zs1').oninput = c1draw; c1draw();
+      }
+      all('[data-zh]', function (b) { b.onclick = function () { B.querySelector('[data-zt="' + b.getAttribute('data-zh') + '"]').value = b.getAttribute('data-v'); }; });
+      all('[data-zsv]', function (b) {
+        b.onclick = function () {
+          var id = b.getAttribute('data-zsv'), t = B.querySelector('[data-zt="' + id + '"]').value.trim(), d = B.querySelector('[data-zd="' + id + '"]').value;
+          if (!t) return say('Напишите должность.');
+          if (!d) return say('Укажите дату начала.');
+          send({ act: 'set', id: id, title: t, from: d }, nm(id) + ' — «' + t + '» с ' + dd(d) + '. Сохранить?', D);
+        };
+      });
+      all('[data-fx]', function (b) { b.onclick = function () { zsFix[b.getAttribute('data-fx')] = 1; draw(D); }; });
+      all('[data-fxc]', function (b) { b.onclick = function () { delete zsFix[b.getAttribute('data-fxc')]; draw(D); }; });
+      all('[data-fxs]', function (b) {
+        b.onclick = function () {
+          var k = b.getAttribute('data-fxs'), id = k.split(':')[0], row = k.split(':')[1];
+          var t = B.querySelector('[data-fxt="' + k + '"]').value.trim(), d = B.querySelector('[data-fxd="' + k + '"]').value;
+          send({ act: 'fix', id: id, row: row, title: t, from: d }, 'Исправить строку: «' + t + '» с ' + dd(d) + '?', D);
+        };
+      });
+      all('[data-fdel]', function (b) {
+        b.onclick = function () { var k = b.getAttribute('data-fdel'); send({ act: 'delrow', id: k.split(':')[0], row: k.split(':')[1] }, 'Удалить эту строку истории (ошибочную)?', D); };
+      });
+      all('[data-zgone]', function (b) {
+        b.onclick = function () { var id = b.getAttribute('data-zgone'), d = B.querySelector('[data-zd="' + id + '"]').value;
+          if (!d) return say('Укажите дату выше.');
+          send({ act: 'gone', id: id, from: d }, nm(id) + ' — не работает с ' + dd(d) + '?', D); };
+      });
+      all('[data-zback]', function (b) { b.onclick = function () { send({ act: 'back', id: b.getAttribute('data-zback') }, nm(b.getAttribute('data-zback')) + ' снова работает?', D); }; });
+      all('[data-zdelp]', function (b) { b.onclick = function () { send({ act: 'delperson', id: b.getAttribute('data-zdelp') }, 'Убрать ' + nm(b.getAttribute('data-zdelp')) + ' из списка?', D); }; });
+      all('[data-zren]', function (b) {
+        b.onclick = function () {
+          var id = b.getAttribute('data-zren'), i = B.querySelector('[data-zrn="' + id + '"]');
+          if (i.style.display === 'none') { i.style.display = ''; i.focus(); b.textContent = '💾 Сохранить имя'; return; }
+          send({ act: 'rename', id: id, name: i.value.trim() }, 'Имя: «' + i.value.trim() + '». Сохранить?', D);
+        };
+      });
+    }
+    load('/api/zp_staff', {}, draw);
   }
   // 24.11.2026 (руководитель): 🎁 Бонусы → 🏭 За партию — каждому сотруднику завода сумма за одну выпущенную партию
   // (линия: Перечисление / Терминал / обе). Партии — выпуск из ERP с 1-го по сегодня; ставки — с месяца, всё в журнал.
@@ -5480,7 +5629,7 @@
       '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
     h += '<div class="agrp">ЗАРПЛАТА</div>';   // 23.11.2026 (руководитель): вкладка «💰 Зарплата» — по умолчанию всем скрыта
     [['zp_dav', '📋', 'Посещение (смотреть и загружать)'], ['zp_tab', '⏱', 'Табель в минутах'],
-     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду'], ['zp_staff', '👔', 'Должности сотрудников завода (смотреть и вписывать)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">💰 Вкладка «Зарплата» (вверху) ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
