@@ -1032,6 +1032,10 @@
   #zs .zss { font-size: 13px; color: var(--hint); margin-top: 3px; } #zs .zss b { color: var(--fg); font-weight: 700; } #zs .zss.c { font-size: 12px; opacity: .8; }
   #zs .zsv { font-size: 24px; color: var(--hint); transition: transform .2s; } #zs .zsc.op .zsv { transform: rotate(90deg); }
   #zs button.sm.red { background: #d32f2f; color: #fff; }
+  #zs .zsfund { background: linear-gradient(150deg, #34c46e, #138a43); color: #fff; border-radius: 16px; padding: 10px 14px; margin: -2px 0 10px; box-shadow: 0 6px 16px rgba(23,150,74,.25); }
+  #zs .zsfund b { display: block; font-size: 22px; font-weight: 800; } #zs .zsfund span { font-size: 12px; opacity: .92; }
+  #zs .zsm { display: inline-block; margin-left: 8px; font-weight: 800; color: #138a43; } #zs .zsm.n { color: var(--hint); font-weight: 600; }
+  #zs .zssal { margin-top: 10px; padding: 10px; border-radius: 12px; background: rgba(23,150,74,.07); border: 1px solid rgba(23,150,74,.2); }
   #zs .zsadd { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   #zs .zsadd .a { border-radius: 14px; padding: 10px 12px; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(16,24,40,.15); }
   #zs .zsadd .a.g { background: linear-gradient(150deg, #34c46e, #17964a); } #zs .zsadd .a.b { background: linear-gradient(150deg, #4b9bff, #1f62c9); }
@@ -1193,9 +1197,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b3abb83f', newBuild = '';
+  var BUILD = 'd87390ba', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795527444' || 0;
+  var BUILD_AT = +'1795527772' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4326,6 +4330,10 @@
       // 24.11.2026 (руководитель): сверху — сколько работают / уволены; кнопки должностей по порядку (1 начальник, 2 качество, 3 склад…)
       var h = '<div class="zstop"><div><b>' + work.length + '</b><span>работают</span></div><div class="g"><b>' + gone.length + '</b><span>уволены</span></div>' +
         '<div><b>' + D.groups.filter(function (g) { return g[0]; }).length + '</b><span>должностей</span></div></div>';
+      if (D.sal_ok) {   // 24.11.2026: сумма зарплат на руку работающих за полный месяц
+        var withS = work.filter(function (p) { return p.cur_sal; });
+        h += '<div class="zsfund"><b>' + fmtq(withS.reduce(function (a, p) { return a + p.cur_sal; }, 0)) + ' сум</b><span>💵 зарплата на руку в месяц · вписана у ' + withS.length + ' из ' + work.length + '</span></div>';
+      }
       h += '<div class="zsgr">' +
         [['*', 'Все', work.length + gone.length, '']].concat(D.groups.map(function (g) { return [g[0] || '-', g[0] || '🆕 Без должности', g[1], g[0]]; }))
           .concat(gone.length ? [['~', '🚪 Уволены', gone.length, '']] : []).map(function (g) {
@@ -4361,6 +4369,7 @@
         var sub = p.gone_now ? (last ? 'был: <b>' + esc(last.title) + '</b> · ' + dd(last.from) + ' — ' + dd(last.to) : '')
           : p.cur ? 'в должности с <b>' + dd(p.cur_from) + '</b>' : (p.hint ? 'в ведомости: ' + esc(p.hint) : 'нажмите, чтобы вписать должность');
         if (p.next) sub += ' · ⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
+        if (D.sal_ok && !p.gone_now) sub += p.cur_sal ? '<span class="zsm">💵 ' + fmtq(p.cur_sal) + ' сум/мес</span>' : '<span class="zsm n">💵 зарплата не вписана</span>';
         if (p.gone && !p.gone_now) sub += ' · 🚪 увольнение с ' + dd(p.gone.from);
         var r = (p.gone_now && zsF === '*' && !goneHdr ? (goneHdr = true, '<div class="msec" style="color:#c62828">🚪 УВОЛЕНЫ · ' + gone.length + '</div>') : '') +
           '<div class="zsc' + (p.gone_now ? ' x' : '') + (op ? ' op' : '') + '" style="--zc:' + col + '"><div class="zsr" data-zo="' + p.id + '">' +
@@ -4382,6 +4391,19 @@
               '<br><small>' + esc(x.by) + ' · ' + esc(x.at) + '</small> <button class="sm" data-fx="' + p.id + ':' + x.id + '">✏️</button>' +
               (D.admin ? ' <button class="sm" data-fdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
           }).join('') || '<div class="empty" style="padding:8px">Должность ещё не вписана</div>');
+          if (D.sal_ok) {   // 24.11.2026 (руководитель): зарплата на руку в месяц за полный рабочий месяц, с историей
+            var sl = p.sal || [];
+            r += '<div class="zssal"><div class="msec" style="margin:0 0 6px;color:#17964a">💵 ЗАРПЛАТА НА РУКУ В МЕСЯЦ</div>' +
+              '<small class="zl">' + (sl.length ? 'Новая зарплата (прежняя останется в истории)' : 'Сколько получает на руку, если отработает весь месяц') + '</small>' +
+              '<input class="txt" inputmode="numeric" data-zsm="' + p.id + '" placeholder="сум в месяц" style="width:100%;margin:4px 0">' +
+              (p.hint_sal && !sl.length ? '<button class="sm" data-zsh="' + p.id + '" data-v="' + p.hint_sal + '">взять ' + fmtq(p.hint_sal) + ' (оклад в ведомости)</button>' : '') +
+              '<small class="zl">С какого числа</small><input class="txt" type="date" data-zsd="' + p.id + '" value="' + D.today.slice(0, 8) + '01" style="width:100%;margin:4px 0">' +
+              '<div class="ivbar"><button class="go" data-zss="' + p.id + '">💾 Сохранить зарплату</button></div>' +
+              (sl.slice().reverse().map(function (x) {
+                return '<div class="zlog">' + (x.from > D.today ? '⏭ ' : x.to ? '🗄 ' : '✅ ') + '<b style="color:#17964a">' + fmtq(x.sum) + ' сум</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : 'по сей день') +
+                  '<small>' + esc(x.by) + ' · ' + esc(x.at) + '</small>' + (D.admin ? '<button class="sm" data-zsdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
+              }).join('') || '<div class="empty" style="padding:6px">Зарплата ещё не вписана</div>') + '</div>';
+          }
           r += '<div class="note">Откуда: ' + esc(SRC[p.src] || p.src) + (p.fid ? ' · Face ID: ' + esc(p.fid) : '') + ' · в списке с ' + dd(p.added) + '</div>';
           r += '<div class="ivbar" style="flex-wrap:wrap;gap:6px">' + (p.gone ? '<button class="sm" data-zback="' + p.id + '">↩️ Вернуть на работу</button>'
             : '<button class="sm red" data-zgone="' + p.id + '">🚪 Уволить с даты выше</button>') +
@@ -4398,6 +4420,18 @@
       var all = function (sel, fn) { Array.prototype.forEach.call(B.querySelectorAll(sel), fn); };
       var nm = function (id) { return (D.people.filter(function (p) { return p.id === id; })[0] || {}).name || ''; };
       all('[data-zf]', function (el) { el.onclick = function () { zsF = el.getAttribute('data-zf'); draw(D); }; });
+      all('[data-zsh]', function (b) { b.onclick = function () { B.querySelector('[data-zsm="' + b.getAttribute('data-zsh') + '"]').value = b.getAttribute('data-v'); }; });
+      all('[data-zss]', function (b) {
+        b.onclick = function () {
+          var id = b.getAttribute('data-zss'), s = B.querySelector('[data-zsm="' + id + '"]').value.replace(/\D/g, ''), d = B.querySelector('[data-zsd="' + id + '"]').value;
+          if (!(+s > 0)) return say('Напишите зарплату числом (сум в месяц).');
+          if (!d) return say('Укажите дату.');
+          send({ act: 'sal', id: id, sum: +s, from: d }, nm(id) + ' — зарплата на руку ' + fmtq(+s) + ' сум в месяц с ' + dd(d) + '. Сохранить?', D);
+        };
+      });
+      all('[data-zsdel]', function (b) {
+        b.onclick = function () { var k = b.getAttribute('data-zsdel'); send({ act: 'saldel', id: k.split(':')[0], row: k.split(':')[1] }, 'Удалить эту строку зарплаты (ошибочную)?', D); };
+      });
       if ($('zsordb')) $('zsordb').onclick = function () { zsOrd = zsOrd ? null : (D.order || []).slice(); draw(D); };
       all('[data-ou]', function (b) { b.onclick = function () { var i = +b.getAttribute('data-ou'); var t = zsOrd[i]; zsOrd[i] = zsOrd[i - 1]; zsOrd[i - 1] = t; draw(D); }; });
       all('[data-od]', function (b) { b.onclick = function () { var i = +b.getAttribute('data-od'); var t = zsOrd[i]; zsOrd[i] = zsOrd[i + 1]; zsOrd[i + 1] = t; draw(D); }; });
@@ -5778,7 +5812,7 @@
       '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
     h += '<div class="agrp">ЗАРПЛАТА</div>';   // 23.11.2026 (руководитель): вкладка «💰 Зарплата» — по умолчанию всем скрыта
     [['zp_dav', '📋', 'Посещение (смотреть и загружать)'], ['zp_tab', '⏱', 'Табель в минутах'],
-     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду'], ['zp_staff', '👔', 'Должности сотрудников завода (смотреть и вписывать)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду'], ['zp_staff', '👔', 'Должности сотрудников завода (смотреть и вписывать)'], ['zp_staff_sal', '💵', 'Должности — зарплата сотрудников (видеть и вписывать)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">💰 Вкладка «Зарплата» (вверху) ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
