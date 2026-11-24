@@ -702,6 +702,14 @@
                  background: rgba(255,255,255,.92); color: #263241; text-shadow: none; }
   .zavg .zb.rs { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 5px 0 #9c4210, 0 12px 22px rgba(217,97,31,.25); }
   .zavg .zb.pr { background: linear-gradient(150deg, #7fb6ff, #3f55c9); box-shadow: 0 5px 0 #2b3b94, 0 12px 22px rgba(63,85,201,.25); }
+  .zavg .zb.or { background: linear-gradient(150deg, #5fd69a, #17964a); box-shadow: 0 5px 0 #0f6f36, 0 12px 22px rgba(23,150,74,.25); }
+  .zavg .zb.lp { background: linear-gradient(150deg, #5fd3a0, #1c8f64); box-shadow: 0 5px 0 #126846, 0 12px 22px rgba(28,143,100,.25); }
+  .zavg .zb.lt { background: linear-gradient(150deg, #7fb6ff, #2f6fd0); box-shadow: 0 5px 0 #1f4f9a, 0 12px 22px rgba(47,111,208,.25); }
+  .osg.plw { grid-template-columns: repeat(2, minmax(0, 1fr)); } .osg.plw .ob { padding: 10px 4px; } .osg.plw .ob b { font-size: 13px; white-space: normal; }
+  /* копия окна плана — как сообщение Telegram: белый «пузырь», текст как в группе */
+  .tgmsg { background: var(--bg2); border-radius: 16px 16px 16px 4px; padding: 12px 13px; white-space: pre-wrap; font-size: 13.5px; line-height: 1.38;
+           box-shadow: 0 3px 0 rgba(0,0,0,.07); word-break: break-word; }
+  .tgmsg u { text-decoration-thickness: 2px; text-underline-offset: 2px; }
   .pmk.rsk { margin: 2px 0 12px; } .pmk.rsk b { font-size: 19px; }
   .pmk.rsk .rsm { grid-column: 1 / -1; background: linear-gradient(150deg, #e9fbf0, #d3f3e0); box-shadow: 0 3px 0 #b5e2c6; }
   .pmk.rsk .rsm b { color: #0f7a3c; } .rsr .rm b.sm { color: #0f7a3c; }
@@ -1042,9 +1050,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ad074091', newBuild = '';
+  var BUILD = 'a30f157f', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795495025' || 0;
+  var BUILD_AT = +'1795496398' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3504,6 +3512,7 @@
   // и ⚙️ Процессы (путь партий по цеху — то, что было во вкладке «В цехе»)
   var zavPart = '';
   function showZav(box) {
+    if (zavPart === 'ord') return showPlanZ(box);
     if (zavPart === 'proc' || zavPart === 'rsx') {
       box.innerHTML = '<div class="navb"><div class="bk" id="zavBack"><i>⬅</i>Назад</div><div class="nt"><small>Завод</small><b>' +
         (zavPart === 'proc' ? '⚙️ Процессы — путь партий по цеху' : '🧪 Расход сырья и упаковки') + '</b></div></div><div id="zavin"><div class="spin">Загрузка из ERP…</div></div>';
@@ -3512,7 +3521,8 @@
     }
     box.innerHTML = '<div class="msec gpsec" style="margin-top:0">🏭 ЗАВОД</div><div class="zavg">' +
       '<div class="zb rs" data-zp="rsx"><i>🧪</i><b>Расход сырья</b><span>Сырьё и упаковка со склада сырья — сколько ушло, на какие партии, на сколько хватит остатка</span><em id="zbr">…</em></div>' +
-      '<div class="zb pr" data-zp="proc"><i>⚙️</i><b>Процессы</b><span>Где сейчас каждая партия: склад сырья → ОТК → цех → дозирование → упаковка → склад ГП</span><em id="zbp">…</em></div></div>';
+      '<div class="zb pr" data-zp="proc"><i>⚙️</i><b>Процессы</b><span>Где сейчас каждая партия: склад сырья → ОТК → цех → дозирование → упаковка → склад ГП</span><em id="zbp">…</em></div>' +
+      '<div class="zb or" data-zp="ord"><i>📝</i><b>Заказы</b><span>План производства Перечисления и Терминала — месяц, неделя, завтра и 2 дня (как в группах PLAN ZAKAZ)</span><em>ПЕР · ТЕР</em></div></div>';
     Array.prototype.forEach.call(box.querySelectorAll('[data-zp]'), function (el) {
       el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} zavPart = el.getAttribute('data-zp'); showZav(box); window.scrollTo(0, 0); };
     });
@@ -3522,6 +3532,62 @@
       var t = pTime(D.now) - 7 * 86400000, b = {};
       D.events.forEach(function (x) { if (pTime(x[2]) >= t) b[x[4] + ':' + x[1] + ':' + (x[4] < 0 ? x[2] : '')] = 1; });
       e.textContent = '7 дн. · ' + Object.keys(b).length + ' парт.';
+    });
+  }
+  // 24.11.2026 (руководитель): 🏭 Завод → 📝 Заказы → Перечисление / Терминал — копия окон групп «PLAN ZAKAZ PERECHISLENIYA /
+  // TERMINAL» (тот же текст, что бот планов показывает в группе; только смотреть, в группах ничего не меняется) + заказы ERP, ждущие запуска
+  var zavLine = '', zavWin = '';
+  function showPlanZ(box) {
+    var LN = { P: ['Перечисление', '2️⃣', 'per', '2 этаж'], T: ['Терминал', '1️⃣', 'ter', '1 этаж'] };
+    function back(f) { return '<div class="navb"><div class="bk" id="plBack"><i>⬅</i>Назад</div><div class="nt"><small>Завод › Заказы</small><b>' + f + '</b></div></div>'; }
+    if (!zavLine) {
+      box.innerHTML = back('📝 Заказы — план производства') + '<div class="zavg z2">' + ['P', 'T'].map(function (l) {
+        return '<div class="zb ' + (l === 'P' ? 'lp' : 'lt') + '" data-pln="' + l + '"><i>' + LN[l][1] + '</i><b>' + LN[l][0] + '</b><span>' + LN[l][3] +
+          ' · как в группе PLAN ZAKAZ ' + (l === 'P' ? 'PERECHISLENIYA' : 'TERMINAL') + '</span></div>';
+      }).join('') + '</div>';
+      $('plBack').onclick = function () { haptic('light'); zavPart = ''; showZav(box); window.scrollTo(0, 0); };
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pln]'), function (el) {
+        el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} zavLine = el.getAttribute('data-pln'); zavWin = ''; showPlanZ(box); window.scrollTo(0, 0); };
+      });
+      return;
+    }
+    box.innerHTML = back(LN[zavLine][1] + ' ' + LN[zavLine][0]) + '<div id="plin"><div class="spin">Собираю планы…</div></div>';
+    $('plBack').onclick = function () { haptic('light'); zavLine = ''; showPlanZ(box); window.scrollTo(0, 0); };
+    var me = cur, inner = $('plin');
+    load('/api/plan', {}, function (D) {
+      if (cur !== me || !inner.isConnected) return;
+      if (!D.ok) { inner.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var W = (D.lines || {})[zavLine] || [];
+      function draw(O) {
+        var orders = O && O.ok ? O.orders.filter(function (o) { return o.line === LN[zavLine][2]; }) : null;
+        var tabs = W.map(function (w) { return [w.kind, w.name]; }).concat([['erp', '🧾 Заказы ERP']]);
+        if (!zavWin || !tabs.some(function (x) { return x[0] === zavWin; })) zavWin = (tabs[tabs.length > 1 ? tabs.length - 2 : 0] || ['erp'])[0];
+        var h = '<div class="osg pml plw">' + tabs.map(function (x, i) {
+          var n = x[0] === 'erp' ? (orders ? orders.length : '…') : '';
+          return '<div class="ob c' + [1, 3, 7, 2][i % 4] + (zavWin === x[0] ? ' on' : '') + '" data-plw="' + x[0] + '"><b>' + esc(x[1]) + '</b>' + (n !== '' ? '<u>' + n + '</u>' : '') + '</div>';
+        }).join('') + '</div>';
+        if (zavWin === 'erp') {
+          h += '<div class="pmsec">🧾 ЗАКАЗЫ ПРОИЗВОДСТВА В ERP — ЖДУТ ЗАПУСКА</div>';
+          h += !orders ? '<div class="spin">Загрузка…</div>' : orders.map(function (o) {
+            var F = PFORM[o.form] || ['🏭', o.form], age = (pTime(O.now) - pTime(o.created)) / 1000;
+            return '<div class="pmc zo"><div class="pmh"><span class="fi">' + F[0] + '</span><b>' + esc(o.name) + '</b></div>' +
+              '<div class="pmm">Заказ № ' + esc(o.num) + (o.brand ? ' · ' + esc(o.brand) : '') + ' · план <b>' + pN(o.plan) + '</b> шт</div>' +
+              '<div class="pmst' + (age > 30 * 86400 ? ' old' : '') + '">' + (age > 30 * 86400 ? '⚠️ Старый заказ — ' : '📝 Ждёт запуска · ') + pDur(age) + ' · с ' + dmy(o.created) + '</div>' +
+              (o.note && !/^\d\d\.\d\d\.\d{4}$/.test(o.note) ? '<div class="pmn">' + esc(o.note) + '</div>' : '') + '</div>';
+          }).join('') || '<div class="empty">Заказов, ждущих запуска, нет</div>';
+        } else {
+          var w = W.filter(function (x) { return x.kind === zavWin; })[0];
+          h += w ? '<div class="tgmsg">' + w.html + '</div><div class="note">Копия окна группы PLAN ZAKAZ ' + (zavLine === 'P' ? 'PERECHISLENIYA' : 'TERMINAL') +
+            (w.sent ? ' (сообщение от ' + esc(w.sent.slice(8, 10) + '.' + w.sent.slice(5, 7) + ' ' + w.sent.slice(11, 16)) + ')' : '') +
+            ' · обновлено ' + esc(D.at) + '. Кнопки плана — в группе.</div>' : '<div class="empty">Окна нет</div>';
+        }
+        inner.innerHTML = h;
+        Array.prototype.forEach.call(inner.querySelectorAll('[data-plw]'), function (el) {
+          el.onclick = function () { haptic('light'); zavWin = el.getAttribute('data-plw'); draw(O); };
+        });
+      }
+      draw(null);
+      load2('/api/pmv', {}, function (O) { if (inner.isConnected) draw(O); });
     });
   }
   var rsxPer = 7, rsxLine = '', rsxKind = '', rsxBy = 'mat', rsxQ = '', rsxOpen = {};
