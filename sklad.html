@@ -1127,9 +1127,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8740991b', newBuild = '';
+  var BUILD = '5deecdee', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795519052' || 0;
+  var BUILD_AT = +'1795519302' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3806,7 +3806,7 @@
   var zinvMonth = '', zinvTab = 'list', zinvOpen = {}, zpInvOn = false, zinvPath = [];
   var ZCF = [['pw', '⚖️ Взвешивание, балл за строку'], ['pc', '🔢 Пересчёт, балл за строку'], ['pg', '📦 Готовая продукция, балл'], ['gp_pcs', '📦 ГП: +1 балл за каждые … шт'], ['tas_pt', '🏙 Ташкент: сум за балл'], ['tas_min', '🏙 Ташкент: не меньше за инвентаризацию, сум'], ['tas_cap', '🏙 Ташкент: лимит в месяц (Перечисление / Терминал), сум'], ['zav_pt', '🏭 Склады сырья завода: сум за балл'], ['zav_min', '🏭 Завод: не меньше за инвентаризацию, сум'], ['zav_n', '🏭 Завод: оплачиваемых раз в месяц, не больше'], ['zav_cap', '🏭 Завод: лимит раздела в месяц, сум'],
              ['tara_pcs', '🫙 Тара: +1 балл за каждые … шт'], ['exit_pt', 'Выход: сум за балл'], ['exit_max', 'Выход: не больше, сум'],
-             ['top', 'Доплата до, сум'], ['etalon', 'Эталон, баллов'], ['cap', 'Потолок на раздел, сум'], ['resp', 'Ответственный ×'],
+             ['top', 'Доплата до, сум'], ['etalon', 'Эталон, баллов'], ['cap', 'Потолок на раздел, сум'], ['resp_pct', 'Ответственному, % (остальное — помощникам поровну)'],
              ['late_days', 'Проведена позже, дней'], ['late_pct', '… тогда минус, %'], ['per_month', 'Раздел оплачивается раз в месяц'], ['only_mini', 'Только пересчёт из мини-аппа (1 — да, 0 — нет)']];
   function showZpInv() {
     var me = cur;
@@ -3855,7 +3855,7 @@
           if (step >= iL) h += '<div class="note" style="margin-top:0">Числа — за ' + esc(mname.toLowerCase()) + '.</div>';
           if (!step) {
             h += '<div class="note">Выберите место, потом Перечисление или Терминал — откроется таблица подтверждённых инвентаризаций с бонусом (год и месяц — там же). ' +
-              'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
+              'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Ответственный получает 75 %, помощники делят 25 % поровну.</div>';
             if (D.edit) h += '<div class="zlinks"><button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>';
           }
         } else {
@@ -3899,13 +3899,21 @@
           r += '<div class="zip">' + x.secs.map(function (s) {
             return '<span class="pill ' + (s.pay ? 'ok' : s.trial ? 'wr' : 'bad') + '">' + s.icon + ' ' + esc(s.title) + ' ' + (s.pay ? fmtq(s.pay) : s.trial ? '0 (было бы ' + fmtq(s.full) + ')' : '0') + '</span>';
           }).join('') + '</div>';
+          // 24.11.2026 (руководитель): сразу видно, кто и сколько получает за эту инвентаризацию
+          var whoL = [];
+          x.secs.forEach(function (s) {
+            if (s.shares.length) s.shares.forEach(function (sh) { whoL.push('👤 ' + esc(sh[0]) + ' <small>(' + (sh[2] === 'ответственный' ? 'отв.' : 'пом.') + ')</small> <b>' + fmtq(sh[1]) + '</b>'); });
+            else if (s.resp || (s.help || []).length) whoL.push('👤 ' + esc([s.resp].concat(s.help || []).filter(Boolean).join(', ')) + ' <b>0</b>');
+          });
+          if (whoL.length) r += '<div class="zim" style="margin:4px 0 0">' + whoL.join(' · ') + '</div>';
           if (op) {
             r += x.secs.map(function (s) {
               var c = '<div class="zis"><div class="zish">' + s.icon + ' <b>' + esc(s.title) + '</b> · ' + s.n + ' строк' + (s.chg ? ' · изменено ' + s.chg : ' · без изменений') + '</div>' +
                 '<div class="zim">баллы: ' + esc(s.how) + ' = <b>' + s.pts + '</b> → ставка <b>' + fmtq(s.full) + '</b>' + (s.why ? '<br><span class="zw">' + esc(s.why) + '</span>' : '') + '</div>';
-              // 24.11.2026: доля по минутам Face ID (пересечение входа/выхода с началом–концом инвентаризации), иначе — поровну
-              if (s.shares.length) c += s.shares.map(function (sh) { return '<div class="zisr"><span>👤 ' + esc(sh[0]) + ' <small>· ' + esc(sh[2]) + (sh[3] != null ? ' · ' + sh[3] + ' мин' : '') + '</small></span><b>' + fmtq(sh[1]) + '</b></div>'; }).join('') +
-                (s.shares.length > 1 || (s.help || []).length ? '<div class="zim">' + (s.by_min ? '⏱ доля — по минутам Face ID × роль' : '⚖️ доля — поровну × роль (нет минут Face ID' + (x.start && x.end ? '' : ' или времени начала и конца') + ')') + '</div>' : '');
+              // 24.11.2026 (руководитель): ответственный — 75 %, помощники делят 25 % поровну
+              var rp_ = (D.conf || {}).resp_pct || 75;
+              if (s.shares.length) c += s.shares.map(function (sh) { return '<div class="zisr"><span>👤 ' + esc(sh[0]) + ' <small>· ' + esc(sh[2]) + '</small></span><b>' + fmtq(sh[1]) + '</b></div>'; }).join('') +
+                (s.shares.length > 1 ? '<div class="zim">⚖️ ответственный ' + rp_ + ' %, помощники ' + (100 - rp_) + ' % поровну</div>' : '');
               else if (s.no_team) c += '<div class="zim zw">👥 у раздела нет ответственного — сумма никому не начислена</div>';
               if (s.ovr) c += '<div class="zim zw">✏️ изменено вручную' + (s.ovr.off ? ' — бонус удалён' : '') + ' · ' + esc(s.ovr.by) + ' ' + esc(String(s.ovr.at).slice(8, 10) + '.' + String(s.ovr.at).slice(5, 7) + ' ' + String(s.ovr.at).slice(11, 16)) + '</div>';
               if (D.can_fix) {   // 24.11.2026 (руководитель): изменить / удалить — сохраняется только после «Сохранить?»
@@ -3923,7 +3931,7 @@
                 }
               }
               c += '<div class="zim">' + (s.resp ? '👥 ' + esc(s.resp) + (s.help.length ? ' + ' + esc(s.help.join(', ')) : '') + ' · ' +
-                (s.days === 'sat' ? '📅 только суббота' : s.days === 'stop' ? '⏸ остановлен' : '🗓 каждый рабочий день') + ' (с ' + esc(s.rule_from) + ')' : '🗂 раздел не настроен — вкладка «Разделы»') + '</div>';
+                (s.ovr ? '✏️ вручную' : (s.days === 'sat' ? '📅 только суббота' : s.days === 'stop' ? '⏸ остановлен' : '🗓 каждый рабочий день') + (s.rule_from ? ' (с ' + esc(s.rule_from) + ')' : '')) : '🗂 раздел не настроен — вкладка «Разделы»') + '</div>';
               return c + '</div>';
             }).join('');
           }
