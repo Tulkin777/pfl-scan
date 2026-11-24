@@ -1101,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '04fdab92', newBuild = '';
+  var BUILD = '5250d4db', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795511709' || 0;
+  var BUILD_AT = +'1795511795' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4030,7 +4030,7 @@
       box.innerHTML = '<div class="mgrid">' + ks.map(function (k, i) {
         var t = ZPT[k], f = k === 'bon' ? null : ((D.parts.pay || D.parts.dav || D.parts.tab).files || [])[0];
         var c = k === 'bon' && D.bonus.inv_only ? '📋 за инвентаризацию'
-          : k === 'bon' ? '<span class="gpbig" style="font-size:20px">' + fmtq(D.bonus.total) + ' сум</span>' + esc(D.bonus.month) + ' · ✅ ' + D.bonus.n_done + ' из ' + D.bonus.n + (D.inv_bonus ? ' · 📋 инвентаризация' : '')
+          : k === 'bon' ? (D.inv_bonus ? '📋 инвентаризация' : 'виды бонусов')   // 24.11.2026: суммы — внутри каждого вида бонуса
           : (f ? 'последний: ' + esc(f.month || f.at) : 'файлов пока нет') + '<br>' + (k === 'pay' ? 'внутри: ' + ['pay', 'dav', 'tab'].filter(function (q) { return D.parts[q]; }).map(function (q) { return { pay: 'расчёт', dav: 'посещение', tab: 'табель' }[q]; }).join(' · ') : t[3]);
         return '<div class="tile cat ' + t[0] + (odd && i === ks.length - 1 ? ' wide' : '') + '" data-zp="' + k + '"><div class="e">' + t[1] + '</div>' +
           '<div class="n">' + t[2] + '</div><div class="c">' + c + '</div></div>';
@@ -4111,6 +4111,13 @@
       if (cur !== me) return;
       var B = $('bon'); if (!B) return;
       if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      // 24.11.2026 (руководитель): в «Бонусах» — только виды бонусов квадратами; месяц, суммы и «Добавить» — внутри каждого вида.
+      // Новый вид бонуса — новый квадрат здесь. Ручные строки (zp_bonus.json) не удалены — просто не показываются.
+      if (true) {
+        B.innerHTML = zpInvOn ? '<div class="osg"><div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div></div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
+        if ($('zinvgo')) $('zinvgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpInv); };
+        return;
+      }
       bonMonth = D.month;
       var y0 = window.scrollY;
       var ppl = '<datalist id="bonppl">' + (D.people || []).map(function (p) { return '<option value="' + esc(p) + '">'; }).join('') + '</datalist>';
