@@ -763,6 +763,20 @@
   .rsl > div { display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 3px 0; }
   .rsl .t { flex: none; width: 72px; color: var(--hint); font-variant-numeric: tabular-nums; } .rsl .w { flex: 1; min-width: 0; } .rsl .w small { color: var(--hint); }
   .rsl b { flex: none; font-variant-numeric: tabular-nums; }
+  /* 24.11.2026: 1С вручную — «🔄 Синхронизация 1С» на главном и «🔄 1С» на месте */
+  .c1bar { display: flex; align-items: center; gap: 10px; margin: 2px 0 12px; padding: 8px 10px; border-radius: 16px;
+           background: linear-gradient(150deg, #eef3ff, #dfe8ff); box-shadow: 0 3px 0 #c3d0f0; }
+  .c1bar button { flex: none; border: 0; border-radius: 13px; padding: 10px 12px; font-weight: 900; font-size: 13px; color: #fff; cursor: pointer;
+                  background: linear-gradient(150deg, #7fb6ff, #2a64c4); box-shadow: 0 4px 0 #1b4590; }
+  .c1bar button:active { transform: translateY(3px); box-shadow: none; } .c1bar button:disabled { opacity: .7; }
+  .c1t { min-width: 0; } .c1t .c1l { display: block; font-size: 12.5px; font-weight: 800; color: #26407a; } .c1t .c1f { display: block; font-size: 11px; color: #b3302b; font-weight: 700; }
+  .c1btn { border: 0; border-radius: 10px; padding: 4px 9px; font-weight: 900; font-size: 12px; color: #fff; cursor: pointer; vertical-align: middle;
+           background: linear-gradient(150deg, #7fb6ff, #2a64c4); box-shadow: 0 3px 0 #1b4590; } .c1btn:disabled { opacity: .7; }
+  .c1ship { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--hint); margin: 0 2px 6px; }
+  .c1ship b { color: var(--fg); }
+  .c1bar { grid-column: 1 / -1; width: auto; } .c1bar .c1t { flex: 1; }
+  .c1bar button, .c1btn { width: auto !important; margin: 0 !important; min-height: 0 !important; display: inline-block; flex: none; line-height: 1.2; }
+  .c1ship span { flex: 1; min-width: 0; }
   /* 24.11.2026: отгрузка — строка без места и почему нет «Взял» */
   .slpl.nopl { background: #fde4e2 !important; color: #b3302b !important; }
   .vznote { margin: 8px 0 2px; padding: 8px 10px; border-radius: 12px; background: #fff3dc; color: #8f5200; font-size: 12.5px; font-weight: 700; line-height: 1.35; }
@@ -1127,9 +1141,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5deecdee', newBuild = '';
+  var BUILD = '28c429e4', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795519302' || 0;
+  var BUILD_AT = +'1795522578' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1823,6 +1837,36 @@
   }
   function ivErr(e) { haptic('error'); say((e && e.text) || 'Ошибка связи — попробуйте ещё раз.'); }
   function fmtq(v) { return v == null ? '—' : (Math.round(+v * 1000) / 1000).toLocaleString('ru-RU'); }
+
+  // 24.11.2026 (руководитель «1С только вручную… везде, где требуется 1С, кнопка «Синхронизация 1С»»):
+  // главный экран — «🔄 Синхронизация 1С» (всё, что читают агенты) + когда синхронизировано; на месте — «🔄 1С» (только нужное)
+  var c1Poll = null;
+  function c1Bar(box) {
+    var el = box.querySelector('.c1bar'); if (!el) return;
+    var put = function (s) {
+      if (!el.isConnected) return;
+      el.querySelector('.c1l').textContent = (s && s.line) || '1С: —';
+      el.querySelector('.c1f').textContent = s && s.fails && s.fails.length && !s.running ? '⚠️ не обновилось: ' + s.fails.join(', ') : '';
+      var b = el.querySelector('button'); b.disabled = !!(s && s.running); b.textContent = s && s.running ? '⏳ Идёт…' : '🔄 Синхронизация 1С';
+      clearTimeout(c1Poll);
+      if (s && s.running) c1Poll = setTimeout(function () { call('/api/c1sync_state', {}).then(put).catch(function () {}); }, 10000);
+    };
+    call('/api/c1sync_state', {}).then(put).catch(function () {});
+    el.querySelector('button').onclick = function () {
+      var b = this, q = 'Синхронизировать 1С сейчас? Продажи, остатки, приходы, отчёты производства, данные Нодира — несколько минут. В 1С ничего не пишется.';
+      var go_ = function (yes) {
+        if (!yes) return; b.disabled = true; b.textContent = '⏳ Запускаю…';
+        call('/api/c1sync', { mode: 'full' }, 30000).then(function (s) { haptic('success'); if (s.text) say(s.text); put(s); }).catch(function (e) { b.disabled = false; ivErr(e); });
+      };
+      try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+    };
+  }
+  function c1Here(btn, body, after) {   // «🔄 1С» на месте: прочитать из 1С только нужное, потом перерисовать
+    btn.disabled = true; var l = btn.textContent; btn.textContent = '⏳ 1С…';
+    call('/api/c1sync', body, 150000).then(function (s) {
+      btn.disabled = false; btn.textContent = l; haptic(s.ok === false ? 'warning' : 'success'); if (s.text) say(s.text); if (after) after(s);
+    }).catch(function (e) { btn.disabled = false; btn.textContent = l; ivErr(e); });
+  }
   function showInvd(id, first) {
     var me = cur, find = '', lastH = '';
     title.textContent = '📋 Инвентаризация · черновик';
@@ -1852,7 +1896,8 @@
         '<div class="note" style="text-align:left;margin:0 0 8px">' + esc(D.store_name) + ' · остатки ERP на ' +
         esc(String(D.fresh || D.at).slice(8, 10) + '.' + String(D.fresh || D.at).slice(5, 7) + ' ' + String(D.fresh || D.at).slice(11)) +
         (D.n_changed ? ' · правки сохраняются сами' : '') +
-        '<br>' + (D.has_c1 ? '📗 ' + esc(D.c1_src) : '📕 1С: связи нет — только Перечисление (без Gynomedix)') + '</div>' +
+        '<br>' + (D.has_c1 ? '📗 ' + esc(D.c1_src) : /связи с 1С нет/.test(D.c1_src || '') || !D.c1_src ? '📕 1С: связи нет — только Перечисление (без Gynomedix)' : '📕 ' + esc(D.c1_src)) +
+        (/связи с 1С нет/.test(D.c1_src || '') || !D.c1_src ? '' : ' <button class="c1btn" id="c1inv">🔄 1С</button>') + '</div>' +
         '<div class="ivsum"><div class="ch"><b>' + D.n_changed + '</b>изменено</div><div class="eq"><b>' + (D.has_c1 ? D.n_eq : '—') + '</b>= 1С</div>' +
         '<div class="ne"><b>' + (D.has_c1 ? D.n_ne : '—') + '</b>≠ 1С</div><div><b>' + D.n + '</b>всего</div></div>' +
         chkBanner(D) +
@@ -1899,6 +1944,7 @@
     }
     function bind() {
       if ($('ivfind')) $('ivfind').oninput = function () { find = this.value; draw(); };
+      if ($('c1inv')) $('c1inv').onclick = function () { c1Here(this, { mode: 'inv', did: D.id }, function (s) { if (s.ok !== false) showInvd(id); }); };
       Array.prototype.forEach.call(view.querySelectorAll('input[data-f]'), function (inp) {
         var old = inp.value;
         inp.onfocus = function () { this.select(); };
@@ -2749,6 +2795,7 @@
       var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x) && live(x); });
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
+        if (kind === 'ship') h += '<div class="c1ship"><span>📗 1С · счёт-фактуры Перечисления: <b class="c1sat">…</b></span><button class="c1btn" data-c1s="1">🔄 1С</button></div>';
         h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
           // 24.11.2026: в отгрузке плитка «Откуда» считает отгружено + просрочено (как число на вкладке) — сумма плиток = вкладке
           var act = kind === 'ship' && (docFlt.ship === 'ok' || docFlt.ship === 'late');
@@ -2828,6 +2875,12 @@
         load2('/api/ship_places_all', {}, function () { if (!hadPl && document.body.contains(box)) { hadPl = true; showDocs(kind, box); } });
       }
       // 23.11.2026 (руководитель): «✅ Взял» прямо на карточке списка — места и партии видны, заходить в документ не нужно
+      if (box.querySelector('[data-c1s]')) {   // 24.11.2026: 1С вручную — время продаж 1С и кнопка «🔄 1С»
+        load2('/api/c1sync_state', {}, function (s) { var e = box.querySelector('.c1sat'); if (e && s) e.textContent = s.sales_at ? s.sales_at.slice(8, 10) + '.' + s.sales_at.slice(5, 7) + ' ' + s.sales_at.slice(11, 16) : 'не синхронизировано'; });
+        box.querySelector('[data-c1s]').onclick = function () {
+          c1Here(this, { mode: 'sales' }, function () { setTimeout(function () { if (box.isConnected) { delete mem[ck('/api/c1sync_state' + JSON.stringify({}))]; showDocs(kind, box); } }, 45000); });
+        };
+      }
       Array.prototype.forEach.call(box.querySelectorAll('[data-tt]'), function (b) {
         b.onclick = function (ev) {
           ev.stopPropagation();
@@ -4078,7 +4131,7 @@
   var TAB_ACC = [['tab_ship', '🛒', 'Движение · Отгрузка'], ['tab_mv', '🚚', 'Движение · Перемещения'], ['tab_inc', '📥', 'Движение · Приходы'], ['tab_ret', '↩️', 'Движение · Возврат'],
                  ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
                  ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
-                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '🏭', 'Завод — расход сырья и процессы цеха'], ['rsx_sum', '💵', 'Завод · расход сырья в деньгах (сум)']];
+                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '🏭', 'Завод — расход сырья и процессы цеха'], ['rsx_sum', '💵', 'Завод · расход сырья в деньгах (сум)'], ['c1sync', '🔄', 'Синхронизация 1С (вся) на главном экране']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
               bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'] };   // 23.11.2026 (руководитель)
@@ -4413,6 +4466,7 @@
       if (mf === 'wh' && !whF.length && !gpOn) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
       lastTabs = fl;
       h += tabsHtml(mf);
+      if (r.c1sync) h += '<div class="c1bar"><button>🔄 Синхронизация 1С</button><div class="c1t"><span class="c1l">1С: …</span><small class="c1f"></small></div></div>';
       // руководитель 22.11: «Завод» — Готовая продукция · Сырьё и упаковка; «Ташкент» — Готовая продукция; склады — внутри
       var cats = CATS.filter(function (c) { return c.tab === mf && Object.keys(tiles).some(function (k) { return c.pick(ITEM[k]); }); });
       if (mf === 'inv') {
@@ -4452,6 +4506,7 @@
       if (!Object.keys(tiles).length) h += '<div class="empty">Вам пока не дан ни один склад</div>';
       view.innerHTML = h;
       bindCats();
+      c1Bar(view);   // 24.11.2026: «🔄 Синхронизация 1С» на главном экране
       if (mf === 'inv') showInv({}, $('invbox'));   // первый шаг инвентаризации — прямо под вкладками
       if (view.querySelector('[data-gpst]')) {   // 📦 Остаток готовой продукции: итог на плитке, нажатие — Перечисление / Терминал
         gpTotal(view.querySelector('.gptot'));
@@ -5307,11 +5362,11 @@
     var h = '', lab = ACC.label_ok || [];
     function actsOf(k) {
       if (k === 'mv') return ['send', 'drive', 'accept'];   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
-      if (k === 'pc' || k === 'os' || k === 'pmv' || k === 'rsx_sum' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
+      if (k === 'pc' || k === 'os' || k === 'pmv' || k === 'rsx_sum' || k === 'c1sync' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
       return k === 'inv' || k === 'prod' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
-      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key === 'rsx_sum' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
+      var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key === 'rsx_sum' || it.key === 'c1sync' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
       var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
