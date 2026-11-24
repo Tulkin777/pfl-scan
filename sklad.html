@@ -421,6 +421,13 @@
   .dir div.shp .ptag.ter, .dir div.shp.z .ptag.ter { background: #7a1f1c; color: #fff; }
   .dir div.shp .brs .br0, .dir div.shp.z .brs .br0 { background: rgba(255,255,255,.55); color: #8e2a26; }
   .dir div.shp.on { box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #a33a36, 0 6px 10px rgba(0,0,0,.25); }
+  /* 24.11.2026 (руководитель): «Откуда» — 4 в ряд, размером как вкладки Движения; бренды не показываем (видно в списке) */
+  .dir.shp4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .dir.shp4 div.shp { min-height: 0; padding: 22px 3px 7px; align-items: center; text-align: center; border-radius: 16px; }
+  .dir.shp4 div.shp .sc { top: 4px; right: 4px; min-width: 20px; padding: 1px 5px; font-size: 11px; border-radius: 10px; }
+  .dir.shp4 div.shp .cty { font-size: 12px; padding-right: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.2px; }
+  .dir.shp4 div.shp .ptag { margin-top: 4px; font-size: 10px; padding: 2px 7px; }
+  .dir.shp4 div.shp .brs { display: none; }
   /* 22.11.2026 (руководитель): нажатое — «негатив»: тёмная заливка, белые буквы, приподнято; остальные — бледнее */
   .stp .sp.on { color: #fff !important; transform: translateY(-3px); opacity: 1 !important; filter: none !important;
                 box-shadow: 0 6px 0 rgba(0,0,0,.28), 0 9px 16px rgba(0,0,0,.2), inset 0 0 0 3px rgba(255,255,255,.92) !important; }
@@ -509,10 +516,10 @@
   .dir .d4 { box-shadow: 0 4px 0 #b06205; } .dir .d5 { box-shadow: 0 4px 0 #0f6f36; } .dir .d6 { box-shadow: 0 4px 0 #0b5e33; }
   .dir .d7 { box-shadow: 0 4px 0 #113a7d; }
   .dir div.z:not(.shp) { color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.18); opacity: .75; filter: saturate(.7); }
-  .dir div.z.d1 { background: linear-gradient(150deg, #4fd68a, #1f62c9); } .dir div.z.d2 { background: linear-gradient(150deg, #1f62c9, #4fd68a); }
-  .dir div.z.d3 { background: linear-gradient(150deg, #aab3c4, #6b7385); } .dir div.z.d4 { background: linear-gradient(150deg, #ffbf55, #e8820c); }
-  .dir div.z.d5 { background: linear-gradient(150deg, #4fd68a, #17964a); } .dir div.z.d6 { background: linear-gradient(150deg, #4fd68a, #0f8a4a); }
-  .dir div.z.d7 { background: linear-gradient(150deg, #6fb2ff, #174fa8); }
+  .dir div.z.d1:not(.shp) { background: linear-gradient(150deg, #4fd68a, #1f62c9); } .dir div.z.d2:not(.shp) { background: linear-gradient(150deg, #1f62c9, #4fd68a); }
+  .dir div.z.d3:not(.shp) { background: linear-gradient(150deg, #aab3c4, #6b7385); } .dir div.z.d4:not(.shp) { background: linear-gradient(150deg, #ffbf55, #e8820c); }
+  .dir div.z.d5:not(.shp) { background: linear-gradient(150deg, #4fd68a, #17964a); } .dir div.z.d6:not(.shp) { background: linear-gradient(150deg, #4fd68a, #0f8a4a); }
+  .dir div.z.d7:not(.shp) { background: linear-gradient(150deg, #6fb2ff, #174fa8); }
   .dir div.z.on { opacity: 1; filter: none; }
   .stp .sp { color: #fff; border-radius: 13px; padding: 7px 1px 6px; }
   .stp .sp.z { opacity: .75; filter: saturate(.7); }
@@ -651,6 +658,14 @@
   .osg .ob.c4 { background: linear-gradient(150deg, #a99bff, #5b48d1); box-shadow: 0 4px 0 #3e3094; }
   .osg .ob.c5 { background: linear-gradient(150deg, #f59fb8, #c9567a); box-shadow: 0 4px 0 #933a57; }
   .osg .ob.c6 { background: linear-gradient(150deg, #b9c2cc, #78838f); box-shadow: 0 4px 0 #555e68; }
+  .osg .ob.c7 { background: linear-gradient(150deg, #6fd9e6, #1f97b0); box-shadow: 0 4px 0 #146a7d; }
+  .osg .ob.c8 { background: linear-gradient(150deg, #8fa6ff, #3f55c9); box-shadow: 0 4px 0 #2b3b94; }
+  .osg .ob.z { opacity: .6; filter: saturate(.6); }
+  /* 24.11.2026: вход — 7 типов: первый (оборудование цеха) во всю ширину, остальные по два, крупно */
+  .osg.os2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .osg.os2 .ob { padding: 14px 8px 12px; } .osg.os2 .ob i { font-size: 32px; } .osg.os2 .ob b { font-size: 14px; white-space: normal; line-height: 1.2; }
+  .osg.os2 .ob:first-child { grid-column: 1 / -1; }
+  .osg.os2 .ob u { font-size: 12px; top: 7px; right: 8px; }
   .crt-g > div.on { border-color: var(--btn); background: rgba(42,129,230,.14); }
   .crt-g > div.on span, .crt-g .cg.on small { color: var(--btn); }
   .crt-f { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -918,9 +933,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5ca25f98', newBuild = '';
+  var BUILD = '0ab51708', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795488747' || 0;
+  var BUILD_AT = +'1795489070' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2461,8 +2476,10 @@
       (x.lines || []).forEach(function (l) { if (l.brand && !seen[l.brand]) { seen[l.brand] = 1; B[l.brand] = (B[l.brand] || 0) + 1; } });
     });
     var ks = Object.keys(B).sort(function (a, b) { return B[b] - B[a]; });
+    // 24.11.2026 (руководитель «слишком большие»): плитки «Откуда» — размером как вкладки Движения, 4 в ряд: город и линия коротко
+    var SH = { t4: ['Ташкент', 'ПЕР'], t3: ['Ташкент', 'ТЕР'], g7: ['Gynomedix', 'ПЕР'], zv: ['Завод', 'ВСЕ'] }[q[0]] || [q[4], q[5]];
     return '<div class="' + q[2] + ' shp' + (c ? '' : ' z') + (on ? ' on' : '') + '" data-dp="' + q[0] + '"><span class="sc">' + c + '</span>' +
-      '<span class="cty">' + esc(q[4]) + '</span>' + (q[5] ? '<span class="ptag' + (q[5] === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + q[5] + '</span>' : '') +
+      '<span class="cty">' + esc(SH[0]) + '</span>' + (SH[1] ? '<span class="ptag' + (q[5] === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + SH[1] + '</span>' : '') +
       '<span class="brs">' + (ks.length ? ks.map(function (b) {   // 3 бренда — коротко, чтобы в один ряд
         var nm = ks.length > 1 ? ({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[b] || b) : b;   // 2+ бренда — коротко, в один ряд
         return '<span class="br ' + (BRCL[b] || '') + '">' + esc(nm) + ' ' + B[b] + '</span>'; }).join('')
@@ -2518,7 +2535,7 @@
       var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x) && live(x); });
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
-        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
+        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
           // 24.11.2026: в отгрузке плитка «Откуда» считает отгружено + просрочено (как число на вкладке) — сумма плиток = вкладке
           var act = kind === 'ship' && (docFlt.ship === 'ok' || docFlt.ship === 'late');
           var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (act ? (x.step === 'ok' || x.step === 'late') : (!f || f[3](x))) && live(x); }), c = rq.length;
@@ -3120,54 +3137,76 @@
     }
     load('/api/med', {}, draw);
   }
-  // 24.11.2026 (руководитель): 🏗 Основные средства завода — список из 1С: папки (Производства, Мебель, Компьютер, Транспорт,
-  // Прочие) кнопками по 4 в ряд, поиск, объекты по алфавиту: название, код 1С, вид, заводской номер
+  // 24.11.2026 (руководитель): 🏗 Основные средства завода — список из 1С. Сначала только 7 кнопок-типов (тип определяем сами
+  // по названию: оборудование, лаборатория, мебель, компьютеры, связь и охрана, бытовая техника, транспорт); список — только
+  // после нажатия на тип: «Назад», поиск внутри типа, объекты по алфавиту (название, код 1С, заводской номер)
   var osF = '', osQ = '';
-  var OSK = { 'Производства': ['Производство', '🏭', 'c1'], 'Мебель': ['Мебель', '🪑', 'c2'], 'Компьютер': ['Компьютеры', '💻', 'c3'],
-              'Транспортные средства': ['Транспорт', '🚚', 'c4'], 'Прочие': ['Прочие', '🧰', 'c5'], 'Без папки': ['Без папки', '📦', 'c6'] };
+  var OST = [   // [ключ, название, значок, цвет, правило по названию] — порядок проверки важен
+    ['car', 'Транспорт', '🚗', 'c4', /damas|lacetti|кобальт|cobalt|спарк|spark|tucson|автомобил/],
+    ['lab', 'Лаборатория', '🔬', 'c3', /лаборатор|весы|тестер|рефрактометр|инкубатор|муфельн|термометр/],
+    ['sec', 'Связь и охрана', '📹', 'c5', /камер|видеонаблюд|домофон|коммутатор|контроля доступа|турникет|рация|телефон|radiotelefon|огнетуш/],
+    ['home', 'Бытовая техника', '❄️', 'c7', /кондиционер|кандиционер|кулер|холодильник|микроволнов|\btv\b|водонагреват|дозатор/],
+    ['furn', 'Мебель', '🪑', 'c2', /стол|стул|кресл|шкаф|доск|мебел|сейф|тумб/],
+    ['pc', 'Компьютеры и оргтехника', '💻', 'c8', /компьют|компют|ноутбук|моноблок|принтер|мфу|монитор|планшет|lenovo|^hp|h61|\bups\b|ибп|стабилизатор|блок питания/],
+    ['prod', 'Производственное оборудование', '🏭', 'c1', null]];   // всё остальное — оборудование цеха
+  function osType(r, folder) {
+    var s = (r.name + ' ' + (r.full || '')).toLowerCase();
+    if (folder === 'Транспортные средства') return 'car';
+    for (var i = 0; i < OST.length; i++) if (OST[i][4] && OST[i][4].test(s)) return OST[i][0];
+    return 'prod';
+  }
   function showOs(box) {
     var me = cur;
     load('/api/os', {}, function (D) {
       if (cur !== me || !box.isConnected) return;
       if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
-      var FS = D.folders || [];
-      if (osF && !FS.some(function (f) { return f.name === osF; })) osF = '';
+      var ALL = [];
+      (D.folders || []).forEach(function (f) { f.rows.forEach(function (r) { ALL.push({ r: r, t: osType(r, f.name) }); }); });
+      ALL.sort(function (a, b) { return a.r.name.localeCompare(b.r.name, 'ru'); });
+      var CNT = {}; ALL.forEach(function (x) { CNT[x.t] = (CNT[x.t] || 0) + 1; });
+      var note = '<div class="note">Справочник «Основные средства» из 1С (только чтение)' + (D.at ? ', прочитан ' + esc(D.at) : '') +
+        '. Тип определён по названию.' + (D.refresh ? ' <button id="osref" style="margin-top:6px">🔄 Перечитать из 1С</button>' : '') + '</div>';
+      function bindRef() {
+        if ($('osref')) $('osref').onclick = function () {
+          this.disabled = true;
+          call('/api/os_refresh', {}, 30000).then(function (x) { say(x.text); }).catch(ivErr);
+        };
+      }
       function draw() {
-        var q = osQ.toLowerCase();
-        var h = '<div class="msec gpsec" style="margin-top:0">🏗 ОСНОВНЫЕ СРЕДСТВА ЗАВОДА · ' + D.n + '</div>' +
-          '<div class="osg">' + [['', 'Все средства', D.n, '🏗', 'c0 all']].concat(FS.map(function (f) {
-            var m = OSK[f.name] || [f.name, '🧰', 'c6'];
-            return [f.name, m[0], f.n, m[1], m[2]];
-          })).map(function (o) {
-            return '<div class="ob ' + o[4] + (osF === o[0] ? ' on' : '') + '" data-of="' + esc(o[0]) + '"><i>' + o[3] + '</i><b>' + esc(o[1]) + '</b><u>' + o[2] + '</u></div>';
-          }).join('') + '</div>' +
+        var T = OST.filter(function (o) { return o[0] === osF; })[0];
+        if (!T) {   // шаг 1: только кнопки типов, списка нет
+          osF = ''; osQ = '';
+          box.innerHTML = '<div class="msec gpsec" style="margin-top:0">🏗 ОСНОВНЫЕ СРЕДСТВА ЗАВОДА · ' + ALL.length + '</div>' +
+            '<div class="osg os2">' + ['prod', 'lab', 'furn', 'pc', 'sec', 'home', 'car'].map(function (k) { return OST.filter(function (o) { return o[0] === k; })[0]; }).map(function (o) {
+              return '<div class="ob ' + o[3] + (CNT[o[0]] ? '' : ' z') + '" data-of="' + o[0] + '"><i>' + o[2] + '</i><b>' + esc(o[1]) + '</b><u>' + (CNT[o[0]] || 0) + '</u></div>';
+            }).join('') + '</div>' + note;
+          Array.prototype.forEach.call(box.querySelectorAll('[data-of]'), function (el) {
+            el.onclick = function () { haptic('light'); osF = el.getAttribute('data-of'); osQ = ''; draw(); window.scrollTo(0, 0); };
+          });
+          bindRef();
+          return;
+        }
+        // шаг 2: список выбранного типа
+        var q = osQ.toLowerCase(), n = 0;
+        var rows = ALL.filter(function (x) { return x.t === osF; }).map(function (x) { return x.r; });
+        var shown = rows.filter(function (r) { return !q || (r.name + ' ' + r.full + ' ' + r.code + ' ' + r.serial + ' ' + r.maker).toLowerCase().indexOf(q) >= 0; });
+        var h = '<div class="navb"><div class="bk" id="osBack"><i>⬅</i>Назад</div><div class="nt"><small>Основные средства</small><b>' +
+          T[2] + ' ' + esc(T[1]) + ' · ' + rows.length + '</b></div></div>' +
           '<input class="txt ivfind" id="osfind" placeholder="🔎 Найти по названию, коду, номеру" value="' + esc(osQ) + '">';
-        var n = 0;
-        FS.forEach(function (f) {
-          if (osF && f.name !== osF) return;
-          var rows = f.rows.filter(function (r) { return !q || (r.name + ' ' + r.full + ' ' + r.code + ' ' + r.serial + ' ' + r.maker).toLowerCase().indexOf(q) >= 0; });
-          if (!rows.length) return;
-          var m = OSK[f.name];
-          h += '<div class="ivsec">' + (m ? m[1] + ' ' + esc(m[0]) : esc(f.name)) + ' · ' + rows.length + '</div>';
-          h += rows.map(function (r) {
-            n++;
-            var sub = [r.grp, r.serial ? 'зав. № ' + r.serial : '', r.maker, r.date ? 'выпуск ' + dmy(r.date) : '', r.note].filter(Boolean).join(' · ');
-            return '<div class="osr"><span class="nn">' + n + '</span><div class="t"><b>' + esc(r.name) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
-              '<span class="cd0">' + esc(r.code) + '</span></div>';
-          }).join('');
-        });
-        if (!n) h += '<div class="empty">' + (D.n ? 'Не найдено' : 'Список из 1С ещё не загружен') + '</div>';
-        h += '<div class="note">Справочник «Основные средства» из 1С (только чтение)' + (D.at ? ', прочитан ' + esc(D.at) : '') + '.' +
-          (D.refresh ? ' <button id="osref" style="margin-top:6px">🔄 Перечитать из 1С</button>' : '') + '</div>';
+        h += shown.map(function (r) {
+          n++;
+          var sub = [r.serial ? 'зав. № ' + r.serial : '', r.maker, r.date ? 'выпуск ' + dmy(r.date) : '', r.note].filter(Boolean).join(' · ');
+          return '<div class="osr"><span class="nn">' + n + '</span><div class="t"><b>' + esc(r.name) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
+            '<span class="cd0">' + esc(r.code) + '</span></div>';
+        }).join('');
+        if (!n) h += '<div class="empty">' + (rows.length ? 'Не найдено' : 'Пусто') + '</div>';
+        h += note;
         var fo = document.activeElement && document.activeElement.id === 'osfind';
         box.innerHTML = h;
         if (fo) { $('osfind').focus(); $('osfind').setSelectionRange(osQ.length, osQ.length); }
         $('osfind').oninput = function () { osQ = this.value; draw(); };
-        Array.prototype.forEach.call(box.querySelectorAll('[data-of]'), function (el) { el.onclick = function () { osF = el.getAttribute('data-of'); draw(); }; });
-        if ($('osref')) $('osref').onclick = function () {
-          var b = this; b.disabled = true;
-          call('/api/os_refresh', {}, 30000).then(function (x) { say(x.text); }).catch(ivErr);
-        };
+        $('osBack').onclick = function () { haptic('light'); osF = ''; draw(); window.scrollTo(0, 0); };
+        bindRef();
       }
       draw();
     });
