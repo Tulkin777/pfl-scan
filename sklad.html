@@ -702,6 +702,12 @@
                  background: rgba(255,255,255,.92); color: #263241; text-shadow: none; }
   .zavg .zb.rs { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 5px 0 #9c4210, 0 12px 22px rgba(217,97,31,.25); }
   .zavg .zb.pr { background: linear-gradient(150deg, #7fb6ff, #3f55c9); box-shadow: 0 5px 0 #2b3b94, 0 12px 22px rgba(63,85,201,.25); }
+  /* 24.11.2026 (руководитель «не помещается»): три кнопки Завода — в один ряд, только значок, название и число */
+  .zavg.z3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .zavg.z3 .zb { padding: 30px 4px 11px; min-height: 0; text-align: center; border-radius: 18px; }
+  .zavg.z3 .zb i { position: static; transform: none; width: 52px; height: 52px; margin: 0 auto 6px; font-size: 30px; }
+  .zavg.z3 .zb b { font-size: 13.5px; line-height: 1.15; } .zavg.z3 .zb span { display: none; }
+  .zavg.z3 .zb em { top: 6px; right: 6px; left: 6px; font-size: 10px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .zavg .zb.or { background: linear-gradient(150deg, #5fd69a, #17964a); box-shadow: 0 5px 0 #0f6f36, 0 12px 22px rgba(23,150,74,.25); }
   .zavg .zb.lp { background: linear-gradient(150deg, #5fd3a0, #1c8f64); box-shadow: 0 5px 0 #126846, 0 12px 22px rgba(28,143,100,.25); }
   .zavg .zb.lt { background: linear-gradient(150deg, #7fb6ff, #2f6fd0); box-shadow: 0 5px 0 #1f4f9a, 0 12px 22px rgba(47,111,208,.25); }
@@ -1074,9 +1080,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '71c2ca51', newBuild = '';
+  var BUILD = 'f6b8f164', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795500575' || 0;
+  var BUILD_AT = +'1795501128' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3543,7 +3549,7 @@
       $('zavBack').onclick = function () { haptic('light'); zavPart = ''; showZav(box); window.scrollTo(0, 0); };
       return zavPart === 'proc' ? showPmv($('zavin')) : showRsx($('zavin'));
     }
-    box.innerHTML = '<div class="msec gpsec" style="margin-top:0">🏭 ЗАВОД</div><div class="zavg">' +
+    box.innerHTML = '<div class="msec gpsec" style="margin-top:0">🏭 ЗАВОД</div><div class="zavg z3">' +
       '<div class="zb rs" data-zp="rsx"><i>🧪</i><b>Расход сырья</b><span>Сырьё и упаковка со склада сырья — сколько ушло, на какие партии, на сколько хватит остатка</span><em id="zbr">…</em></div>' +
       '<div class="zb pr" data-zp="proc"><i>⚙️</i><b>Процессы</b><span>Где сейчас каждая партия: склад сырья → ОТК → цех → дозирование → упаковка → склад ГП</span><em id="zbp">…</em></div>' +
       '<div class="zb or" data-zp="ord"><i>📝</i><b>Заказы</b><span>План производства Перечисления и Терминала — месяц, неделя, завтра и 2 дня (как в группах PLAN ZAKAZ)</span><em>ПЕР · ТЕР</em></div></div>';
