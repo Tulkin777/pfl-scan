@@ -1237,9 +1237,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '53fc6701', newBuild = '';
+  var BUILD = 'ff77530c', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795542747' || 0;
+  var BUILD_AT = +'1795542943' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4318,21 +4318,43 @@
       var first = B.querySelector('[data-zv]');
       if (first) zpView(first.getAttribute('data-zv'), first.getAttribute('data-id'));
       if ($('zptab')) (function () {   // 24.11.2026: табель месяца (как в «Сверхурочных»), правила — там же
+        // 24.11.2026 (руководитель): сначала год (2026–2030), нажал — годы исчезают, 12 месяцев этого года; выбрал месяц —
+        // ниже таблица; «⬅ Назад» с месяцев — снова к годам. Открывается сразу на текущем месяце.
         var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], op = {};
-        function dr(T) {
+        var now = new Date(), curY = String(now.getFullYear()), curM = curY + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
+        var st = { step: 'm', y: curY, m: curM, T: null };
+        function paint() {
           var Z = $('zptab'); if (!Z || cur !== me) return;
-          if (!T.ok) { Z.innerHTML = '<div class="empty">' + esc(T.text || 'Нет данных') + '</div>'; return; }
-          var mn = MONN[+T.month.slice(5, 7)] + ' ' + T.month.slice(0, 4);
-          var x = '<div class="crt-g gr">' + (T.months.length ? T.months : [T.month]).map(function (m) { return '<div class="cg' + (m === T.month ? ' on' : '') + '" data-tm="' + m + '">' + esc(MONN[+m.slice(5, 7)]) + '<small>' + m.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
-          // 24.11.2026 (руководитель): таблица есть всегда — бонусы месяца (за партию, без брака) видны и без отчёта посещения
-          if (!T.have) x += '<div class="note" style="margin-top:0">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — минуты появятся после загрузки (📋 Посещение → 📎 Загрузить). Бонусы месяца — уже в таблице.</div>';
-          x += otTable(T, T.conf || {}, mn, op);
-          x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
+          var x = '';
+          if (st.step === 'y') {
+            x += '<div class="crt-l">Год</div><div class="osg">' + ['2026', '2027', '2028', '2029', '2030'].map(function (y, i) {
+              return '<div class="ob ' + ['c1', 'c3', 'c4', 'c2', 'c7'][i] + (y === st.y ? ' on' : '') + '" data-zy="' + y + '"><i>📅</i><b>' + y + '</b></div>'; }).join('') + '</div>';
+            x += '<div class="note" style="margin-top:0">Выберите год — откроются его 12 месяцев.</div>';
+          } else {
+            x += '<div class="crt-l">' + st.y + ' · месяц</div><div class="crt-g gr">' + MONN.slice(1).map(function (n, i) {
+              var k = st.y + '-' + ('0' + (i + 1)).slice(-2);
+              return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '">' + esc(n) + '<small>' + st.y + '</small></div>'; }).join('') + '</div>';
+            var T = st.T;
+            if (!T) x += '<div class="spin">Считаю…</div>';
+            else if (!T.ok) x += '<div class="empty">' + esc(T.text || 'Нет данных') + '</div>';
+            else {
+              var mn = MONN[+T.month.slice(5, 7)] + ' ' + T.month.slice(0, 4);
+              // таблица есть всегда — бонусы месяца (за партию, без брака) видны и без отчёта посещения
+              if (!T.have) x += '<div class="note" style="margin-top:0">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — минуты появятся после загрузки (📋 Посещение → 📎 Загрузить). Бонусы месяца — уже в таблице.</div>';
+              x += otTable(T, T.conf || {}, mn, op);
+              x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
+            }
+          }
           Z.innerHTML = x;
-          Array.prototype.forEach.call(Z.querySelectorAll('[data-tm]'), function (el) { el.onclick = function () { load('/api/zp_ot', { month: el.getAttribute('data-tm') }, dr); }; });
-          Array.prototype.forEach.call(Z.querySelectorAll('[data-ow]'), function (el) { el.onclick = function () { var w = el.getAttribute('data-ow'); op[w] = !op[w]; dr(T); }; });
+          Array.prototype.forEach.call(Z.querySelectorAll('[data-zy]'), function (el) { el.onclick = function () { haptic('light'); st.y = el.getAttribute('data-zy'); st.step = 'm'; if (st.m.slice(0, 4) !== st.y) { st.m = ''; st.T = null; } paint(); }; });
+          Array.prototype.forEach.call(Z.querySelectorAll('[data-zmo]'), function (el) { el.onclick = function () { haptic('light'); pick(el.getAttribute('data-zmo')); }; });
+          Array.prototype.forEach.call(Z.querySelectorAll('[data-ow]'), function (el) { el.onclick = function () { var w = el.getAttribute('data-ow'); op[w] = !op[w]; paint(); }; });
+          if (st.step === 'm' && !st.m) { var c = Z.querySelector('.crt-g'); if (c) c.insertAdjacentHTML('afterend', '<div class="note" style="margin-top:0">Выберите месяц — ниже откроется таблица.</div>'); }
         }
-        load('/api/zp_ot', {}, dr);
+        function pick(k) { st.m = k; st.T = null; paint(); load('/api/zp_ot', { month: k }, function (T) { if (st.m === k) { st.T = T; paint(); } }); }
+        // большая «⬅ Назад»: с месяцев — к выбору года, с годов — выход как обычно
+        backHook = function () { if (cur !== me || !$('zptab') || st.step !== 'm') return false; st.step = 'y'; paint(); return true; };
+        pick(curM);
       })();
       Array.prototype.forEach.call(B.querySelectorAll('[data-zv]'), function (el) {
         el.onclick = function (ev) {
