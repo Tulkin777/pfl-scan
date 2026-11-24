@@ -852,6 +852,9 @@
   .ott td.pctc { color: #8a5a00; }   /* 24.11.2026: без фона, цвет цифр оставлен */ .ott td.pctc b { font-size: 13.5px; }
   .ott td.sumc { color: #116b34; }   /* 24.11.2026: без фона, цвет цифр оставлен */ .ott td.sumc b { font-size: 13.5px; }
   .ott td.factc { background: #e6f0ff; color: #1f4f9a; } .ott td.factc b { font-size: 13.5px; }
+  /* 24.11.2026 (руководитель): стоимость надбавки сверхурочно — цифра в цветной «таблетке» */
+  .ott td.otcc .otpill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 13px; color: #8a3f00; background: linear-gradient(135deg, #ffe2c2, #ffc98f); box-shadow: 0 1px 3px rgba(196,106,0,.25), inset 0 0 0 1px rgba(196,106,0,.18); }
+  .ott td.otcc small { margin-top: 3px; }
   .ott td.no { font-size: 16px; font-weight: 800; text-align: center; } .ott td.nf { text-align: center; color: #999; font-style: italic; }
   .ott td.nm { text-align: left; white-space: normal; min-width: 150px; } .ott .neg { color: #c62828; } .ott .pos { color: #1b7f3b; } .ott tr[data-ow] { cursor: pointer; }
   .ott tr.otd td { text-align: left; white-space: normal; font-size: 12px; background: rgba(0,0,0,.03); }
@@ -1240,9 +1243,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd5709803', newBuild = '';
+  var BUILD = '6f428dca', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795543400' || 0;
+  var BUILD_AT = +'1795543490' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4791,7 +4794,7 @@
               // 24.11.2026 (руководитель): по факту = зарплата с бонусами × % в смену от нормы
               '<td class="factc"><b>' + (p.nofid ? '—' : fmtq(zpf(p))) + '</b>' + (p.nofid ? '' : '<small>' + fmtq(zpb(p)) + ' × ' + pct1(p).toLocaleString('ru') + ' %</small>') + '</td>' +
               // 24.11.2026 (руководитель): стоимость надбавки = надбавка (мин) × стоимость минуты (зарплата ÷ норма месяца)
-              '<td>' + (p.ot_min && p.ot_rate ? '<b style="color:#c46a00">' + fmtq(Math.round(p.ot_min * p.ot_rate)) + '</b><small>' + F(p.ot_min) + ' мин × ' + fmtq(Math.round(p.ot_rate * 100) / 100) + '</small>'
+              '<td class="otcc">' + (p.ot_min && p.ot_rate ? '<b class="otpill">' + fmtq(Math.round(p.ot_min * p.ot_rate)) + '</b><small>' + F(p.ot_min) + ' мин × ' + fmtq(Math.round(p.ot_rate * 100) / 100) + '</small>'
                 : (p.ot_min && !p.salary ? '<span style="opacity:.5">нет зарплаты</span>' : '0')) + '</td>' +
               // 24.11.2026 (руководитель): инвентаризация по субботам — сумма; должен был (в правиле раздела), а нет — ✖
               IS.map(function (d) { var v = (p.inv || {})[d] || 0; return '<td>' + (v ? '<b>' + fmtq(v) + '</b>' : d > TD ? '<span style="opacity:.4">впереди</span>' : p.inv_need ? '<span class="neg">✖</span>' : '—') + '</td>'; }).join('') +
@@ -4807,7 +4810,7 @@
           // итог % — вся смена всех ÷ вся норма всех (кто есть в отчёте посещения)
           (function () { var a = 0, b = 0; D.people.forEach(function (p) { if (!p.nofid) { a += p.shift || 0; b += p.norm || 0; } }); return '<td class="pctc"><b>' + (b ? (Math.round(a / b * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>'; })() +
           '<td class="factc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.nofid ? 0 : zpf(p)); }, 0)) + '</b></td>' +
-          '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0); }, 0)) + '</b></td>' +
+          '<td class="otcc"><b class="otpill">' + fmtq(D.people.reduce(function (a, p) { return a + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0); }, 0)) + '</b></td>' +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_other || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_total || 0); }, 0)) + '</b></td></tr>' +
           '</tbody></table></div></div>';
