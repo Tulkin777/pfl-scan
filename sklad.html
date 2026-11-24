@@ -602,6 +602,28 @@
   .crt-g .cg { padding: 7px 2px; font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .crt-g .cg small { display: block; font-size: 11px; font-weight: 700; color: var(--hint); }
   .crt-g .cg.z { opacity: .45; }
+  /* 24.11.2026 (руководитель): 🏗 Основные средства — папки объёмными цветными плитками: значок, название, число */
+  .osg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 2px 0 14px; max-width: 860px; }
+  .osg .ob { position: relative; overflow: hidden; border-radius: 16px; padding: 10px 6px 9px; text-align: center; cursor: pointer; color: #fff;
+             min-width: 0; transition: transform .12s, box-shadow .12s; text-shadow: 0 1px 2px rgba(0,0,0,.28); }
+  .osg .ob:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 52%; pointer-events: none;
+                    background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0)); }
+  .osg .ob i { display: block; font-style: normal; font-size: 26px; line-height: 1.15; text-shadow: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  .osg .ob b { display: block; font-size: 13px; font-weight: 800; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .osg .ob u { position: absolute; top: 6px; right: 7px; text-decoration: none; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 10px;
+               background: rgba(255,255,255,.92); color: #263241; text-shadow: none; font-variant-numeric: tabular-nums; }
+  .osg .ob.all { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 10px; }
+  .osg .ob.all i { display: inline; font-size: 22px; } .osg .ob.all b { display: inline; font-size: 14px; margin: 0; }
+  .osg .ob.all u { position: static; }
+  .osg .ob.on { transform: translateY(-3px); box-shadow: 0 7px 0 rgba(0,0,0,.28), 0 10px 18px rgba(0,0,0,.22), inset 0 0 0 3px rgba(255,255,255,.9) !important; }
+  .osg .ob:active { transform: translateY(3px); box-shadow: none !important; }
+  .osg .ob.c0 { background: linear-gradient(150deg, #9fb3c8, #4f6880); box-shadow: 0 4px 0 #344658; }
+  .osg .ob.c1 { background: linear-gradient(150deg, #5fd3a0, #1c8f64); box-shadow: 0 4px 0 #126846; }
+  .osg .ob.c2 { background: linear-gradient(150deg, #f2c27a, #c27c2c); box-shadow: 0 4px 0 #8f5918; }
+  .osg .ob.c3 { background: linear-gradient(150deg, #7fb6ff, #2f6fd0); box-shadow: 0 4px 0 #1f4f9a; }
+  .osg .ob.c4 { background: linear-gradient(150deg, #a99bff, #5b48d1); box-shadow: 0 4px 0 #3e3094; }
+  .osg .ob.c5 { background: linear-gradient(150deg, #f59fb8, #c9567a); box-shadow: 0 4px 0 #933a57; }
+  .osg .ob.c6 { background: linear-gradient(150deg, #b9c2cc, #78838f); box-shadow: 0 4px 0 #555e68; }
   .crt-g > div.on { border-color: var(--btn); background: rgba(42,129,230,.14); }
   .crt-g > div.on span, .crt-g .cg.on small { color: var(--btn); }
   .crt-f { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -869,9 +891,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'c7785caa', newBuild = '';
+  var BUILD = '3cf0e549', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795465631' || 0;
+  var BUILD_AT = +'1795488486' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3074,6 +3096,8 @@
   // 24.11.2026 (руководитель): 🏗 Основные средства завода — список из 1С: папки (Производства, Мебель, Компьютер, Транспорт,
   // Прочие) кнопками по 4 в ряд, поиск, объекты по алфавиту: название, код 1С, вид, заводской номер
   var osF = '', osQ = '';
+  var OSK = { 'Производства': ['Производство', '🏭', 'c1'], 'Мебель': ['Мебель', '🪑', 'c2'], 'Компьютер': ['Компьютеры', '💻', 'c3'],
+              'Транспортные средства': ['Транспорт', '🚚', 'c4'], 'Прочие': ['Прочие', '🧰', 'c5'], 'Без папки': ['Без папки', '📦', 'c6'] };
   function showOs(box) {
     var me = cur;
     load('/api/os', {}, function (D) {
@@ -3084,8 +3108,11 @@
       function draw() {
         var q = osQ.toLowerCase();
         var h = '<div class="msec gpsec" style="margin-top:0">🏗 ОСНОВНЫЕ СРЕДСТВА ЗАВОДА · ' + D.n + '</div>' +
-          '<div class="crt-g gr">' + [['', 'Все', D.n]].concat(FS.map(function (f) { return [f.name, { 'Транспортные средства': 'Транспорт', 'Производства': 'Произв.', 'Компьютер': 'Компьют.' }[f.name] || f.name, f.n]; })).map(function (o) {
-            return '<div class="cg' + (osF === o[0] ? ' on' : '') + '" data-of="' + esc(o[0]) + '">' + esc(o[1]) + '<small>' + o[2] + '</small></div>';
+          '<div class="osg">' + [['', 'Все средства', D.n, '🏗', 'c0 all']].concat(FS.map(function (f) {
+            var m = OSK[f.name] || [f.name, '🧰', 'c6'];
+            return [f.name, m[0], f.n, m[1], m[2]];
+          })).map(function (o) {
+            return '<div class="ob ' + o[4] + (osF === o[0] ? ' on' : '') + '" data-of="' + esc(o[0]) + '"><i>' + o[3] + '</i><b>' + esc(o[1]) + '</b><u>' + o[2] + '</u></div>';
           }).join('') + '</div>' +
           '<input class="txt ivfind" id="osfind" placeholder="🔎 Найти по названию, коду, номеру" value="' + esc(osQ) + '">';
         var n = 0;
@@ -3093,7 +3120,8 @@
           if (osF && f.name !== osF) return;
           var rows = f.rows.filter(function (r) { return !q || (r.name + ' ' + r.full + ' ' + r.code + ' ' + r.serial + ' ' + r.maker).toLowerCase().indexOf(q) >= 0; });
           if (!rows.length) return;
-          h += '<div class="ivsec">' + esc(f.name) + ' · ' + rows.length + '</div>';
+          var m = OSK[f.name];
+          h += '<div class="ivsec">' + (m ? m[1] + ' ' + esc(m[0]) : esc(f.name)) + ' · ' + rows.length + '</div>';
           h += rows.map(function (r) {
             n++;
             var sub = [r.grp, r.serial ? 'зав. № ' + r.serial : '', r.maker, r.date ? 'выпуск ' + dmy(r.date) : '', r.note].filter(Boolean).join(' · ');
