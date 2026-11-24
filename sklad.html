@@ -1101,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ac6dbdea', newBuild = '';
+  var BUILD = 'f9b5a89b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795509972' || 0;
+  var BUILD_AT = +'1795510333' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3770,6 +3770,7 @@
       var ppl = '<datalist id="zinvppl">' + (D.people_list || []).map(function (p) { return '<option value="' + esc(p) + '">'; }).join('') + '</datalist>';
       // 24.11.2026 (руководитель): две кнопки — «Созданные» и «Подтверждённые»; внутри сначала год, потом месяц (где что-то есть), потом список
       var CR = D.created || [], OKM = D.ok_months || {};
+      var ZINV_START = '2026-11';
       var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
       var MH = function (name, extra) { return '<div class="msec">' + esc(String(name).toUpperCase()) + (extra ? ' · ' + extra : '') + '</div>'; };
       var madeM = {};
@@ -3779,17 +3780,15 @@
           return '<div class="ob ' + t[4] + (zinvTab === t[0] ? ' on' : '') + '" data-zt="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (t[3] !== '' ? '<u>' + t[3] + '</u>' : '') + '</div>';
         }).join('') + '</div>';
       if (zinvTab === 'made' || zinvTab === 'list') {
-        var CNT = zinvTab === 'made' ? madeM : OKM;
-        var ms = Object.keys(CNT).filter(function (k) { return CNT[k] > 0; });
-        if (ms.indexOf(D.month) < 0) ms.push(D.month);
-        var yrs = ms.map(function (k) { return k.slice(0, 4); }).filter(function (y, i, a) { return a.indexOf(y) === i; }).sort().reverse();
-        var yr = D.month.slice(0, 4);
-        h += '<div class="crt-l">Год</div><div class="crt-g gr">' + yrs.map(function (y) {
-          var n = ms.filter(function (k) { return k.slice(0, 4) === y; }).reduce(function (a, k) { return a + (CNT[k] || 0); }, 0);
-          return '<div class="cg' + (y === yr ? ' on' : '') + '" data-zy="' + y + '">' + y + '<small>' + n + '</small></div>';
+        // 24.11.2026 (руководитель): годы 2026–2029, месяцы — с ноября 2026 (задним числом не нужно), все месяцы года по порядку
+        var CNT = zinvTab === 'made' ? madeM : OKM, yr = D.month.slice(0, 4);
+        var mOf = function (y) { var a = []; for (var i = 1; i <= 12; i++) { var k = y + '-' + (i < 10 ? '0' : '') + i; if (k >= ZINV_START) a.push(k); } return a; };
+        h += '<div class="crt-l">Год</div><div class="crt-g gr">' + ['2026', '2027', '2028', '2029'].map(function (y) {
+          var n = mOf(y).reduce(function (a, k) { return a + (CNT[k] || 0); }, 0);
+          return '<div class="cg' + (y === yr ? ' on' : '') + '" data-zy="' + y + '">' + y + '<small>' + (n || '') + '</small></div>';
         }).join('') + '</div>';
-        h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.filter(function (k) { return k.slice(0, 4) === yr; }).sort().map(function (k) {
-          return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-zm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + (CNT[k] || 0) + '</small></div>';
+        h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + mOf(yr).map(function (k) {
+          return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-zm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + (CNT[k] || '') + '</small></div>';
         }).join('') + '</div>';
       }
       var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
@@ -3901,8 +3900,8 @@
       Array.prototype.forEach.call(B.querySelectorAll('[data-zm]'), function (el) { el.onclick = function () { load('/api/zp_inv', { month: el.getAttribute('data-zm') }, draw); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zy]'), function (el) {   // год → последний месяц этого года, где что-то есть
         el.onclick = function () {
-          var y = el.getAttribute('data-zy'), C2 = zinvTab === 'made' ? madeM : OKM;
-          var k = Object.keys(C2).filter(function (q) { return q.slice(0, 4) === y && C2[q] > 0; }).sort().pop() || (y + '-12');
+          var y = el.getAttribute('data-zy'), now = new Date(), cm = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
+          var k = cm.slice(0, 4) === y ? cm : (y === ZINV_START.slice(0, 4) ? ZINV_START : y + '-01');   // этот год — текущий месяц, другой — первый месяц
           load('/api/zp_inv', { month: k }, draw);
         };
       });
