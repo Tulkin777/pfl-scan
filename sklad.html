@@ -1101,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f6384921', newBuild = '';
+  var BUILD = 'ad66e191', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795510422' || 0;
+  var BUILD_AT = +'1795510748' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3843,7 +3843,7 @@
                 }
               }
               c += '<div class="zim">' + (s.resp ? '👥 ' + esc(s.resp) + (s.help.length ? ' + ' + esc(s.help.join(', ')) : '') + ' · ' +
-                (s.days === 'sat' ? '📅 только суббота' : '🗓 каждый рабочий день') + ' (с ' + esc(s.rule_from) + ')' : '🗂 раздел не настроен — вкладка «Разделы»') + '</div>';
+                (s.days === 'sat' ? '📅 только суббота' : s.days === 'stop' ? '⏸ остановлен' : '🗓 каждый рабочий день') + ' (с ' + esc(s.rule_from) + ')' : '🗂 раздел не настроен — вкладка «Разделы»') + '</div>';
               return c + '</div>';
             }).join('');
           }
@@ -3857,7 +3857,7 @@
         h += (D.sections || []).map(function (s) {
           var cur_ = s.cur || {}, open_ = zinvOpen['s' + s.key];
           var r = '<div class="zic zs' + (s.cur ? '' : ' nr') + '"><div class="zih" data-zo="s' + s.key + '"><div class="t"><b>' + s.icon + ' ' + esc(s.title) + '</b><small>' +
-            (s.cur ? '👤 ' + esc(cur_.resp || '—') + (cur_.help && cur_.help.length ? ' + ' + esc(cur_.help.join(', ')) : '') + ' · ' + (cur_.days === 'sat' ? '📅 только суббота' : '🗓 каждый рабочий день') + ' · с ' + esc(MN(cur_.from))
+            (s.cur ? '👤 ' + esc(cur_.resp || '—') + (cur_.help && cur_.help.length ? ' + ' + esc(cur_.help.join(', ')) : '') + ' · ' + (cur_.days === 'sat' ? '📅 только суббота' : cur_.days === 'stop' ? '⏸ остановлен' : '🗓 каждый рабочий день') + ' · с ' + esc(MN(cur_.from))
               : '❗ не настроен') + '</small></div><span class="r">' + (open_ ? '▲' : '✏️') + '</span></div>';
           if (open_) {
             r += '<div class="zrf" data-key="' + s.key + '"><label><small>Ответственный (×' + esc(String((D.conf || {}).resp || 1.2)) + ')</small><select class="txt" data-f="resp"><option value="">—</option>' +
@@ -3867,7 +3867,8 @@
               }).join('') + '</div>' +
               '<small class="zl">За какие дни бонус</small><div class="zd2">' +
               '<label class="zck big"><input type="checkbox" data-d="sat"' + (cur_.days === 'sat' ? ' checked' : '') + '> 📅 Только суббота</label>' +
-              '<label class="zck big"><input type="checkbox" data-d="work"' + (cur_.days !== 'sat' ? ' checked' : '') + '> 🗓 Каждый рабочий день</label></div>' +
+              '<label class="zck big"><input type="checkbox" data-d="work"' + (cur_.days !== 'sat' && cur_.days !== 'stop' ? ' checked' : '') + '> 🗓 Каждый рабочий день</label>' +
+              '<label class="zck big"><input type="checkbox" data-d="stop"' + (cur_.days === 'stop' ? ' checked' : '') + '> ⏸ Остановить бонус</label></div>' +   // 24.11.2026 (руководитель)
               '<small class="zl">С какого месяца</small><div class="zd2">' +
               '<label class="zck big"><input type="checkbox" data-m="' + D.month + '" checked> с этого — ' + esc(MN(D.month)) + '</label>' +
               '<label class="zck big"><input type="checkbox" data-m="' + D.next_month + '"> со следующего — ' + esc(MN(D.next_month)) + '</label></div>' +
@@ -3876,7 +3877,7 @@
           if ((s.hist || []).length) r += '<div class="zhist">' + s.hist.map(function (v) {
             var on_ = s.cur && v.id === s.cur.id;
             return '<div class="' + (on_ ? 'on' : '') + '"><span>' + (on_ ? '✅ ' : '🗄 ') + 'с ' + esc(MN(v.from)) + ' · ' + esc(v.resp || '—') + (v.help && v.help.length ? ' + ' + esc(v.help.join(', ')) : '') +
-              ' · ' + (v.days === 'sat' ? 'только суббота' : 'каждый рабочий день') + ' <small>· ' + esc(v.by) + ' ' + esc(String(v.at).slice(8, 10) + '.' + String(v.at).slice(5, 7)) + '</small></span>' +
+              ' · ' + (v.days === 'sat' ? 'только суббота' : v.days === 'stop' ? '⏸ остановлен' : 'каждый рабочий день') + ' <small>· ' + esc(v.by) + ' ' + esc(String(v.at).slice(8, 10) + '.' + String(v.at).slice(5, 7)) + '</small></span>' +
               (D.admin ? '<button class="zdel" data-zdel="' + esc(v.id) + '" title="Удалить строку (например, тестовую)">🗑</button>' : '') + '</div>';
           }).join('') + '</div>';
           return r + '</div>';
@@ -3939,7 +3940,13 @@
           var b = this, pick = function (a) { var i = f.querySelector('[' + a + ']:checked'); return i ? i.getAttribute(a) : ''; };
           var body = { month: zinvMonth, key: f.getAttribute('data-key'), resp: f.querySelector('[data-f="resp"]').value, days: pick('data-d') || 'work', from: pick('data-m') || zinvMonth,
             help: Array.prototype.map.call(f.querySelectorAll('[data-h]:checked'), function (i) { return i.getAttribute('data-h'); }) };
-          if (!body.resp) return say('Выберите ответственного.');
+          if (!body.resp && body.days !== 'stop') return say('Выберите ответственного.');
+          if (body.days === 'stop') {   // остановить — с выбранного месяца и дальше, пока не будет новой строки
+            var q_ = 'Остановить бонус раздела с ' + body.from + '? Дальше каждый месяц — 0, пока не включите снова.', b0 = this;
+            var go_ = function (yes) { if (!yes) return; b0.disabled = true; call('/api/zp_inv_rule', body, 30000).then(function (q) { if (!q.ok) { say(q.text); b0.disabled = false; return; }
+              haptic('success'); zinvOpen['s' + body.key] = false; draw(q); }).catch(function (e) { b0.disabled = false; ivErr(e); }); };
+            try { return tg.showConfirm(q_, go_); } catch (e) { return go_(confirm(q_)); }
+          }
           b.disabled = true; b.textContent = '⏳';
           call('/api/zp_inv_rule', body, 30000).then(function (q) { if (!q.ok) { say(q.text); b.disabled = false; b.textContent = '💾 Сохранить'; return; }
             haptic('success'); zinvOpen['s' + body.key] = false; draw(q); }).catch(function (e) { b.disabled = false; b.textContent = '💾 Сохранить'; ivErr(e); });
