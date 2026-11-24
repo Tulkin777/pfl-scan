@@ -1193,9 +1193,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f019f220', newBuild = '';
+  var BUILD = 'e3e8a02b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795526339' || 0;
+  var BUILD_AT = +'1795526866' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4474,6 +4474,7 @@
     bindTabs();
     var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     var LN = { per: 'Перечисление', ter: 'Терминал', all: 'Обе линии' };
+    function lineSel(v) { return '<select class="txt" data-f="line" style="width:118px">' + ['all', 'per', 'ter'].map(function (l) { return '<option value="' + l + '"' + ((v || 'all') === l ? ' selected' : '') + '>' + LN[l] + '</option>'; }).join('') + '</select>'; }
     function draw(D) {
       if (cur !== me) return;
       var B = $('zb'); if (!B) return;
@@ -4483,38 +4484,40 @@
       var ms = [];
       for (var k = '2026-11'; k <= D.cur; ) { ms.push(k); var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } k = y + '-' + (m < 10 ? '0' : '') + m; }
       var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
+      var RP = (D.rates || {}).pos || {};
       var h = '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.map(function (k) {
         return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-bm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
       h += '<div class="crt-g st3"><div class="cb eq"><b>' + D.n.all + '</b><span>партий' + (D.month === D.cur ? ' с 1-го по сегодня' : ' за месяц') + '</span></div>' +
         '<div class="cb"><b>' + D.n.per + '</b><span>Перечисление</span></div><div class="cb"><b>' + D.n.ter + '</b><span>Терминал</span></div></div>';
       h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>бонус за партии · ' + esc(mname.toLowerCase()) + '</span></div>';
-      // сотрудники и ставки
-      h += '<div class="msec">СОТРУДНИКИ ЗАВОДА · СТАВКА ЗА 1 ПАРТИЮ</div><div class="zbf">';
-      // 24.11.2026 (руководитель): по должностям — начальник завода, контроль качества, склад, начальник участка, работники;
-      // без должности — ниже, уволенные — в самом низу; в каждой группе номер и сколько человек
-      var SI = D.staff_info || {}, POS = D.pos || [], PN = {};
-      POS.forEach(function (p) { PN[p[0]] = p[1]; });
-      var grp = POS.map(function (p) { return [p[0], p[1]]; }).concat([['', 'Без должности'], ['fired', 'Уволены']]);
-      var gOf = function (w) { var i = SI[w] || {}; return i.fired ? 'fired' : (PN[i.pos] ? i.pos : ''); };
-      var row = function (w, n) {
-        var r = (D.rates || {})[w] || {}, i = SI[w] || {}, p = (D.people || []).filter(function (q) { return q.who === w; })[0];
-        return '<div class="zpf zbr' + (i.fired ? ' cx' : '') + '" data-w="' + esc(w) + '" style="flex-wrap:wrap"><span class="nn">' + n + '</span><div class="t"><b style="text-transform:none">' + esc(w) + '</b>' +
-          '<small>' + (i.fired ? 'уволен с ' + esc(i.fired) : p ? p.n + ' партий × ' + fmtq(p.rate) + ' = <b>' + fmtq(p.sum) + ' сум</b>' : 'ставки нет') + '</small></div>' +
-          '<input class="txt" inputmode="numeric" placeholder="сум за партию" style="width:100px" data-f="sum" value="' + (r.sum || '') + '">' +
-          '<select class="txt" data-f="line" style="width:118px">' + ['all', 'per', 'ter'].map(function (l) { return '<option value="' + l + '"' + ((r.line || 'all') === l ? ' selected' : '') + '>' + LN[l] + '</option>'; }).join('') + '</select>' +
-          '<select class="txt" data-f="pos" style="width:150px"><option value="">— должность</option>' + POS.map(function (q) { return '<option value="' + q[0] + '"' + (i.pos === q[0] ? ' selected' : '') + '>' + esc(q[1]) + '</option>'; }).join('') + '</select>' +
-          '<label class="zck"><input type="checkbox" data-f="fired"' + (i.fired ? ' checked' : '') + '> уволен</label></div>';
+      // 24.11.2026 (руководитель): ставка по должности (должности — из «👔 Должности»), у человека можно поставить свою
+      h += '<div class="msec">СТАВКА ЗА 1 ПАРТИЮ ПО ДОЛЖНОСТИ</div>' + (D.order || []).map(function (t, i) {
+        var r = RP[t] || {};
+        return '<div class="zpf zbp" data-pos="' + esc(t) + '" style="flex-wrap:wrap"><span class="nn">' + (i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(t) + '</b>' +
+          '<small>' + (D.pos_n[t] || 0) + ' чел.</small></div><input class="txt" inputmode="numeric" placeholder="сум за партию" style="width:110px" data-f="sum" value="' + (r.sum || '') + '">' + lineSel(r.line) + '</div>';
+      }).join('');
+      // сотрудники — по порядку должностей; без должности — ниже; уволенные — в самом низу
+      var act = D.people.filter(function (p) { return !p.gone; }), gone = D.people.filter(function (p) { return p.gone; });
+      var row = function (p, n) {
+        var o = p.own || {};
+        return '<div class="zpf zbr' + (p.gone ? ' cx' : '') + '" data-id="' + esc(p.id) + '" style="flex-wrap:wrap"><span class="nn">' + n + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b>' +
+          '<small>' + esc(p.pos || 'без должности') + (p.gone ? ' · уволен с ' + esc(p.gone_from) : '') + ' · ' +
+          (p.n ? p.n + ' партий = <b>' + fmtq(p.sum) + ' сум</b>' + (p.src ? ' (' + p.src + ')' : '') : 'бонуса нет') + '</small></div>' +
+          '<input class="txt" inputmode="numeric" placeholder="своя ставка" style="width:110px" data-f="sum" value="' + (o.sum || '') + '">' + lineSel(o.line) + '</div>';
       };
-      h += grp.map(function (g) {
-        var ws = (D.staff || []).filter(function (w) { return gOf(w) === g[0]; });
-        if (!ws.length) return '';
-        return '<div class="crt-l">' + esc(g[1]) + ' · ' + ws.length + '</div>' + ws.map(function (w, i) { return row(w, i + 1); }).join('');
-      }).join('') + '</div>';
+      var gl = [], seen = {};
+      act.forEach(function (p) { var g = p.pos || ''; if (!seen[g]) { seen[g] = []; gl.push(g); } seen[g].push(p); });
+      gl.sort(function (a, b) { return (a === '') - (b === '') || (D.order || []).indexOf(a) - (D.order || []).indexOf(b); });
+      var no = 0;
+      h += '<div class="msec">СОТРУДНИКИ ЗАВОДА</div>' + gl.map(function (g) {
+        return '<div class="crt-l">' + esc(g || 'Без должности') + ' · ' + seen[g].length + '</div>' + seen[g].map(function (p) { no++; return row(p, no); }).join('');
+      }).join('') + (gone.length ? '<div class="crt-l">Уволены · ' + gone.length + '</div>' + gone.map(function (p, i) { return row(p, i + 1); }).join('') : '');
+      h += '<div class="note">Должности и «уволен» меняются в 💵 Расчёт зарплаты → 👔 Должности — здесь подтягиваются сами. Ставка — по должности; «своя ставка» у человека — вместо должностной. ' +
+        'Партия считается по должности человека на день выпуска; после увольнения — не считается.</div>';
       h += '<small class="zl">С какого месяца действуют ставки</small><div class="zd2">' +
         '<label class="zck big"><input type="checkbox" data-zbm="' + D.month + '" checked> с этого — ' + esc(mname) + '</label>' +
         '<label class="zck big"><input type="checkbox" data-zbm="' + D.next_month + '"> со следующего</label></div>' +
-        '<div class="ivbar"><button class="go" id="zbsave">💾 Сохранить</button></div>';
-      // по дням
+        '<div class="ivbar"><button class="go" id="zbsave">💾 Сохранить ставки</button></div>';
       h += '<div class="msec">ПАРТИИ ПО ДНЯМ</div>' + ((D.days || []).map(function (d) {
         var op = zbOpen[d.day];
         return '<div class="zpf" data-zbd="' + d.day + '"><span class="nn">' + esc(d.day.slice(8, 10) + '.' + d.day.slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' +
@@ -4522,7 +4525,6 @@
           (op ? '<small>' + d.items.map(function (b) { return '№' + esc(b.num) + ' ' + esc(b.item) + ' · ' + LN[b.line] + ' · ' + fmtq(b.qty) + ' шт · ' + esc(b.at.slice(11, 16)); }).join('<br>') + '</small>' : '') +
           '</div><b>' + (op ? '▲' : '▼') + '</b></div>';
       }).join('') || '<div class="empty" style="padding:10px">Партий в этом месяце пока нет</div>');
-      h += '<div class="note">Партия — заказ производства, выпущенный в ERP. Сумма человека = партии его линии с 1-го числа × его ставка. Ставки меняются с месяца, прошлые месяцы — по своим ставкам.</div>';
       h += '<div class="msec">ЖУРНАЛ ИЗМЕНЕНИЙ</div>' + ((D.log || []).map(function (l) { return '<div class="zlog">' + esc(l.at) + ' · ' + esc(l.by) + ' · ' + esc(l.text) + '</div>'; }).join('') || '<div class="empty" style="padding:8px">Пока изменений нет</div>');
       B.innerHTML = h; window.scrollTo(0, y0);
       Array.prototype.forEach.call(B.querySelectorAll('[data-bm]'), function (el) { el.onclick = function () { load('/api/zp_batch', { month: el.getAttribute('data-bm') }, draw); }; });
@@ -4531,18 +4533,16 @@
         i.onchange = function () { Array.prototype.forEach.call(B.querySelectorAll('[data-zbm]'), function (j) { j.checked = j === i; }); };
       });
       $('zbsave').onclick = function () {
-        var ppl = {}, stf = {}, b = this;
-        Array.prototype.forEach.call(B.querySelectorAll('.zbr'), function (r) {
-          var s = r.querySelector('[data-f="sum"]').value.replace(/\s/g, '');
-          if (+s > 0) ppl[r.getAttribute('data-w')] = { sum: +s, line: r.querySelector('[data-f="line"]').value };
-          stf[r.getAttribute('data-w')] = { pos: r.querySelector('[data-f="pos"]').value, fired: r.querySelector('[data-f="fired"]').checked };
-        });
+        var pos = {}, ppl = {}, b = this, txt = [];
+        var val = function (r) { return r.querySelector('[data-f="sum"]').value.replace(/\s/g, ''); };
+        Array.prototype.forEach.call(B.querySelectorAll('.zbp'), function (r) { var s = val(r); if (+s > 0) { pos[r.getAttribute('data-pos')] = { sum: +s, line: r.querySelector('[data-f="line"]').value }; txt.push(r.getAttribute('data-pos') + ' — ' + s); } });
+        Array.prototype.forEach.call(B.querySelectorAll('.zbr'), function (r) { var s = val(r); if (+s > 0) { ppl[r.getAttribute('data-id')] = { sum: +s, line: r.querySelector('[data-f="line"]').value }; txt.push(r.querySelector('b').textContent + ' (своя) — ' + s); } });
         var fi = B.querySelector('[data-zbm]:checked'), frm = fi ? fi.getAttribute('data-zbm') : D.month;
-        var q_ = 'Сохранить ставки, должности и «уволен» с ' + frm + '?\n' + Object.keys(ppl).map(function (w) { return w + ' — ' + ppl[w].sum + ' (' + LN[ppl[w].line] + ')'; }).join('\n');
+        var q_ = 'Сохранить ставки за партию с ' + frm + '?\n' + txt.join('\n');
         var go_ = function (yes) {
           if (!yes) return;
           b.disabled = true;
-          call('/api/zp_batch_set', { month: zbMonth, from: frm, people: ppl, staff: stf }, 30000).then(function (q) {
+          call('/api/zp_batch_set', { month: zbMonth, from: frm, pos: pos, people: ppl }, 30000).then(function (q) {
             b.disabled = false; if (!q.ok) return say(q.text); haptic('success'); say('Сохранено: ' + q.text); draw(q);
           }).catch(function (e) { b.disabled = false; ivErr(e); });
         };
