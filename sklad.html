@@ -1141,9 +1141,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '28c429e4', newBuild = '';
+  var BUILD = '8a7f7751', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795522578' || 0;
+  var BUILD_AT = +'1795522940' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1847,7 +1847,9 @@
       if (!el.isConnected) return;
       el.querySelector('.c1l').textContent = (s && s.line) || '1С: —';
       el.querySelector('.c1f').textContent = s && s.fails && s.fails.length && !s.running ? '⚠️ не обновилось: ' + s.fails.join(', ') : '';
-      var b = el.querySelector('button'); b.disabled = !!(s && s.running); b.textContent = s && s.running ? '⏳ Идёт…' : '🔄 Синхронизация 1С';
+      var b = el.querySelector('button'), wt = s && !s.running ? (s.wait_full || 0) : 0;   // не чаще раза в 10 мин
+      b.disabled = !!(s && s.running) || wt > 0; b.textContent = s && s.running ? '⏳ Идёт…' : wt > 0 ? '🔄 через ' + (Math.floor(wt / 60) + 1) + ' мин' : '🔄 Синхронизация 1С';
+      if (wt > 0) { clearTimeout(c1Poll); c1Poll = setTimeout(function () { call('/api/c1sync_state', {}).then(put).catch(function () {}); }, Math.min(wt, 60) * 1000); return; }
       clearTimeout(c1Poll);
       if (s && s.running) c1Poll = setTimeout(function () { call('/api/c1sync_state', {}).then(put).catch(function () {}); }, 10000);
     };
