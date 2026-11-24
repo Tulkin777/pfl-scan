@@ -719,6 +719,10 @@
   .tgmsg.haskb { border-radius: 16px 16px 4px 4px; margin-bottom: 3px; }
   .tgkb > div { display: flex; gap: 3px; margin-bottom: 3px; } .tgkb span { flex: 1; text-align: center; font-size: 12.5px; font-weight: 700; padding: 9px 4px;
     border-radius: 8px; background: rgba(47,111,208,.12); color: #2f4fb0; opacity: .75; cursor: not-allowed; }
+  .tgkb.on span[data-pcb] { opacity: 1; cursor: pointer; background: linear-gradient(150deg, #e6eeff, #d3e0ff); box-shadow: 0 2px 0 #b5c6ef; }
+  .tgkb.on span[data-pcb]:active { transform: translateY(2px); box-shadow: none; } .tgkb span.busy { opacity: .5 !important; }
+  .tgrep { margin: 6px 0; font-size: 12.5px; } .tgrep summary { cursor: pointer; color: var(--hint); font-weight: 700; }
+  .tgrep div { display: flex; gap: 6px; margin-top: 6px; } .tgrep .txt { flex: 1; margin: 0; }
   .tgnote { margin-top: 8px; background: #fff3dc; color: #8f5200; border-radius: 12px; }
   .pmk.rsk { margin: 2px 0 12px; } .pmk.rsk b { font-size: 19px; }
   .pmk.rsk .rsm { grid-column: 1 / -1; background: linear-gradient(150deg, #e9fbf0, #d3f3e0); box-shadow: 0 3px 0 #b5e2c6; }
@@ -1101,9 +1105,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5250d4db', newBuild = '';
+  var BUILD = 'ef0b021d', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795511795' || 0;
+  var BUILD_AT = +'1795512030' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3629,13 +3633,31 @@
         } else {
           var w = W.filter(function (x) { return String(x.key || x.kind) === zavWin; })[0];
           // 24.11.2026 (этап 1): окно, которое бот планов сам записал для мини-аппа, — с его кнопками (нажатия — этап 2)
-          var kbh = w && (w.kb || []).length ? '<div class="tgkb">' + w.kb.map(function (row) { return '<div>' + row.map(function (b) { return '<span title="Пока нажимается только в группе">' + esc(b.text) + '</span>'; }).join('') + '</div>'; }).join('') + '</div>' : '';
+          // этап 2: кнопки нажимаются (выполняет бот планов), если бот принимает заявки; ERP и «2 дня» — бот ответит «нажмите в группе»
+          var kbh = w && (w.kb || []).length ? '<div class="tgkb' + (D.press ? ' on' : '') + '">' + w.kb.map(function (row) { return '<div>' + row.map(function (b) {
+            return b.cb && D.press ? '<span data-pcb="' + esc(b.cb) + '" data-pkey="' + esc(w.key) + '">' + esc(b.text) + '</span>' : '<span title="Пока нажимается только в группе">' + esc(b.text) + '</span>'; }).join('') + '</div>'; }).join('') + '</div>' +
+            (D.press ? '<details class="tgrep"><summary>✍️ Ответить боту текстом (например, количество)</summary><div><input class="txt" data-prep="' + esc(w.key) + '" placeholder="Ответ на это окно"><button class="go" data-prsend="' + esc(w.key) + '">➤</button></div></details>' : '') : '';
           var nth = w && (w.notes || []).length ? w.notes.map(function (n_) { return '<div class="tgmsg tgnote">' + n_.html + '</div>'; }).join('') : '';
           h += w ? '<div class="tgmsg' + (kbh ? ' haskb' : '') + '">' + w.html + '</div>' + kbh + nth + '<div class="note">' + (D.mirror ? '🔗 Окно бота планов — то же, что в группе PLAN ZAKAZ ' : 'Копия окна группы PLAN ZAKAZ ') + (zavLine === 'P' ? 'PERECHISLENIYA' : 'TERMINAL') +
             (w.sent ? ' (сообщение от ' + esc(w.sent.slice(8, 10) + '.' + w.sent.slice(5, 7) + ' ' + w.sent.slice(11, 16)) + ')' : '') +
-            (D.mirror ? '' : ' · обновлено ' + esc(D.at)) + '. Кнопки пока нажимаются только в группе.</div>' : '<div class="empty">Окна нет</div>';
+            (D.mirror ? '' : ' · обновлено ' + esc(D.at)) + (D.press ? '. Кнопки работают как в группе; заказы ERP и «План на 2 дня» — пока только в группе.' : '. Кнопки пока нажимаются только в группе.') + '</div>' : '<div class="empty">Окна нет</div>';
         }
         inner.innerHTML = h;
+        var plSend = function (body, el) {
+          if (el) el.classList.add('busy');
+          call('/api/plan_press', body, 70000).then(function (q) {
+            var msg = (q.answers || []).map(function (a) { return a.text; }).filter(Boolean).join('\n') || q.text;
+            haptic(q.ok ? 'success' : 'warning'); if (msg) say(msg);
+            delete mem[ck('/api/plan' + JSON.stringify({}))];
+            load('/api/plan', {}, function (D2) { if (inner.isConnected) { D = D2; W = (D.lines || {})[zavLine] || []; draw(O); } });
+          }).catch(function (e) { if (el) el.classList.remove('busy'); ivErr(e); });
+        };
+        Array.prototype.forEach.call(inner.querySelectorAll('[data-pcb]'), function (el) {
+          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} plSend({ kind: 'cb', key: el.getAttribute('data-pkey'), data: el.getAttribute('data-pcb') }, el); };
+        });
+        Array.prototype.forEach.call(inner.querySelectorAll('[data-prsend]'), function (el) {
+          el.onclick = function () { var k = el.getAttribute('data-prsend'), i = inner.querySelector('[data-prep="' + k + '"]'); if (!i || !i.value.trim()) return; plSend({ kind: 'reply', key: k, text: i.value.trim() }, el); };
+        });
         Array.prototype.forEach.call(inner.querySelectorAll('[data-plw]'), function (el) {
           el.onclick = function () { haptic('light'); zavWin = el.getAttribute('data-plw'); draw(O); };
         });
