@@ -687,6 +687,39 @@
   .osthero.ok .c { background: rgba(79,214,138,.22); color: #c9f7dc; } .osthero.ok .bd { color: #17964a; }
   .osthero.bad .c { background: rgba(255,191,85,.24); color: #ffe2a8; } .osthero.bad .bd { background: #ffbf55; color: #4a2c00; }
   .osthero .oh2 { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #aebcff; }
+  /* 24.11.2026 (руководитель): 🏭 Завод — две большие кнопки: 💸 Расходы · ⚙️ Процессы */
+  .zavg { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .zavg .zb { position: relative; overflow: hidden; border-radius: 22px; padding: 16px 16px 15px 84px; min-height: 96px; color: #fff; cursor: pointer;
+              text-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .12s, box-shadow .12s; }
+  .zavg .zb:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%; pointer-events: none;
+                     background: linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,0)); }
+  .zavg .zb:active { transform: translateY(4px); box-shadow: none !important; }
+  .zavg .zb i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 56px; height: 56px; border-radius: 18px; font-style: normal;
+                font-size: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.2);
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); text-shadow: none; }
+  .zavg .zb b { display: block; font-size: 21px; font-weight: 900; } .zavg .zb span { display: block; font-size: 12.5px; font-weight: 700; opacity: .93; margin-top: 3px; line-height: 1.3; }
+  .zavg .zb em { position: absolute; top: 12px; right: 12px; font-style: normal; font-size: 11.5px; font-weight: 900; padding: 2px 9px; border-radius: 10px;
+                 background: rgba(255,255,255,.92); color: #263241; text-shadow: none; }
+  .zavg .zb.rs { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 5px 0 #9c4210, 0 12px 22px rgba(217,97,31,.25); }
+  .zavg .zb.pr { background: linear-gradient(150deg, #7fb6ff, #3f55c9); box-shadow: 0 5px 0 #2b3b94, 0 12px 22px rgba(63,85,201,.25); }
+  .pmk.rsk { margin: 2px 0 12px; } .pmk.rsk b { font-size: 19px; }
+  .osg.rskind { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 10px; }
+  .osg.rskind .ob { padding: 8px 4px 7px; border-radius: 14px; } .osg.rskind .ob i { font-size: 20px; } .osg.rskind .ob b { font-size: 13px; }
+  .osg.rskind .ob u { top: 4px; right: 5px; font-size: 10.5px; padding: 0 6px; }
+  .rsseg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--bg2); margin-bottom: 10px; }
+  .rsseg span { text-align: center; padding: 8px 4px; border-radius: 11px; font-size: 13px; font-weight: 800; cursor: pointer; color: var(--hint); }
+  .rsseg span.on { background: linear-gradient(150deg, #8b7bff, #4b39c9); color: #fff; box-shadow: 0 3px 0 #34278f; }
+  .rsr { background: var(--bg2); border-radius: 14px; padding: 9px 11px; margin: 0 0 8px; cursor: pointer; border-left: 6px solid #1f97b0; }
+  .rsr.bt { border-left-color: #d9611f; }
+  .rsr .rh { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.25; } .rsr .rh b { flex: 1; min-width: 0; }
+  .rsr .ki { font-size: 17px; } .rsr .rv { flex: none; font-weight: 900; font-size: 15px; font-variant-numeric: tabular-nums; } .rsr .rv small { font-size: 11px; color: var(--hint); }
+  .rsr .rm { font-size: 12px; color: var(--hint); margin-top: 3px; } .rsr .rm b { color: var(--fg); }
+  .rsr .dl { font-weight: 900; padding: 1px 6px; border-radius: 7px; } .rsr .dl.lo { background: #fde4e2; color: #b3302b; }
+  .rsr .dl.mid { background: #fff3dc; color: #8f5200; } .rsr .dl.ok { background: #dcf5e6; color: #0f7a3c; }
+  .rsl { margin-top: 7px; border-top: 1px dashed #cfd5df; padding-top: 5px; }
+  .rsl > div { display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 3px 0; }
+  .rsl .t { flex: none; width: 72px; color: var(--hint); font-variant-numeric: tabular-nums; } .rsl .w { flex: 1; min-width: 0; } .rsl .w small { color: var(--hint); }
+  .rsl b { flex: none; font-variant-numeric: tabular-nums; }
   /* 24.11.2026 (руководитель): ⚙️ В цехе — движение внутри производства: линия, конвейер этапов, карточки партий, узкое место */
   .fchip[data-f=pmv] { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 4px 0 #9c4210; }
   .osg.pml { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 12px; }
@@ -1007,9 +1040,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '2494b0bf', newBuild = '';
+  var BUILD = '354b0465', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795490095' || 0;
+  var BUILD_AT = +'1795490630' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3449,12 +3482,134 @@
       draw();
     });
   }
+  // 24.11.2026 (руководитель): вкладка «🏭 Завод» — внутри две кнопки: 💸 Расходы (расход сырья и упаковки со склада сырья)
+  // и ⚙️ Процессы (путь партий по цеху — то, что было во вкладке «В цехе»)
+  var zavPart = '';
+  function showZav(box) {
+    if (zavPart === 'proc' || zavPart === 'rsx') {
+      box.innerHTML = '<div class="navb"><div class="bk" id="zavBack"><i>⬅</i>Назад</div><div class="nt"><small>Завод</small><b>' +
+        (zavPart === 'proc' ? '⚙️ Процессы — путь партий по цеху' : '💸 Расходы — сырьё и упаковка') + '</b></div></div><div id="zavin"><div class="spin">Загрузка из ERP…</div></div>';
+      $('zavBack').onclick = function () { haptic('light'); zavPart = ''; showZav(box); window.scrollTo(0, 0); };
+      return zavPart === 'proc' ? showPmv($('zavin')) : showRsx($('zavin'));
+    }
+    box.innerHTML = '<div class="msec gpsec" style="margin-top:0">🏭 ЗАВОД</div><div class="zavg">' +
+      '<div class="zb rs" data-zp="rsx"><i>💸</i><b>Расходы</b><span>Сырьё и упаковка со склада сырья — сколько ушло, на какие партии, на сколько хватит остатка</span><em id="zbr">…</em></div>' +
+      '<div class="zb pr" data-zp="proc"><i>⚙️</i><b>Процессы</b><span>Где сейчас каждая партия: склад сырья → ОТК → цех → дозирование → упаковка → склад ГП</span><em id="zbp">…</em></div></div>';
+    Array.prototype.forEach.call(box.querySelectorAll('[data-zp]'), function (el) {
+      el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} zavPart = el.getAttribute('data-zp'); showZav(box); window.scrollTo(0, 0); };
+    });
+    load2('/api/pmv', {}, function (D) { var e = $('zbp'); if (e && D && D.ok) e.textContent = D.rows.filter(function (x) { return x.s < 17; }).length + ' в работе'; });
+    load2('/api/rsx', {}, function (D) {
+      var e = $('zbr'); if (!e || !D || !D.ok) return;
+      var t = pTime(D.now) - 7 * 86400000, b = {};
+      D.events.forEach(function (x) { if (pTime(x[2]) >= t) b[x[4] + ':' + x[1] + ':' + (x[4] < 0 ? x[2] : '')] = 1; });
+      e.textContent = '7 дн. · ' + Object.keys(b).length + ' парт.';
+    });
+  }
+  var rsxPer = 7, rsxLine = '', rsxKind = '', rsxBy = 'mat', rsxQ = '', rsxOpen = {};
+  var RPACK = /этикет|флакон|крыш|короб|пл[её]нк|инструкц|гофро|ложк|пакет|банк|блистер|фольг|туб|колпач|стакан|мерн|пэт|бутыл|вкладыш|стикер|пробк|дозатор|шприц|тара/;
+  function rsxIsPack(m) { return RPACK.test(m.name.toLowerCase()) || m.unit === 'шт' || m.unit === 'комп'; }
+  function rQ(v) { return v >= 100 ? pN(v) : String(Math.round(v * 1000) / 1000).replace('.', ','); }
+  function showRsx(box) {
+    var me = cur;
+    load('/api/rsx', {}, function (D) {
+      if (cur !== me || !box.isConnected) return;
+      if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      var now = pTime(D.now), today = D.now.slice(0, 10);
+      function draw() {
+        var y0 = window.scrollY, from = rsxPer === 1 ? pTime(today + ' 00:00') : now - rsxPer * 86400000;
+        var inLine = function (e) { return !rsxLine || (rsxLine === 'per' ? e[1] === 2 : e[1] === 1); };
+        var E = D.events.filter(function (e) { return pTime(e[2]) >= from && inLine(e); });
+        var E30 = D.events.filter(inLine);
+        var kindOf = function (pid) { return rsxIsPack(D.mats[pid]) ? 'pack' : 'raw'; };
+        var KC = { '': {}, raw: {}, pack: {} };
+        E.forEach(function (e) { KC[''][e[0]] = 1; KC[kindOf(e[0])][e[0]] = 1; });
+        var Ek = E.filter(function (e) { return !rsxKind || kindOf(e[0]) === rsxKind; });
+        var h = '<div class="osg pml">' + [[1, '📅', 'Сегодня'], [7, '🗓', '7 дней'], [30, '📆', '30 дней']].map(function (p) {
+          return '<div class="ob c' + (p[0] === 1 ? 2 : p[0] === 7 ? 3 : 8) + (rsxPer === p[0] ? ' on' : '') + '" data-rp="' + p[0] + '"><i>' + p[1] + '</i><b>' + p[2] + '</b></div>';
+        }).join('') + '</div><div class="osg pml">' + [['', '🏭', 'Обе линии', 'c0'], ['per', '2️⃣', 'Перечисление', 'c1'], ['ter', '1️⃣', 'Терминал', 'c3']].map(function (l) {
+          return '<div class="ob ' + l[3] + (rsxLine === l[0] ? ' on' : '') + '" data-rl="' + l[0] + '"><i>' + l[1] + '</i><b>' + l[2] + '</b></div>';
+        }).join('') + '</div>';
+        // итоги периода
+        var bset = {}, kg = 0, pcs = 0;
+        E.forEach(function (e) { bset[e[4] + ':' + e[1] + ':' + (e[4] < 0 ? e[2] : '')] = 1; var m = D.mats[e[0]]; if (m.unit === 'кг') kg += e[3]; else if (m.unit === 'гр') kg += e[3] / 1000; else if (m.unit === 'шт') pcs += e[3]; });
+        h += '<div class="pmk rsk"><div><b>' + Object.keys(bset).length + '</b><span>🏭 партий списали сырьё</span></div>' +
+          '<div><b>' + Object.keys(KC['']).length + '</b><span>🧾 позиций сырья и упаковки</span></div>' +
+          '<div><b>' + rQ(kg) + ' кг</b><span>🧪 сырья ушло (кг)</span></div><div><b>' + pN(pcs) + ' шт</b><span>📦 упаковки ушло (шт)</span></div></div>';
+        h += '<div class="osg rskind">' + [['', '🧾', 'Всё', 'c6'], ['raw', '🧪', 'Сырьё', 'c7'], ['pack', '📦', 'Упаковка', 'c4']].map(function (k) {
+          return '<div class="ob ' + k[3] + (rsxKind === k[0] ? ' on' : '') + '" data-rk="' + k[0] + '"><i>' + k[1] + '</i><b>' + k[2] + '</b><u>' + Object.keys(KC[k[0]]).length + '</u></div>';
+        }).join('') + '</div>';
+        h += '<div class="rsseg"><span data-rb="mat" class="' + (rsxBy === 'mat' ? 'on' : '') + '">🧪 По материалам</span><span data-rb="bat" class="' + (rsxBy === 'bat' ? 'on' : '') + '">🏭 По партиям</span></div>' +
+          '<input class="txt ivfind" id="rsfind" placeholder="🔎 Найти сырьё или товар" value="' + esc(rsxQ) + '">';
+        var q = rsxQ.toLowerCase();
+        if (rsxBy === 'mat') {
+          var M = {};
+          Ek.forEach(function (e) { var x = M[e[0]] = M[e[0]] || { pid: e[0], sum: 0, ev: [] }; x.sum += e[3]; x.ev.push(e); });
+          var ML = Object.keys(M).map(function (k) { return M[k]; }).filter(function (x) { return !q || D.mats[x.pid].name.toLowerCase().indexOf(q) >= 0; });
+          var low = function (x) {   // хватит меньше чем на 14 дней — наверх
+            var m = D.mats[x.pid], bal = rsxLine ? +(m.bal[rsxLine === 'per' ? '2' : '1'] || 0) : (+(m.bal['1'] || 0) + +(m.bal['2'] || 0));
+            var u = E30.filter(function (e) { return e[0] === x.pid; }).reduce(function (a, e) { return a + e[3]; }, 0);
+            return u > 0 && bal / (u / 30) < 14 ? 0 : 1;
+          };
+          ML.forEach(function (x) { x.lo = low(x); });
+          ML.sort(function (a, b) { return a.lo - b.lo || b.ev.length - a.ev.length || D.mats[a.pid].name.localeCompare(D.mats[b.pid].name, 'ru'); });
+          h += '<div class="ivsec">' + (rsxKind === 'raw' ? '🧪 Сырьё' : rsxKind === 'pack' ? '📦 Упаковка' : '🧾 Сырьё и упаковка') + ' · ' + ML.length + '</div>';
+          h += ML.map(function (x) {
+            var m = D.mats[x.pid], bal = rsxLine ? +(m.bal[rsxLine === 'per' ? '2' : '1'] || 0) : (+(m.bal['1'] || 0) + +(m.bal['2'] || 0));
+            var u30 = E30.filter(function (e) { return e[0] === x.pid; }).reduce(function (a, e) { return a + e[3]; }, 0);
+            var days = u30 > 0 ? bal / (u30 / 30) : NaN, op = rsxOpen['m' + x.pid];
+            var dc = days === days ? (days < 14 ? 'lo' : days < 45 ? 'mid' : 'ok') : '';
+            var r = '<div class="rsr' + (op ? ' op' : '') + '" data-ro="m' + x.pid + '"><div class="rh"><span class="ki">' + (rsxIsPack(m) ? '📦' : '🧪') + '</span><b>' + esc(m.name) + '</b>' +
+              '<span class="rv">' + rQ(x.sum) + ' <small>' + esc(m.unit) + '</small></span></div>' +
+              '<div class="rm">' + x.ev.length + ' парт. · остаток ' + rQ(bal) + ' ' + esc(m.unit) + (dc ? ' · <span class="dl ' + dc + '">хватит ≈ ' + (days > 365 ? 'больше года' : Math.round(days) + ' дн.') + '</span>' : '') + '</div>';
+            if (op) r += '<div class="rsl">' + x.ev.slice().reverse().map(function (e) {
+              var b = D.batches[e[4]];
+              return '<div><span class="t">' + esc(e[2].slice(8, 10) + '.' + e[2].slice(5, 7) + ' ' + e[2].slice(11, 16)) + '</span><span class="w">' + (b ? esc(b.name) + ' <small>№' + esc(b.num) + '</small>' : '<small>без партии ERP</small>') +
+                '</span><span class="pln ' + (e[1] === 2 ? 'per' : 'ter') + '">' + (e[1] === 2 ? 'ПЕР' : 'ТЕР') + '</span><b>' + rQ(e[3]) + '</b></div>';
+            }).join('') + '</div>';
+            return r + '</div>';
+          }).join('') || '<div class="empty">За этот период расхода нет</div>';
+        } else {
+          var BT = {};
+          Ek.forEach(function (e) { var k = e[4] < 0 ? 'x' + e[1] + e[2] : 'b' + e[4]; var x = BT[k] = BT[k] || { k: k, b: D.batches[e[4]], st: e[1], d: e[2], ev: [] }; x.ev.push(e); });
+          var BL = Object.keys(BT).map(function (k) { return BT[k]; }).filter(function (x) {
+            return !q || (x.b ? x.b.name : '').toLowerCase().indexOf(q) >= 0 || x.ev.some(function (e) { return D.mats[e[0]].name.toLowerCase().indexOf(q) >= 0; });
+          });
+          BL.sort(function (a, b) { return pTime(b.d) - pTime(a.d); });
+          h += '<div class="ivsec">🏭 Партии · ' + BL.length + '</div>';
+          h += BL.map(function (x) {
+            var op = rsxOpen[x.k], F = x.b ? x.b.fact : 0;
+            var r = '<div class="rsr bt' + (op ? ' op' : '') + '" data-ro="' + x.k + '"><div class="rh"><span class="ki">🏭</span><b>' + (x.b ? esc(x.b.name) : 'Без партии ERP') + '</b>' +
+              '<span class="pln ' + (x.st === 2 ? 'per' : 'ter') + '">' + (x.st === 2 ? 'ПЕР' : 'ТЕР') + '</span></div>' +
+              '<div class="rm">' + esc(x.d.slice(8, 10) + '.' + x.d.slice(5, 7) + ' ' + x.d.slice(11, 16)) + (x.b ? ' · № ' + esc(x.b.num) + ' · выпущено <b>' + pN(F) + '</b> шт' : '') + ' · ' + x.ev.length + ' поз. списано</div>';
+            if (op) r += '<div class="rsl">' + x.ev.slice().sort(function (a, b) { return D.mats[a[0]].name.localeCompare(D.mats[b[0]].name, 'ru'); }).map(function (e) {
+              var m = D.mats[e[0]];
+              return '<div><span class="w">' + (rsxIsPack(m) ? '📦 ' : '🧪 ') + esc(m.name) + '</span><b>' + rQ(e[3]) + ' ' + esc(m.unit) + '</b></div>';
+            }).join('') + '</div>';
+            return r + '</div>';
+          }).join('') || '<div class="empty">За этот период расхода нет</div>';
+        }
+        h += '<div class="note">Из ERP (только чтение): списание сырья и упаковки со складов сырья при выпуске партии; «хватит» — остаток склада сырья ÷ средний расход за 30 дн. · ' + esc(D.at) + '</div>';
+        var fo = document.activeElement && document.activeElement.id === 'rsfind';
+        box.innerHTML = h; window.scrollTo(0, y0);
+        if (fo) { $('rsfind').focus(); $('rsfind').setSelectionRange(rsxQ.length, rsxQ.length); }
+        $('rsfind').oninput = function () { rsxQ = this.value; draw(); };
+        var on = function (a, f) { Array.prototype.forEach.call(box.querySelectorAll('[' + a + ']'), function (el) { el.onclick = function () { haptic('light'); f(el.getAttribute(a)); draw(); }; }); };
+        on('data-rp', function (v) { rsxPer = +v; });
+        on('data-rl', function (v) { rsxLine = v; });
+        on('data-rk', function (v) { rsxKind = v; });
+        on('data-rb', function (v) { rsxBy = v; });
+        on('data-ro', function (v) { rsxOpen[v] = !rsxOpen[v]; });
+      }
+      draw();
+    });
+  }
   // 23.11.2026 (руководитель): все вкладки главного экрана для «👥 Доступ» — в порядке экрана. Новая вкладка — добавить сюда,
   // тогда она сразу появится в «ВКЛАДКИ ГЛАВНОГО ЭКРАНА» (✅ Показать / ⛔ Скрыть). «Склады» — это две строки (завод и Ташкент).
   var TAB_ACC = [['tab_ship', '🛒', 'Движение · Отгрузка'], ['tab_mv', '🚚', 'Движение · Перемещения'], ['tab_inc', '📥', 'Движение · Приходы'], ['tab_ret', '↩️', 'Движение · Возврат'],
                  ['tab_prod', '🏭', 'Из производства'], ['tab_inv', '📋', 'Инвентаризация'],
                  ['tab_zav', '🏭', 'Склады · Склад завода'], ['tab_tas', '🏙', 'Склады · Склад Ташкента'],
-                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '⚙️', 'Движение внутри производства']];
+                 ['cert', '📜', 'Разрешения (сертификаты)'], ['zp', '💰', 'Зарплата'], ['os', '🏗', 'Основные средства'], ['pmv', '🏭', 'Завод — расходы сырья и процессы цеха']];
   var ZPT = { dav: ['g', '📋', 'Посещение', 'отчёт Face ID · загрузить'], tab: ['b', '⏱', 'Табель в минутах', 'минуты · сверхурочно · опоздания'],
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
               bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'] };   // 23.11.2026 (руководитель)
@@ -3688,7 +3843,7 @@
       var osOn = !!r.os;
       if (osOn) fl.push(['os', '🏗 Осн. средства']);   // 24.11.2026 (руководитель): основные средства завода — список 1С
       var pmvOn = !!r.pmv;
-      if (pmvOn) fl.push(['pmv', '⚙️ В цехе']);   // 24.11.2026 (руководитель): движение внутри производства — после «Движения»
+      if (pmvOn) fl.push(['pmv', '🏭 Завод']);   // 24.11.2026 (руководитель): «В цехе» → «Завод»: внутри 💸 Расходы и ⚙️ Процессы   // 24.11.2026 (руководитель): движение внутри производства — после «Движения»
       if ((mfilter === 'inv' && invOn) || (mfilter === 'ost' && ostOn) || (mfilter === 'cert' && certOn) || (mfilter === 'zp' && zpOn) || (mfilter === 'os' && osOn) || (mfilter === 'pmv' && pmvOn) ||
           (/^(mv|inc|ret|ship)$/.test(mfilter) && r.flow && tabOn(mfilter))) mf = mfilter;
       if (mf === 'wh' && !whF.length && !gpOn) mf = ((lastTabs2.filter(function (t) { return t[0] !== 'prod'; })[0]) || fl[0] || ['wh'])[0];   // складов не дано
@@ -3756,7 +3911,7 @@
       if ($('certbox')) showCertTop($('certbox'), r.certp || { cert: true });
       if ($('zpbox')) showZp($('zpbox'));
       if ($('osbox')) showOs($('osbox'));
-      if ($('pmvbox')) showPmv($('pmvbox'));
+      if ($('pmvbox')) showZav($('pmvbox'));
       Array.prototype.forEach.call(view.querySelectorAll('[data-wf]'), function (el) {
         el.onclick = function () {
           mfilter = el.getAttribute('data-wf');
