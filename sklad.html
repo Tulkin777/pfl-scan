@@ -736,6 +736,10 @@
   .rsl > div { display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 3px 0; }
   .rsl .t { flex: none; width: 72px; color: var(--hint); font-variant-numeric: tabular-nums; } .rsl .w { flex: 1; min-width: 0; } .rsl .w small { color: var(--hint); }
   .rsl b { flex: none; font-variant-numeric: tabular-nums; }
+  /* 24.11.2026: отгрузка — строка без места и почему нет «Взял» */
+  .slpl.nopl { background: #fde4e2 !important; color: #b3302b !important; }
+  .vznote { margin: 8px 0 2px; padding: 8px 10px; border-radius: 12px; background: #fff3dc; color: #8f5200; font-size: 12.5px; font-weight: 700; line-height: 1.35; }
+  .vznote b { color: #b3302b; } .vznote.g { background: #eef0f4; color: #5b6476; }
   /* 24.11.2026 (руководитель): 🎁 Бонусы → 📋 Инвентаризация */
   .zinvbtn { position: relative; overflow: hidden; border-radius: 18px; padding: 13px 14px 12px 70px; margin: 0 0 12px; color: #fff; cursor: pointer;
              background: linear-gradient(150deg, #a99bff, #5b48d1); box-shadow: 0 5px 0 #3e3094; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
@@ -1080,9 +1084,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f6b8f164', newBuild = '';
+  var BUILD = '7299812c', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795501128' || 0;
+  var BUILD_AT = +'1795502014' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4532,10 +4536,18 @@
         var fq = formOf(y.name);
         return '<div class="mvli"><span class="no">' + (j + 1) + '</span><span><span class="pn">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '</span> · <b>' + n(y.qty) + ' шт</b>' +
           (y.batch ? ' · <b class="mvbt">п.' + esc(y.batch) + '</b>' : '') +
-          (y.place ? '<br><span class="slpl">📍 ' + esc(y.place) + '</span>' : '') + '</span></div>';
+          (y.place ? '<br><span class="slpl">📍 ' + esc(y.place) + '</span>'
+            // 24.11.2026 (руководитель «почему нет «Взял»»): строку не нашли на местах склада — показать, а не молчать
+            : plcOk(p) && p.mode === 'noted' ? '<br><span class="slpl nopl">❗ нет на местах склада</span>' : '') + '</span></div>';
       }).join('') + '</div>';
     if (st === 'ok' && plcOk(p) && p.can && p.mode !== 'hint' && !(p.mode === 'noted' && !p.ready))
       h += '<button class="main vzcard" data-vz="' + esc(x.id) + '">✅ Взял — списать с этих мест</button>';
+    else if (st === 'ok' && plcOk(p) && p.mode === 'noted' && !p.ready) {
+      var miss = p.lines.filter(function (y) { return !y.place; }).map(function (y) { return y.item; });
+      h += '<div class="vznote">❗ «Взял» появится, когда все строки найдутся на местах. Нет на местах склада: <b>' + esc(miss.join(', ')) + '</b>.<br>' +
+        'Проверьте склад: товар есть — откройте документ и отметьте место в окне «Склад «откуда»»; нет — значит его отгрузили не отсюда, сообщите руководителю.</div>';
+    } else if (st === 'ok' && plcOk(p) && p.mode !== 'hint' && !p.can)
+      h += '<div class="vznote g">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
     else if (st === 'ok' && p && p.mode === 'hint')
       h += '<div class="note" style="margin:4px 0 0">У бота по этому документу задачи нет — если товар ещё на месте, проверьте и спишите в окне склада.</div>';
     return h;
