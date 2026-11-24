@@ -777,6 +777,18 @@
   .c1bar { grid-column: 1 / -1; width: auto; } .c1bar .c1t { flex: 1; }
   .c1bar button, .c1btn { width: auto !important; margin: 0 !important; min-height: 0 !important; display: inline-block; flex: none; line-height: 1.2; }
   .c1ship span { flex: 1; min-width: 0; }
+  .c1bar button.off { background: linear-gradient(150deg, #9aa6bf, #5d6a86) !important; box-shadow: 0 4px 0 #3e4860 !important; }
+  .c1cfg .c1now { background: linear-gradient(150deg, #eef3ff, #dfe8ff); border-radius: 14px; padding: 10px 12px; box-shadow: 0 3px 0 #c3d0f0; }
+  .c1cfg .c1now b { display: block; color: #26407a; font-size: 13.5px; } .c1cfg .c1now small { color: #4a5a80; font-size: 12px; }
+  .c1sec { margin: 14px 2px 7px; font-size: 12px; font-weight: 900; color: var(--hint); text-transform: uppercase; letter-spacing: .3px; }
+  .c1gap, .c1days { display: flex; flex-wrap: wrap; gap: 7px; }
+  .c1gap span, .c1days span { padding: 9px 12px; border-radius: 12px; font-weight: 900; font-size: 13px; cursor: pointer; background: var(--bg2); box-shadow: 0 3px 0 #d6dbe4; }
+  .c1gap span.on { color: #fff; background: linear-gradient(150deg, #7fb6ff, #2a64c4); box-shadow: 0 4px 0 #1b4590; transform: translateY(-2px); }
+  .c1days span.on { color: #fff; background: linear-gradient(150deg, #5fd69a, #17964a); box-shadow: 0 4px 0 #0f6f36; transform: translateY(-2px); }
+  .c1hrs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .c1hrs label { font-size: 12px; font-weight: 800; color: var(--hint); }
+  .c1hrs .txt { margin: 3px 0 0; width: 100%; }
+  .c1chk { display: flex; gap: 8px; align-items: center; font-size: 13.5px; font-weight: 700; padding: 8px 2px; }
+  .c1cfg #c1save { margin-top: 14px; width: 100%; }
   /* 24.11.2026: отгрузка — строка без места и почему нет «Взял» */
   .slpl.nopl { background: #fde4e2 !important; color: #b3302b !important; }
   .vznote { margin: 8px 0 2px; padding: 8px 10px; border-radius: 12px; background: #fff3dc; color: #8f5200; font-size: 12.5px; font-weight: 700; line-height: 1.35; }
@@ -1141,9 +1153,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8a7f7751', newBuild = '';
+  var BUILD = '6f8c603c', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795522940' || 0;
+  var BUILD_AT = +'1795523990' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1847,7 +1859,14 @@
       if (!el.isConnected) return;
       el.querySelector('.c1l').textContent = (s && s.line) || '1С: —';
       el.querySelector('.c1f').textContent = s && s.fails && s.fails.length && !s.running ? '⚠️ не обновилось: ' + s.fails.join(', ') : '';
-      var b = el.querySelector('button'), wt = s && !s.running ? (s.wait_full || 0) : 0;   // не чаще раза в 10 мин
+      el._s = s;
+      if (s && s.work === false && !s.running) {   // 24.11.2026: вне рабочего времени — кнопка объясняет, 1С не трогает
+        var bb = el.querySelector('button'); bb.disabled = false; bb.textContent = '🌙 Нерабочее время'; bb.classList.add('off');
+        el.querySelector('.c1f').textContent = 'синхронизация 1С — ' + (s.work_text || 'в рабочее время');
+        return;
+      }
+      el.querySelector('button').classList.remove('off');
+      var b = el.querySelector('button'), wt = s && !s.running ? (s.wait_full || 0) : 0;   // не чаще раза в N мин
       b.disabled = !!(s && s.running) || wt > 0; b.textContent = s && s.running ? '⏳ Идёт…' : wt > 0 ? '🔄 через ' + (Math.floor(wt / 60) + 1) + ' мин' : '🔄 Синхронизация 1С';
       if (wt > 0) { clearTimeout(c1Poll); c1Poll = setTimeout(function () { call('/api/c1sync_state', {}).then(put).catch(function () {}); }, Math.min(wt, 60) * 1000); return; }
       clearTimeout(c1Poll);
@@ -1855,6 +1874,7 @@
     };
     call('/api/c1sync_state', {}).then(put).catch(function () {});
     el.querySelector('button').onclick = function () {
+      if (el._s && el._s.work === false) return say('🌙 Нерабочее время — синхронизацию 1С сейчас начать нельзя.\nРабочее время: ' + (el._s.work_text || '') + '.');
       var b = this, q = 'Синхронизировать 1С сейчас? Продажи, остатки, приходы, отчёты производства, данные Нодира — несколько минут. В 1С ничего не пишется.';
       var go_ = function (yes) {
         if (!yes) return; b.disabled = true; b.textContent = '⏳ Запускаю…';
@@ -5334,6 +5354,48 @@
     var r = k && roleOf(k);
     return r ? '<span class="role">' + esc(r.emoji + ' ' + r.name) + '</span>' : '<span class="role no">⛔ Нет доступа</span>';
   }
+
+  // 24.11.2026 (руководитель): настройки синхронизации 1С — в «👥 Доступ»: через сколько минут можно снова, рабочие дни и часы,
+  // сама в начале и в конце рабочего дня. Вне рабочего времени кнопка не работает («🌙 нерабочее время»).
+  function showC1Cfg() {
+    title.textContent = '🔄 Синхронизация 1С';
+    sub.textContent = 'Только у вас. Когда и как часто можно синхронизировать 1С';
+    view.innerHTML = '<div class="spin">Загрузка…</div>';
+    var me = cur;
+    call('/api/c1sync_state', {}).then(function (s) {
+      if (cur !== me) return;
+      var c = s.conf || {}, DAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], GAPS = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+      if (GAPS.indexOf(c.gap_min) < 0) GAPS.push(c.gap_min);
+      var h = '<div class="c1cfg">' +
+        '<div class="c1now"><b>' + esc(s.line || '') + '</b><small>' + (s.work ? '🟢 сейчас рабочее время' : '🌙 сейчас нерабочее время') + ' · ' + esc(s.work_text || '') + '</small></div>' +
+        '<div class="c1sec">⏱ Можно снова через</div><div class="c1gap">' + GAPS.sort(function (a, b) { return a - b; }).map(function (g) {
+          return '<span data-gap="' + g + '" class="' + (g === c.gap_min ? 'on' : '') + '">' + (g < 60 ? g + ' мин' : (g / 60) + ' ч') + '</span>';
+        }).join('') + '</div><div class="note" style="margin-top:4px">Одно ограничение на всех: после любой синхронизации 1С следующая — не раньше, чем через это время.</div>' +
+        '<div class="c1sec">🗓 Рабочие дни</div><div class="c1days">' + DAYS.map(function (d, i) {
+          return '<span data-day="' + i + '" class="' + ((c.days || []).indexOf(i) >= 0 ? 'on' : '') + '">' + d + '</span>';
+        }).join('') + '</div>' +
+        '<div class="c1sec">🕘 Рабочее время</div><div class="c1hrs"><label>Начало дня<input type="time" class="txt" id="c1st" value="' + esc(c.start || '09:00') + '"></label>' +
+        '<label>Конец дня<input type="time" class="txt" id="c1en" value="' + esc(c.end || '18:00') + '"></label></div>' +
+        '<div class="c1sec">🤖 Сама, без нажатия</div>' +
+        '<label class="c1chk"><input type="checkbox" id="c1as"' + (c.auto_start ? ' checked' : '') + '> 🌅 В начале рабочего дня — полная синхронизация</label>' +
+        '<label class="c1chk"><input type="checkbox" id="c1ae"' + (c.auto_end ? ' checked' : '') + '> 🌇 В конце рабочего дня — полная синхронизация</label>' +
+        '<button class="main" id="c1save">💾 Сохранить</button>' +
+        '<div class="note">Вне рабочего времени кнопки «🔄 Синхронизация 1С» и «🔄 1С» не запускают 1С — покажут «нерабочее время». В 1С ничего не пишется.</div></div>';
+      view.innerHTML = h;
+      Array.prototype.forEach.call(view.querySelectorAll('[data-gap]'), function (el) {
+        el.onclick = function () { Array.prototype.forEach.call(view.querySelectorAll('[data-gap]'), function (x) { x.classList.toggle('on', x === el); }); };
+      });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-day]'), function (el) { el.onclick = function () { el.classList.toggle('on'); }; });
+      $('c1save').onclick = function () {
+        var b = this, gp = view.querySelector('[data-gap].on');
+        var body = { gap_min: gp ? +gp.getAttribute('data-gap') : c.gap_min, start: $('c1st').value, end: $('c1en').value, auto_start: $('c1as').checked, auto_end: $('c1ae').checked,
+          days: Array.prototype.map.call(view.querySelectorAll('[data-day].on'), function (x) { return +x.getAttribute('data-day'); }) };
+        b.disabled = true;
+        call('/api/c1sync_conf', body, 30000).then(function (q) { b.disabled = false; haptic(q.ok ? 'success' : 'warning'); say(q.text || 'Готово'); if (q.ok) showC1Cfg(); })
+          .catch(function (e) { b.disabled = false; ivErr(e); });
+      };
+    }).catch(fail);
+  }
   function showAcc() {
     title.textContent = '👥 Доступ';
     sub.textContent = 'Только у вас. Кто что видит и нажимает в «📱 Склад»';
@@ -5341,6 +5403,7 @@
     accLoad(function () {
       if (cur !== showAcc) return;
       var h = '<div class="row"><button class="main" id="aroles">🎭 Роли</button><button id="aadd">➕ Сотрудник</button><button id="alog">📜 Журнал</button></div>' +
+        '<div class="row"><button id="ac1">🔄 Синхронизация 1С — минуты и рабочее время</button></div>' +
         '<div class="emp"><div class="av" style="background:#a85a00">👑</div><div class="t"><div class="n">Вы (руководитель)</div><span class="role m">👑 Руководитель</span>' +
         '<div class="c">все склады · все кнопки · снять нельзя</div></div></div>';
       ACC.users.forEach(function (u, i) {
@@ -5354,6 +5417,7 @@
       $('aroles').onclick = function () { go(function () { showRoles(null); }); };
       $('aadd').onclick = function () { go(showAdd); };
       $('alog').onclick = function () { go(showLog); };
+      $('ac1').onclick = function () { go(showC1Cfg); };
       Array.prototype.forEach.call(view.querySelectorAll('.emp[data-i]'), function (el) {
         el.onclick = function () { var n0 = ACC.users[+el.getAttribute('data-i')].name; go(function () { showEmp(n0); }); };
       });
