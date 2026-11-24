@@ -428,6 +428,25 @@
   .dir.shp4 div.shp .cty { font-size: 12px; padding-right: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.2px; }
   .dir.shp4 div.shp .ptag { margin-top: 4px; font-size: 10px; padding: 2px 7px; }
   .dir.shp4 div.shp .brs { display: none; }
+  /* 24.11.2026 (руководитель «все одинаковые, не видно, что нажал»): у каждого склада «Откуда» свой цвет — как у линий
+     (Перечисление — зелёный, Терминал — синий, Gynomedix — фиолетовый, Завод — оранжевый); пустой — того же цвета бледнее;
+     выбранный — приподнят, белая рамка и свечение своего цвета, остальные притушены */
+  .dir div.shp.s-t4, .dir div.shp.s-t4.z { background: linear-gradient(150deg, #5fd3a0, #168a5c); box-shadow: 0 4px 0 #0f6544; }
+  .dir div.shp.s-t3, .dir div.shp.s-t3.z { background: linear-gradient(150deg, #7fb6ff, #2a64c4); box-shadow: 0 4px 0 #1b4590; }
+  .dir div.shp.s-g7, .dir div.shp.s-g7.z { background: linear-gradient(150deg, #c79bff, #7a3fd0); box-shadow: 0 4px 0 #552a96; }
+  .dir div.shp.s-zv, .dir div.shp.s-zv.z { background: linear-gradient(150deg, #ffb36b, #d9611f); box-shadow: 0 4px 0 #9c4210; }
+  .dir div.shp.z { filter: saturate(.55) brightness(1.08); opacity: .8; }
+  .dir div.shp .sc, .dir div.shp.z .sc { color: #263241; }
+  .dir div.shp .ptag, .dir div.shp.z .ptag { background: rgba(255,255,255,.92); color: #263241; }
+  .dir div.shp .ptag.ter, .dir div.shp.z .ptag.ter { background: #10295c; color: #fff; }
+  .dir div.shp.on { transform: translateY(-4px) scale(1.04); filter: none; opacity: 1; z-index: 1;
+                    box-shadow: inset 0 0 0 3px #fff, 0 7px 0 rgba(0,0,0,.28), 0 10px 22px rgba(0,0,0,.25) !important; }
+  .dir div.shp.s-t4.on { box-shadow: inset 0 0 0 3px #fff, 0 7px 0 #0f6544, 0 10px 24px rgba(22,138,92,.55) !important; }
+  .dir div.shp.s-t3.on { box-shadow: inset 0 0 0 3px #fff, 0 7px 0 #1b4590, 0 10px 24px rgba(42,100,196,.55) !important; }
+  .dir div.shp.s-g7.on { box-shadow: inset 0 0 0 3px #fff, 0 7px 0 #552a96, 0 10px 24px rgba(122,63,208,.55) !important; }
+  .dir div.shp.s-zv.on { box-shadow: inset 0 0 0 3px #fff, 0 7px 0 #9c4210, 0 10px 24px rgba(217,97,31,.55) !important; }
+  .dir.shp4:has(> .on) > div.shp:not(.on) { opacity: .5; filter: saturate(.45); }
+  .dir.shp4 div.shp:active { transform: translateY(3px); box-shadow: none !important; }
   /* 22.11.2026 (руководитель): нажатое — «негатив»: тёмная заливка, белые буквы, приподнято; остальные — бледнее */
   .stp .sp.on { color: #fff !important; transform: translateY(-3px); opacity: 1 !important; filter: none !important;
                 box-shadow: 0 6px 0 rgba(0,0,0,.28), 0 9px 16px rgba(0,0,0,.2), inset 0 0 0 3px rgba(255,255,255,.92) !important; }
@@ -1105,9 +1124,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ef0b021d', newBuild = '';
+  var BUILD = '32d483a6', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795512030' || 0;
+  var BUILD_AT = +'1795512240' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1435,11 +1454,12 @@
       '<div class="nt">' + (path ? '<small>' + esc(path) + '</small>' : '') + '<b>' + esc(ttl) + '</b></div>' + rbs + '</div>';
   }
   var isAdmin = false;
+  var backHook = null;   // 24.11.2026: экран может забрать «⬅ Назад» на шаг внутри себя (вернуть true), иначе — обычный выход
   // 23.11.2026 (руководитель): значок «выключить» как в Windows — красный, всем знаком
   var PWR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M7.05 6.05a8 8 0 1 0 9.9 0"/><path d="M12 3v8"/></svg>';
   document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
     var b = e.target.closest && e.target.closest('[data-back]');
-    if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} goBack(); return; }
+    if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} if (backHook && backHook()) return; goBack(); return; }
     var c = e.target.closest && e.target.closest('[data-fs],[data-rf],[data-ac],[data-ex]');
     if (!c) return;
     try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {}
@@ -2669,7 +2689,7 @@
     var ks = Object.keys(B).sort(function (a, b) { return B[b] - B[a]; });
     // 24.11.2026 (руководитель «слишком большие»): плитки «Откуда» — размером как вкладки Движения, 4 в ряд: город и линия коротко
     var SH = { t4: ['Ташкент', 'ПЕР'], t3: ['Ташкент', 'ТЕР'], g7: ['Gynomedix', 'ПЕР'], zv: ['Завод', 'ВСЕ'] }[q[0]] || [q[4], q[5]];
-    return '<div class="' + q[2] + ' shp' + (c ? '' : ' z') + (on ? ' on' : '') + '" data-dp="' + q[0] + '"><span class="sc">' + c + '</span>' +
+    return '<div class="' + q[2] + ' shp s-' + q[0] + (c ? '' : ' z') + (on ? ' on' : '') + '" data-dp="' + q[0] + '"><span class="sc">' + c + '</span>' +
       '<span class="cty">' + esc(SH[0]) + '</span>' + (SH[1] ? '<span class="ptag' + (q[5] === 'ТЕРМИНАЛ' ? ' ter' : '') + '">' + SH[1] + '</span>' : '') +
       '<span class="brs">' + (ks.length ? ks.map(function (b) {   // 3 бренда — коротко, чтобы в один ряд
         var nm = ks.length > 1 ? ({ 'BP Pharma': 'BP', Gynomedix: 'GX', Bromedix: 'BM' }[b] || b) : b;   // 2+ бренда — коротко, в один ряд
@@ -3827,8 +3847,7 @@
         var opts = !zinvPath.length ? [['tas', '🏙', 'Ташкент', 'c3'], ['zav', '🏭', 'Завод', 'c1']]
           : zinvPath[0] === 'zav' && zinvPath.length === 1 ? [['gp', '📦', 'Готовая продукция', 'c2'], ['raw', '🧪', 'Сырьё', 'c7']]
           : [['per', '2️⃣', 'Перечисление', 'c4'], ['ter', '1️⃣', 'Терминал', 'c8']];
-        if (zinvPath.length) h += '<div class="zlinks"><button class="btn2" data-zback="1">‹ Назад</button></div>' +
-          MH(MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4) + ' · ' + (zinvTab === 'made' ? 'созданные' : 'подтверждённые'), zinvPath.map(function (k) { return PNM[k]; }).join(' · '));
+        if (zinvPath.length) h += MH(MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4) + ' · ' + (zinvTab === 'made' ? 'созданные' : 'подтверждённые'), zinvPath.map(function (k) { return PNM[k]; }).join(' · '));
         var mine_ = arr.filter(inPath);
         if (FIN) return mine_;
         h += '<div class="osg zit">' + opts.map(function (t) {
@@ -3948,7 +3967,8 @@
       B.innerHTML = h; window.scrollTo(0, y0);
       Array.prototype.forEach.call(B.querySelectorAll('[data-zm]'), function (el) { el.onclick = function () { load('/api/zp_inv', { month: el.getAttribute('data-zm') }, draw); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zgr]'), function (el) { el.onclick = function () { haptic('light'); zinvPath = zinvPath.concat([el.getAttribute('data-zgr')]); draw(D); window.scrollTo(0, 0); }; });
-      Array.prototype.forEach.call(B.querySelectorAll('[data-zback]'), function (el) { el.onclick = function () { haptic('light'); zinvPath = zinvPath.slice(0, -1); draw(D); }; });
+      // 24.11.2026 (руководитель): шаг назад — большой «⬅ Назад» сверху (отдельной кнопки нет)
+      backHook = function () { if (cur !== me || !zinvPath.length || (zinvTab !== 'made' && zinvTab !== 'list')) return false; zinvPath = zinvPath.slice(0, -1); draw(D); return true; };
       Array.prototype.forEach.call(B.querySelectorAll('[data-zy]'), function (el) {   // год → последний месяц этого года, где что-то есть
         el.onclick = function () {
           var y = el.getAttribute('data-zy'), now = new Date(), cm = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
