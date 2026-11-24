@@ -1127,9 +1127,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ca544b59', newBuild = '';
+  var BUILD = 'd873e6b5', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795513118' || 0;
+  var BUILD_AT = +'1795514831' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3833,8 +3833,9 @@
       var CLS = function (st) { st = +st; return { g: st === 1 || st === 2 || st === 5 || st === 6 ? 'zav' : 'tas', s: st === 1 || st === 2 ? 'raw' : st === 5 || st === 6 ? 'gp' : '',
                                                    l: st === 2 || st === 4 || st === 6 || st === 7 ? 'per' : 'ter' }; };
       var PNM = { tas: '🏙 Ташкент', zav: '🏭 Завод', gp: '📦 Готовая продукция', raw: '🧪 Сырьё', per: 'Перечисление', ter: 'Терминал', made: '🆕 Созданные', list: '✅ Подтверждённые' };
-      var PP = zinvPath, iT = PP[0] === 'zav' ? 2 : 1, iL = iT + 1, FIN = PP.length === iL + 1, FLOW = zinvTab === 'made' || zinvTab === 'list';
-      if (PP.length > iT) zinvTab = PP[iT];
+      // 24.11.2026 (руководитель): шага «Созданные / Подтверждённые» нет — после места сразу Перечисление / Терминал, потом таблица (подтверждённые)
+      if (zinvTab === 'made') zinvTab = 'list';
+      var PP = zinvPath, iT = -1, iL = PP[0] === 'zav' ? 2 : 1, FIN = PP.length === iL + 1, FLOW = zinvTab === 'list';
       var fits = function (x, upto) { var c = CLS(x.store);
         return (!PP[0] || c.g === PP[0]) && (PP[0] !== 'zav' || !PP[1] || c.s === PP[1]) && (upto <= iL || !PP[iL] || c.l === PP[iL]); };
       var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
@@ -3846,16 +3847,14 @@
           var step = PP.length, opts;
           if (step === 0) opts = [['tas', '🏙', 'Ташкент', 'c3'], ['zav', '🏭', 'Завод', 'c1']];
           else if (PP[0] === 'zav' && step === 1) opts = [['gp', '📦', 'Готовая продукция', 'c2'], ['raw', '🧪', 'Сырьё', 'c7']];
-          else if (step === iT) opts = [['made', '🆕', 'Созданные', 'c2'], ['list', '✅', 'Подтверждённые', 'c1']];
           else opts = [['per', '2️⃣', 'Перечисление', 'c4'], ['ter', '1️⃣', 'Терминал', 'c8']];
           h += '<div class="osg zit">' + opts.map(function (t) {
             var n = '';
-            if (step === iT) n = (t[0] === 'made' ? arrM : arrL).filter(function (x) { return fits(x, iT); }).length;
-            else if (step === iL) { var src = zinvTab === 'made' ? arrM : arrL; n = src.filter(function (x) { return fits(x, iT) && CLS(x.store).l === t[0]; }).length; }
+            if (step === iL) { var src = zinvTab === 'made' ? arrM : arrL; n = src.filter(function (x) { return fits(x, iT) && CLS(x.store).l === t[0]; }).length; }
             return '<div class="ob ' + t[3] + '" data-zgr="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (n !== '' ? '<u>' + n + '</u>' : '') + '</div>'; }).join('') + '</div>';
-          if (step >= iT) h += '<div class="note" style="margin-top:0">Числа — за ' + esc(mname.toLowerCase()) + '.</div>';
+          if (step >= iL) h += '<div class="note" style="margin-top:0">Числа — за ' + esc(mname.toLowerCase()) + '.</div>';
           if (!step) {
-            h += '<div class="note">Выберите место, потом «Созданные» или «Подтверждённые», Перечисление или Терминал, затем год и месяц — откроется список. ' +
+            h += '<div class="note">Выберите место, потом Перечисление или Терминал — откроется таблица подтверждённых инвентаризаций с бонусом (год и месяц — там же). ' +
               'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
             if (D.edit) h += '<div class="zlinks"><button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>';
           }
@@ -3885,6 +3884,8 @@
             if (wk.length) h += '<div class="crt-l">Кому</div>' + wk.map(function (w) {
               return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(w) + '</b></div><b>' + fmtq(who[w]) + ' сум</b></div>'; }).join('');
             if (ncx) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + ncx + ' — не оплачиваются</div>';
+            var npend = arrM.filter(function (c) { return fits(c, 9) && !c.cx && !c.doc; }).length;
+            if (npend) h += '<div class="note" style="margin-top:4px">⏳ ещё считаются в мини-аппе (не подтверждены): ' + npend + '</div>';
             h += '<div class="note">Нажмите инвентаризацию — расчёт по разделам и кто получает' + (D.can_fix ? '; там же ✏️ изменить людей или 🗑 удалить бонус (сохраняется после подтверждения)' : '') + '.</div>';
           }
         }
