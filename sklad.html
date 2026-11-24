@@ -1159,9 +1159,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1d442bc3', newBuild = '';
+  var BUILD = '0c3a7c49', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795525492' || 0;
+  var BUILD_AT = +'1795525773' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4433,17 +4433,30 @@
       h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>бонус за партии · ' + esc(mname.toLowerCase()) + '</span></div>';
       // сотрудники и ставки
       h += '<div class="msec">СОТРУДНИКИ ЗАВОДА · СТАВКА ЗА 1 ПАРТИЮ</div><div class="zbf">';
-      h += (D.staff || []).map(function (w) {
-        var r = (D.rates || {})[w] || {}, p = (D.people || []).filter(function (q) { return q.who === w; })[0];
-        return '<div class="zpf zbr" data-w="' + esc(w) + '"><div class="t"><b style="text-transform:none">' + esc(w) + '</b>' +
-          '<small>' + (p ? p.n + ' партий × ' + fmtq(p.rate) + ' = <b>' + fmtq(p.sum) + ' сум</b>' : 'ставки нет') + '</small></div>' +
-          '<input class="txt" inputmode="numeric" placeholder="сум" style="width:90px" data-f="sum" value="' + (r.sum || '') + '">' +
-          '<select class="txt" data-f="line" style="width:120px">' + ['all', 'per', 'ter'].map(function (l) { return '<option value="' + l + '"' + ((r.line || 'all') === l ? ' selected' : '') + '>' + LN[l] + '</option>'; }).join('') + '</select></div>';
+      // 24.11.2026 (руководитель): по должностям — начальник завода, контроль качества, склад, начальник участка, работники;
+      // без должности — ниже, уволенные — в самом низу; в каждой группе номер и сколько человек
+      var SI = D.staff_info || {}, POS = D.pos || [], PN = {};
+      POS.forEach(function (p) { PN[p[0]] = p[1]; });
+      var grp = POS.map(function (p) { return [p[0], p[1]]; }).concat([['', 'Без должности'], ['fired', 'Уволены']]);
+      var gOf = function (w) { var i = SI[w] || {}; return i.fired ? 'fired' : (PN[i.pos] ? i.pos : ''); };
+      var row = function (w, n) {
+        var r = (D.rates || {})[w] || {}, i = SI[w] || {}, p = (D.people || []).filter(function (q) { return q.who === w; })[0];
+        return '<div class="zpf zbr' + (i.fired ? ' cx' : '') + '" data-w="' + esc(w) + '" style="flex-wrap:wrap"><span class="nn">' + n + '</span><div class="t"><b style="text-transform:none">' + esc(w) + '</b>' +
+          '<small>' + (i.fired ? 'уволен с ' + esc(i.fired) : p ? p.n + ' партий × ' + fmtq(p.rate) + ' = <b>' + fmtq(p.sum) + ' сум</b>' : 'ставки нет') + '</small></div>' +
+          '<input class="txt" inputmode="numeric" placeholder="сум за партию" style="width:100px" data-f="sum" value="' + (r.sum || '') + '">' +
+          '<select class="txt" data-f="line" style="width:118px">' + ['all', 'per', 'ter'].map(function (l) { return '<option value="' + l + '"' + ((r.line || 'all') === l ? ' selected' : '') + '>' + LN[l] + '</option>'; }).join('') + '</select>' +
+          '<select class="txt" data-f="pos" style="width:150px"><option value="">— должность</option>' + POS.map(function (q) { return '<option value="' + q[0] + '"' + (i.pos === q[0] ? ' selected' : '') + '>' + esc(q[1]) + '</option>'; }).join('') + '</select>' +
+          '<label class="zck"><input type="checkbox" data-f="fired"' + (i.fired ? ' checked' : '') + '> уволен</label></div>';
+      };
+      h += grp.map(function (g) {
+        var ws = (D.staff || []).filter(function (w) { return gOf(w) === g[0]; });
+        if (!ws.length) return '';
+        return '<div class="crt-l">' + esc(g[1]) + ' · ' + ws.length + '</div>' + ws.map(function (w, i) { return row(w, i + 1); }).join('');
       }).join('') + '</div>';
       h += '<small class="zl">С какого месяца действуют ставки</small><div class="zd2">' +
         '<label class="zck big"><input type="checkbox" data-zbm="' + D.month + '" checked> с этого — ' + esc(mname) + '</label>' +
         '<label class="zck big"><input type="checkbox" data-zbm="' + D.next_month + '"> со следующего</label></div>' +
-        '<div class="ivbar"><button class="go" id="zbsave">💾 Сохранить ставки</button></div>';
+        '<div class="ivbar"><button class="go" id="zbsave">💾 Сохранить</button></div>';
       // по дням
       h += '<div class="msec">ПАРТИИ ПО ДНЯМ</div>' + ((D.days || []).map(function (d) {
         var op = zbOpen[d.day];
@@ -4461,17 +4474,18 @@
         i.onchange = function () { Array.prototype.forEach.call(B.querySelectorAll('[data-zbm]'), function (j) { j.checked = j === i; }); };
       });
       $('zbsave').onclick = function () {
-        var ppl = {}, b = this;
+        var ppl = {}, stf = {}, b = this;
         Array.prototype.forEach.call(B.querySelectorAll('.zbr'), function (r) {
           var s = r.querySelector('[data-f="sum"]').value.replace(/\s/g, '');
           if (+s > 0) ppl[r.getAttribute('data-w')] = { sum: +s, line: r.querySelector('[data-f="line"]').value };
+          stf[r.getAttribute('data-w')] = { pos: r.querySelector('[data-f="pos"]').value, fired: r.querySelector('[data-f="fired"]').checked };
         });
         var fi = B.querySelector('[data-zbm]:checked'), frm = fi ? fi.getAttribute('data-zbm') : D.month;
-        var q_ = 'Сохранить ставки за партию с ' + frm + '?\n' + Object.keys(ppl).map(function (w) { return w + ' — ' + ppl[w].sum + ' (' + LN[ppl[w].line] + ')'; }).join('\n');
+        var q_ = 'Сохранить ставки, должности и «уволен» с ' + frm + '?\n' + Object.keys(ppl).map(function (w) { return w + ' — ' + ppl[w].sum + ' (' + LN[ppl[w].line] + ')'; }).join('\n');
         var go_ = function (yes) {
           if (!yes) return;
           b.disabled = true;
-          call('/api/zp_batch_set', { month: zbMonth, from: frm, people: ppl }, 30000).then(function (q) {
+          call('/api/zp_batch_set', { month: zbMonth, from: frm, people: ppl, staff: stf }, 30000).then(function (q) {
             b.disabled = false; if (!q.ok) return say(q.text); haptic('success'); say('Сохранено: ' + q.text); draw(q);
           }).catch(function (e) { b.disabled = false; ivErr(e); });
         };
