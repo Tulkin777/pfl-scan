@@ -1209,9 +1209,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ee9523b3', newBuild = '';
+  var BUILD = 'd388f542', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795531986' || 0;
+  var BUILD_AT = +'1795532054' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4588,24 +4588,9 @@
         return '<div class="zpf zbp" data-pos="' + esc(t) + '" style="flex-wrap:wrap"><span class="nn">' + (i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(t) + '</b>' +
           '<small>' + (D.pos_n[t] || 0) + ' чел.</small></div><input class="txt" inputmode="numeric" placeholder="сум за партию" style="width:110px" data-f="sum" value="' + (r.sum || '') + '">' + lineSel(r.line) + '</div>';
       }).join('');
-      // сотрудники — по порядку должностей; без должности — ниже; уволенные — в самом низу
-      var act = D.people.filter(function (p) { return !p.gone; }), gone = D.people.filter(function (p) { return p.gone; });
-      var row = function (p, n) {
-        var o = p.own || {};
-        return '<div class="zpf zbr' + (p.gone ? ' cx' : '') + '" data-id="' + esc(p.id) + '" style="flex-wrap:wrap"><span class="nn">' + n + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b>' +
-          '<small>' + esc(p.pos || 'без должности') + (p.gone ? ' · уволен с ' + esc(p.gone_from) : '') + ' · ' +
-          (p.n ? p.n + ' партий = <b>' + fmtq(p.sum) + ' сум</b>' + (p.src ? ' (' + p.src + ')' : '') : 'бонуса нет') + '</small></div>' +
-          '<input class="txt" inputmode="numeric" placeholder="своя ставка" style="width:110px" data-f="sum" value="' + (o.sum || '') + '">' + lineSel(o.line) + '</div>';
-      };
-      var gl = [], seen = {};
-      act.forEach(function (p) { var g = p.pos || ''; if (!seen[g]) { seen[g] = []; gl.push(g); } seen[g].push(p); });
-      gl.sort(function (a, b) { return (a === '') - (b === '') || (D.order || []).indexOf(a) - (D.order || []).indexOf(b); });
-      var no = 0;
-      h += '<div class="msec">СОТРУДНИКИ ЗАВОДА</div>' + gl.map(function (g) {
-        return '<div class="crt-l">' + esc(g || 'Без должности') + ' · ' + seen[g].length + '</div>' + seen[g].map(function (p) { no++; return row(p, no); }).join('');
-      }).join('') + (gone.length ? '<div class="crt-l">Уволены · ' + gone.length + '</div>' + gone.map(function (p, i) { return row(p, i + 1); }).join('') : '');
-      h += '<div class="note">Должности и «уволен» меняются в 💵 Расчёт зарплаты → 👔 Должности — здесь подтягиваются сами. Ставка — по должности; «своя ставка» у человека — вместо должностной. ' +
-        'Партия считается по должности человека на день выпуска; после увольнения — не считается.</div>';
+      // 24.11.2026 (руководитель): список сотрудников здесь убран — кто сколько получил, видно в таблице зарплаты (колонка «Бонус за партию»)
+      h += '<div class="note">Ставка — по должности (должности и «уволен» — в 💵 Расчёт зарплаты → 👔 Должности). Партия считается по должности человека на день выпуска; после увольнения — не считается. ' +
+        'Кто сколько получил — в таблице зарплаты, колонка «Бонус за партию».</div>';
       h += '<small class="zl">С какого месяца действуют ставки</small><div class="zd2">' +
         '<label class="zck big"><input type="checkbox" data-zbm="' + D.month + '" checked> с этого — ' + esc(mname) + '</label>' +
         '<label class="zck big"><input type="checkbox" data-zbm="' + D.next_month + '"> со следующего</label></div>' +
@@ -4628,7 +4613,7 @@
         var pos = {}, ppl = {}, b = this, txt = [];
         var val = function (r) { return r.querySelector('[data-f="sum"]').value.replace(/\s/g, ''); };
         Array.prototype.forEach.call(B.querySelectorAll('.zbp'), function (r) { var s = val(r); if (+s > 0) { pos[r.getAttribute('data-pos')] = { sum: +s, line: r.querySelector('[data-f="line"]').value }; txt.push(r.getAttribute('data-pos') + ' — ' + s); } });
-        Array.prototype.forEach.call(B.querySelectorAll('.zbr'), function (r) { var s = val(r); if (+s > 0) { ppl[r.getAttribute('data-id')] = { sum: +s, line: r.querySelector('[data-f="line"]').value }; txt.push(r.querySelector('b').textContent + ' (своя) — ' + s); } });
+        ppl = (D.rates || {}).people || {};   // свои ставки (если были) — сохраняются как были
         var fi = B.querySelector('[data-zbm]:checked'), frm = fi ? fi.getAttribute('data-zbm') : D.month;
         var q_ = 'Сохранить ставки за партию с ' + frm + '?\n' + txt.join('\n');
         var go_ = function (yes) {
