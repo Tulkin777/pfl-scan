@@ -1041,6 +1041,11 @@
   #zs .zsfund { background: linear-gradient(150deg, #34c46e, #138a43); color: #fff; border-radius: 16px; padding: 10px 14px; margin: -2px 0 10px; box-shadow: 0 6px 16px rgba(23,150,74,.25); }
   #zs .zsfund b { display: block; font-size: 22px; font-weight: 800; } #zs .zsfund span { font-size: 12px; opacity: .92; }
   #zs .zsm { display: inline-block; margin-left: 8px; font-weight: 800; color: #138a43; } #zs .zsm.n { color: var(--hint); font-weight: 600; }
+  .zbcsum { background: linear-gradient(150deg, #ffb547, #d97706); color: #fff; border-radius: 14px; padding: 10px 14px; margin-bottom: 8px; box-shadow: 0 6px 16px rgba(217,119,6,.25); }
+  .zbcsum > b { display: block; font-size: 22px; font-weight: 800; } .zbcsum span { font-size: 12px; }
+  .zbct { overflow-x: auto; } .zbct table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--tg-theme-bg-color, #fff); border-radius: 12px; overflow: hidden; }
+  .zbct th { background: #1f4e78; color: #fff; padding: 6px; font-weight: 700; white-space: nowrap; } .zbct td { padding: 6px; border-bottom: 1px solid rgba(120,130,150,.18); }
+  .zbct td.r { text-align: right; white-space: nowrap; } .zbct tr.t td { background: rgba(217,119,6,.12); font-weight: 800; }
   #zs .zssal { margin-top: 10px; padding: 10px; border-radius: 12px; background: rgba(23,150,74,.07); border: 1px solid rgba(23,150,74,.2); }
   #zs .zsadd { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   #zs .zsadd .a { border-radius: 14px; padding: 10px 12px; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(16,24,40,.15); }
@@ -1203,9 +1208,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '99e3aba5', newBuild = '';
+  var BUILD = '853d34bd', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795530977' || 0;
+  var BUILD_AT = +'1795531496' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4266,8 +4271,20 @@
         }).join('') : '<div class="empty" style="padding:14px">Файлов пока нет</div>';
       });
       h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). Нажмите строку — таблица этого месяца ниже.</div>' +
-        '<div id="zpv"></div>';
+        '<div id="zpv"></div>' + (k === 'pay' ? '<div id="zpbc"></div>' : '');
       B.innerHTML = h;
+      if (k === 'pay') load('/api/zp_batch_calc', {}, function (Q) {   // 24.11.2026 (руководитель): внизу — расчёт за партии этого месяца
+        var X = $('zpbc'); if (!X || cur !== me || !Q.ok) return;
+        var MN = ['', 'январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+        var ppl = (Q.people || []).filter(function (p) { return p.rate || p.sum; });
+        X.innerHTML = '<div class="msec" style="margin-top:14px">🏭 ЗА ПАРТИИ · ' + (MN[+Q.month.slice(5, 7)] + ' ' + Q.month.slice(0, 4)).toUpperCase() + '</div>' +
+          '<div class="zbcsum"><b>' + fmtq(Q.total) + ' сум</b><span>вышло партий: <b>' + Q.n.all + '</b> (Перечисление ' + Q.n.per + ', Терминал ' + Q.n.ter + ') · с 1-го по сегодня · ' + esc(Q.at) + '</span></div>' +
+          '<div class="zbct"><table><tr><th>№</th><th>Сотрудник</th><th>Должность</th><th>за 1 партию</th><th>партий</th><th>сумма</th></tr>' +
+          ppl.map(function (p) { return '<tr><td>' + (p.no || '—') + '</td><td>' + esc(p.who) + '</td><td>' + esc(p.pos || '—') + '</td><td class="r">' + fmtq(p.rate) +
+            '</td><td class="r">' + p.n + '</td><td class="r"><b>' + fmtq(p.sum) + '</b></td></tr>'; }).join('') +
+          '<tr class="t"><td></td><td>Итого</td><td></td><td></td><td></td><td class="r"><b>' + fmtq(Q.total) + '</b></td></tr></table></div>' +
+          '<div class="note">Ставка за 1 партию — по должности (🎁 Бонусы → 🏭 За партию). Партии — выпуск в ERP с 1-го числа. Сумма = ставка × партии; после увольнения партии не считаются.</div>';
+      });
       // 23.11.2026 (руководитель): таблица сразу ниже — смотреть, что начислено и что удержано, не скачивая
       var first = B.querySelector('[data-zv]');
       if (first) zpView(first.getAttribute('data-zv'), first.getAttribute('data-id'));
