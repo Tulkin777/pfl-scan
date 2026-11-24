@@ -422,9 +422,9 @@
   .dir div.shp .brs .br0, .dir div.shp.z .brs .br0 { background: rgba(255,255,255,.55); color: #8e2a26; }
   .dir div.shp.on { box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #a33a36, 0 6px 10px rgba(0,0,0,.25); }
   /* 22.11.2026 (руководитель): нажатое — «негатив»: тёмная заливка, белые буквы, приподнято; остальные — бледнее */
-  .stp .sp.on { background: linear-gradient(150deg, #6b5cff, #3a28b8) !important; color: #fff !important; box-shadow: 0 4px 0 #261a80 !important;
-                transform: translateY(-2px); opacity: 1 !important; }
-  .stp:has(.sp.on) .sp:not(.on) { opacity: .45; }
+  .stp .sp.on { color: #fff !important; transform: translateY(-3px); opacity: 1 !important; filter: none !important;
+                box-shadow: 0 6px 0 rgba(0,0,0,.28), 0 9px 16px rgba(0,0,0,.2), inset 0 0 0 3px rgba(255,255,255,.92) !important; }
+  .stp:has(.sp.on) .sp:not(.on) { opacity: .5; }
   .dir:has(> .on) > div:not(.on) { opacity: .4; filter: saturate(.5); }
   .dir > div.on { transform: translateY(-3px); box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #3a28b8, 0 6px 10px rgba(0,0,0,.25); }
   .stp.s3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -499,7 +499,34 @@
   .stp .sp { text-align: center; border-radius: 12px; padding: 6px 1px; font-size: 10.5px; font-weight: 800; background: var(--bg2); color: var(--fg);
              box-shadow: 0 2px 0 rgba(0,0,0,.1); cursor: pointer; line-height: 1.2; }
   .stp .sp b { display: block; font-size: 18px; } .stp .sp.z { opacity: .5; }
-  .stp .sp.on { box-shadow: inset 0 0 0 3px #4b39c9; background: #efeaff; color: #4b39c9; opacity: 1; }
+  /* 24.11.2026 (руководитель): внутри Движения (Отгрузка, Перемещения, Приходы, Возврат) — все плитки цветные объёмные,
+     с бликом сверху и «ступенькой» снизу; пустые — того же цвета, только бледнее; выбранная — приподнята, белая рамка */
+  .dir > div, .stp .sp { position: relative; overflow: hidden; text-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .12s, box-shadow .12s; }
+  .dir > div:before, .stp .sp:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%; pointer-events: none;
+                                       background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0)); }
+  .dir > div:active, .stp .sp:active { transform: translateY(3px); box-shadow: none !important; }
+  .dir .d1 { box-shadow: 0 4px 0 #1a4f8f; } .dir .d2 { box-shadow: 0 4px 0 #1a7a45; } .dir .d3 { box-shadow: 0 4px 0 #4e5566; }
+  .dir .d4 { box-shadow: 0 4px 0 #b06205; } .dir .d5 { box-shadow: 0 4px 0 #0f6f36; } .dir .d6 { box-shadow: 0 4px 0 #0b5e33; }
+  .dir .d7 { box-shadow: 0 4px 0 #113a7d; }
+  .dir div.z:not(.shp) { color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.18); opacity: .75; filter: saturate(.7); }
+  .dir div.z.d1 { background: linear-gradient(150deg, #4fd68a, #1f62c9); } .dir div.z.d2 { background: linear-gradient(150deg, #1f62c9, #4fd68a); }
+  .dir div.z.d3 { background: linear-gradient(150deg, #aab3c4, #6b7385); } .dir div.z.d4 { background: linear-gradient(150deg, #ffbf55, #e8820c); }
+  .dir div.z.d5 { background: linear-gradient(150deg, #4fd68a, #17964a); } .dir div.z.d6 { background: linear-gradient(150deg, #4fd68a, #0f8a4a); }
+  .dir div.z.d7 { background: linear-gradient(150deg, #6fb2ff, #174fa8); }
+  .dir div.z.on { opacity: 1; filter: none; }
+  .stp .sp { color: #fff; border-radius: 13px; padding: 7px 1px 6px; }
+  .stp .sp.z { opacity: .75; filter: saturate(.7); }
+  .stp .sp[data-st=new], .stp .sp[data-df=new], .stp .sp[data-df=wait] { background: linear-gradient(150deg, #ffc766, #e8860c); box-shadow: 0 4px 0 #b06205; }
+  .stp .sp[data-st=ready] { background: linear-gradient(150deg, #e3b07a, #a8692c); box-shadow: 0 4px 0 #7a4a1c; }
+  .stp .sp[data-st=road] { background: linear-gradient(150deg, #a99bff, #5b48d1); box-shadow: 0 4px 0 #3e3094; }
+  .stp .sp[data-st=came], .stp .sp[data-df=tas] { background: linear-gradient(150deg, #7fb6ff, #2f6fd0); box-shadow: 0 4px 0 #1f4f9a; }
+  .stp .sp[data-st=ok], .stp .sp[data-df=ok], .stp .sp[data-df=done] { background: linear-gradient(150deg, #5fd69a, #17964a); box-shadow: 0 4px 0 #0f6f36; }
+  .stp .sp[data-df=late] { background: linear-gradient(150deg, #f6a9a2, #d9534f); box-shadow: 0 4px 0 #a33a36; }
+  .stp .sp[data-df=noshelf] { background: linear-gradient(150deg, #f59fb8, #c9567a); box-shadow: 0 4px 0 #933a57; }
+  .stp .sp[data-df=arch] { background: linear-gradient(150deg, #b9c2cc, #78838f); box-shadow: 0 4px 0 #555e68; }
+  .prodb { position: relative; overflow: hidden; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .prodb:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%; pointer-events: none;
+                  background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0)); }
   .tcard { background: var(--bg2); border-radius: 16px; padding: 10px 12px; margin: 0 0 10px; border-left: 8px solid #ccc; cursor: pointer;
            box-shadow: 0 3px 0 rgba(0,0,0,.06); }
   .tcard:active { transform: translateY(2px); }
@@ -891,9 +918,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '3cf0e549', newBuild = '';
+  var BUILD = '5ca25f98', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795488486' || 0;
+  var BUILD_AT = +'1795488747' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
