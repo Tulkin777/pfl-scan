@@ -1236,9 +1236,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '17a997c0', newBuild = '';
+  var BUILD = 'fdf5aa5f', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795542163' || 0;
+  var BUILD_AT = +'1795542275' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4740,13 +4740,11 @@
     setTimeout(ottNavInit, 0);   // 24.11.2026: панель прокрутки — после вставки в страницу
     h += '<div class="ottnav"><button type="button" data-ottl title="Влево">◀</button><div class="ottbar"><div class="ottthumb"></div></div><span class="ottpos"></span>' +
       '<button type="button" data-ottr title="Вправо">▶</button></div><div class="ottbox"><div class="ottw" tabindex="0"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('В смену от нормы', '%') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы', 'сум') + th('Зарплата с бонусами', 'итого, сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы', 'сум') + th('Зарплата с бонусами', 'итого, сум') + th('В смену от нормы', '%') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '</td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small></td>' +
-              (p.nofid ? '<td colspan="8" class="nf">нет в отчёте посещения (Face ID) за этот месяц</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td><td>' + F(p.shift) + '</td>' +
-              // 24.11.2026 (руководитель): % отработанного в смену от нормы — выделено, дальше пойдёт в расчёты
-              '<td class="pctc"><b>' + (p.norm ? (Math.round(p.shift / p.norm * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>' +
+              (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td><td>' + F(p.shift) + '</td>' +
               '<td class="' + (p.diff < 0 ? 'neg' : '') + '">' + (p.diff < 0 ? '−' + F(-p.diff) : '0') + '</td><td class="' + (p.late ? 'neg' : '') + '">' + F(p.late) + '</td>' +
               '<td>' + F(p.min) + '<small>' + F(p.m) + ' + ' + F(p.e) + ' + ' + F(p.w) + '</small></td><td class="pos"><b>' + F(p.net) + '</b></td>') + (C.hour ? '<td><b>' + fmtq(p.sum) + '</b></td>' : '') +
               // 24.11.2026 (руководитель): надбавка сверхурочно = итог сверхурочно × (зарплата ÷ норма) × (1 + %)
@@ -4760,6 +4758,8 @@
               '<td>' + (p.spec ? '<b style="color:#c46a00">' + fmtq(p.spec) + '</b>' + (p.spec_n > 1 ? '<small>' + p.spec_n + ' бонуса</small>' : '') : '0') + '</td>' +
               // 24.11.2026 (руководитель): итог = зарплата + бонус за партию + бонус без брака + спец. бонусы
               '<td class="sumc"><b>' + fmtq(zpb(p)) + '</b></td>' +
+              // 24.11.2026 (руководитель): % в смену от нормы — после «Зарплата с бонусами», выделено, дальше пойдёт в расчёты
+              '<td class="pctc"><b>' + (p.nofid ? '—' : (p.norm ? (Math.round(p.shift / p.norm * 1000) / 10).toLocaleString('ru') : 0) + ' %') + '</b></td>' +
               // 24.11.2026 (руководитель): инвентаризация по субботам — сумма; должен был (в правиле раздела), а нет — ✖
               IS.map(function (d) { var v = (p.inv || {})[d] || 0; return '<td>' + (v ? '<b>' + fmtq(v) + '</b>' : d > TD ? '<span style="opacity:.4">впереди</span>' : p.inv_need ? '<span class="neg">✖</span>' : '—') + '</td>'; }).join('') +
               '<td>' + (p.inv_other ? fmtq(p.inv_other) : '—') + '</td><td>' + (p.inv_total ? '<b>' + fmtq(p.inv_total) + '</b>' : '0') + '</td>' +
@@ -4770,13 +4770,12 @@
                 (p.noout ? '<br>⚠️ дней без отметки выхода: ' + p.noout + ' (минуты этих дней не посчитаны)' : '') + '</td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
-          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="3"></td>' +
-          // 24.11.2026: итог % — вся смена всех ÷ вся норма всех (кто есть в отчёте посещения)
-          (function () { var a = 0, b = 0; D.people.forEach(function (p) { if (!p.nofid) { a += p.shift || 0; b += p.norm || 0; } }); return '<td class="pctc"><b>' + (b ? (Math.round(a / b * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>'; })() +
-          '<td colspan="' + (C.hour ? 5 : 4) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
+          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.qual || 0); }, 0)) + '</b></td>' +
           '<td><b>' + fmtq(D.spec_total || 0) + '</b></td>' +
           '<td class="sumc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + zpb(p); }, 0)) + '</b></td>' +
+          // итог % — вся смена всех ÷ вся норма всех (кто есть в отчёте посещения)
+          (function () { var a = 0, b = 0; D.people.forEach(function (p) { if (!p.nofid) { a += p.shift || 0; b += p.norm || 0; } }); return '<td class="pctc"><b>' + (b ? (Math.round(a / b * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>'; })() +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_other || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_total || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0); }, 0)) + '</b></td></tr>' +
           '</tbody></table></div></div>';
