@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>KO‘CHIRISH</title>
+<title>PFL JARAYON</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#8a3fd1">
 <!-- PFL · тестовый Mini App складов KO‘CHIRISH (22.11.2026). На этой странице НЕТ данных и токенов: всё приходит с сервера
@@ -1040,9 +1040,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e1e97a36', newBuild = '';
+  var BUILD = '179172ae', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795492979' || 0;
+  var BUILD_AT = +'1795494446' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4690,7 +4690,7 @@
         h += '<div class="emp" data-i="' + i + '"><div class="av"' + (u.role ? '' : ' style="background:#9aa0a6"') + '>' + esc(u.name.charAt(0)) + '</div><div class="t"><div class="n">' +
           esc(u.name) + '</div>' + roleChip(u.role) + (s.own ? ' <span class="ex">✏️ ' + s.own + ' своё</span>' : '') + '<div class="c">' + c + '</div></div><div>›</div></div>';
       });
-      h += '<p class="note">Новые люди группы KO‘CHIRISH и мини-аппа появляются здесь сами («🆕 новый», ⛔ нет доступа) — нажмите и дайте роль</p>';
+      h += '<p class="note">Новые люди группы PFL JARAYON и мини-аппа появляются здесь сами («🆕 новый», ⛔ нет доступа) — нажмите и дайте роль</p>';
       view.innerHTML = h;
       $('aroles').onclick = function () { go(function () { showRoles(null); }); };
       $('aadd').onclick = function () { go(showAdd); };
@@ -5001,7 +5001,7 @@
       else if (d.t === 'here') answered = true;
       else if (d.t === 'take' && !winOff) {   // другое окно забрало работу — это закрыть
         winOff = true; cur = function () {}; stack = []; topShow(false);
-        view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>KO‘CHIRISH открыт в другом окне</h2><p>Это окно можно закрыть.</p>' +
+        view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>PFL JARAYON открыт в другом окне</h2><p>Это окно можно закрыть.</p>' +
           '<button class="main" id="wx">✖ Закрыть</button></div>';
         $('wx').onclick = function () { try { tg.close(); } catch (e) {} try { window.close(); } catch (e) {} };
         setTimeout(function () { try { tg.close(); } catch (e) {} }, 1500);
@@ -5012,20 +5012,20 @@
       if (!answered) { winOn = true; return start(); }
       // руководитель 22.11: второе окно не открывать — всплывающее сообщение и закрыть, «открыть здесь» не даём
       winOff = true; topShow(false);
-      view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>KO‘CHIRISH уже открыт</h2><p>Работайте в открытом окне.</p></div>';
+      view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>PFL JARAYON уже открыт</h2><p>Работайте в открытом окне.</p></div>';
       var shut = function () { try { tg.close(); } catch (e) {} try { window.close(); } catch (e) {} };
-      if (tg && tg.showAlert) { try { tg.showAlert('KO‘CHIRISH уже открыт в другом окне.\nЭто окно закроется.', shut); } catch (e) { shut(); } }
-      else { alert('KO‘CHIRISH уже открыт в другом окне. Это окно закроется.'); shut(); }
+      if (tg && tg.showAlert) { try { tg.showAlert('PFL JARAYON уже открыт в другом окне.\nЭто окно закроется.', shut); } catch (e) { shut(); } }
+      else { alert('PFL JARAYON уже открыт в другом окне. Это окно закроется.'); shut(); }
     }, 400);
   }
   // 22.11.2026: окна Telegram (кнопка в группе и «Открыть» в списке чатов) друг друга не видят — замок на сервере:
   // окно регистрируется, шлёт пульс каждые 8 с; уже есть живое другое окно — всплывающее «уже открыт» и закрыть.
   function winShut(text) {
     winOff = true; cur = function () {}; stack = []; topShow(false);
-    view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>KO‘CHIRISH уже открыт</h2><p>Работайте в открытом окне.</p></div>';
+    view.innerHTML = '<div class="down"><div class="ico">🪟</div><h2>PFL JARAYON уже открыт</h2><p>Работайте в открытом окне.</p></div>';
     var shut = function () { try { tg.close(); } catch (e) {} try { window.close(); } catch (e) {} };
-    if (tg && tg.showAlert) { try { tg.showAlert((text || 'KO‘CHIRISH уже открыт в другом окне.') + '\nЭто окно закроется.', shut); } catch (e) { shut(); } }
-    else { alert((text || 'KO‘CHIRISH уже открыт в другом окне.') + ' Это окно закроется.'); shut(); }
+    if (tg && tg.showAlert) { try { tg.showAlert((text || 'PFL JARAYON уже открыт в другом окне.') + '\nЭто окно закроется.', shut); } catch (e) { shut(); } }
+    else { alert((text || 'PFL JARAYON уже открыт в другом окне.') + ' Это окно закроется.'); shut(); }
   }
   function winServer(start) {
     call('/api/win', { win: WIN, act: 'hello' }, 8000).then(function (r) {
@@ -5065,7 +5065,7 @@
   }
   if (pcKey) winOne(function () { boot(function () { winServer(home); }); });
   else if (!tg || !tg.initData) {
-    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «KO‘CHIRISH 🔄» в личке бота склада.</p>' +
+    view.innerHTML = '<div class="down"><div class="ico">📱</div><h2>Откройте в Telegram</h2><p>Кнопка «PFL JARAYON» в закрепе группы PFL JARAYON.</p>' +
       '<p>💻 На компьютере: в личке бота склада напишите <b>/pc</b>.</p></div>';
   } else if (new URLSearchParams(location.search).get('drv')) {
     // 🚛 водитель нажал «Взял / Привёз / Проблема» под сообщением бота — отмечаем и показываем итог (руководитель 22.11)
