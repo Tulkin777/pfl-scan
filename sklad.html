@@ -1040,9 +1040,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '354b0465', newBuild = '';
+  var BUILD = 'e1e97a36', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795490630' || 0;
+  var BUILD_AT = +'1795492979' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1128,7 +1128,23 @@
     }).catch(function () { return false; }).then(function (ok) { apiP = null; return ok; });
     return apiP;
   }
+  // 24.11.2026 (руководитель: «Слишком часто — подождите минуту»): один экран просил одно и то же по 2–5 раз подряд
+  // (список рисуется из памяти и свежим, каждая отрисовка заново просит дополнения) — лимит 240 запросов в минуту кончался.
+  // Теперь одинаковый запрос ЧТЕНИЯ в пределах 4 с не уходит на сервер второй раз: получает тот же ответ.
+  // Любое действие (провести, взять, сохранить…) сразу сбрасывает эту память — после действия данные всегда свежие.
+  var RD_PATH = /^\/api\/(menu|flow|ship_docs|ship_places_all|places|wh|win|os|pmv|rsx|cert|qc|med|zp|zp_view|zp_bonus|inv_stock|ost|invd_all|invd_list|invd_get|inv_doc|task|scheme|acc|spec_data)$/;
+  var rdMemo = {};
   function call(path, body, timeout) {
+    if (!RD_PATH.test(path)) { rdMemo = {}; return call0(path, body, timeout); }
+    var k = path + JSON.stringify(body || {}), m = rdMemo[k], now = Date.now();
+    if (m && (m.busy || now - m.t < 4000)) return m.p;
+    var x = { t: now, busy: true };
+    x.p = call0(path, body, timeout).then(function (r) { x.busy = false; x.t = Date.now(); return r; },
+      function (e) { if (rdMemo[k] === x) delete rdMemo[k]; throw e; });
+    rdMemo[k] = x;
+    return x.p;
+  }
+  function call0(path, body, timeout) {
     var b0 = JSON.stringify(body || {}), was = api;
     return call1(path, body, timeout).catch(function (e) {
       if (!e || !e.down) throw e;
