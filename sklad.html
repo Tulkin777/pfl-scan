@@ -1101,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f9b5a89b', newBuild = '';
+  var BUILD = 'f6384921', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795510333' || 0;
+  var BUILD_AT = +'1795510422' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3928,7 +3928,7 @@
       });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zt]'), function (el) { el.onclick = function () { haptic('light'); zinvTab = el.getAttribute('data-zt'); draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zo]'), function (el) { el.onclick = function () { var k = el.getAttribute('data-zo'); zinvOpen[k] = !zinvOpen[k]; draw(D); }; });
-      Array.prototype.forEach.call(B.querySelectorAll('.zrf'), function (f) {
+      Array.prototype.forEach.call(B.querySelectorAll('.zrf[data-key]'), function (f) {   // только формы «Разделов» (у правки документа своя кнопка)
         var one = function (attr) {   // две галочки — выбрана одна
           Array.prototype.forEach.call(f.querySelectorAll('[' + attr + ']'), function (i) {
             i.onchange = function () { Array.prototype.forEach.call(f.querySelectorAll('[' + attr + ']'), function (j) { j.checked = j === i; }); };
