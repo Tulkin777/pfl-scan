@@ -1202,9 +1202,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '0fe57e9b', newBuild = '';
+  var BUILD = 'c640dbc2', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795529906' || 0;
+  var BUILD_AT = +'1795529988' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4245,8 +4245,10 @@
         '<div class="note" style="margin-top:0">Бот документов попросит файл Excel из iVMS-4200 в личке, агент Камол сразу разберёт посещение и табель.</div>';
       if (k === 'pay') {   // 24.11.2026: внутри расчёта — кнопки «Посещение» и «Табель в минутах»
         var sub = ['dav', 'tab', 'staff'].filter(function (q) { return q === 'staff' ? D.staff : D.parts[q]; });   // 24.11.2026: + 👔 Должности
-        if (sub.length) h += '<div class="mgrid" style="margin-bottom:10px">' + sub.map(function (q, qi) { var t2 = ZPT[q];
-          return '<div class="tile cat ' + t2[0] + (sub.length % 2 === 1 && qi === sub.length - 1 ? ' wide' : '') + '" data-zsub="' + q + '"><div class="e">' + t2[1] + '</div><div class="n">' + t2[2] + '</div><div class="c">' + t2[3] + '</div></div>'; }).join('') + '</div>';
+        // 24.11.2026 (руководитель): Посещение · Табель в минутах · Должности — одной строкой, маленькими квадратами
+        var SC = { dav: 'c1', tab: 'c3', staff: 'c4' };
+        if (sub.length) h += '<div class="osg">' + sub.map(function (q) { var t2 = ZPT[q];
+          return '<div class="ob ' + (SC[q] || 'c0') + '" data-zsub="' + q + '"><i>' + t2[1] + '</i><b>' + t2[2] + '</b></div>'; }).join('') + '</div>';
       }
       var parts = k === 'pay' ? ['pay', 'ved'] : [k];
       parts.forEach(function (p) {
@@ -4260,7 +4262,7 @@
       });
       h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). Нажмите строку — таблица этого месяца ниже.</div>' +
         '<div id="zpv"></div>';
-      if (k === 'pay' && isAdmin) h += '<div class="msec">📊 ТАБЕЛЬ МЕСЯЦА ДЛЯ ЗАРПЛАТЫ</div><div id="zptab"><div class="spin">Считаю по отчёту посещения…</div></div>';   // 24.11.2026 (руководитель)
+      if (k === 'dav' && isAdmin) h += '<div class="msec">📊 ТАБЕЛЬ МЕСЯЦА ДЛЯ ЗАРПЛАТЫ</div><div id="zptab"><div class="spin">Считаю по отчёту посещения…</div></div>';   // 24.11.2026 (руководитель)
       B.innerHTML = h;
       // 23.11.2026 (руководитель): таблица сразу ниже — смотреть, что начислено и что удержано, не скачивая
       var first = B.querySelector('[data-zv]');
