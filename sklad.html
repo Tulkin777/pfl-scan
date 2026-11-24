@@ -1210,9 +1210,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '32a30b56', newBuild = '';
+  var BUILD = '48c88614', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795535812' || 0;
+  var BUILD_AT = +'1795536110' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4647,7 +4647,7 @@
     h += '<div class="zisum"><b>' + (C.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>к оплате сверхурочно: ' + F(D.min.net) + ' мин' + (C.hour ? ' × ' + fmtq(C.hour) + ' сум/час' : '') + '</span></div>';
     var th = function (t, sub) { return '<th>' + t + (sub ? '<small>' + sub + '</small>' : '') + '</th>'; };
     h += '<div class="ottw"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Отрабо&shy;тано', 'в смену + надбавка, мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '</td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small></td>' +
@@ -4657,6 +4657,8 @@
               // 24.11.2026 (руководитель): надбавка сверхурочно = итог сверхурочно × (зарплата ÷ норма) × (1 + %)
               // 24.11.2026 (руководитель): надбавка — в минутах: итог сверхурочно × (1 + %), без формулы
               '<td>' + (p.ot_min ? '<b style="color:#c46a00">' + F(p.ot_min) + '</b>' : '0') + '</td>' +
+              // 24.11.2026 (руководитель): отработано = в смену + надбавка сверхурочно (мин)
+              '<td>' + (p.nofid ? '—' : '<b style="color:#1f62c9">' + F(p.work_min) + '</b>') + '</td>' +
               // 24.11.2026 (руководитель): зарплата из «👔 Должностей» — между сверхурочными и бонусом за партию
               '<td>' + (p.salary ? '<b style="color:#138a43">' + fmtq(p.salary) + '</b>' : '<span style="opacity:.5">—</span>') + '</td>' +
               '<td>' + (p.batch ? '<b>' + fmtq(p.batch) + '</b><small>' + p.batch_n + ' партий</small>' : '0') + '</td>' +
@@ -4664,11 +4666,11 @@
               // 24.11.2026 (руководитель): инвентаризация по субботам — сумма; должен был (в правиле раздела), а нет — ✖
               IS.map(function (d) { var v = (p.inv || {})[d] || 0; return '<td>' + (v ? '<b>' + fmtq(v) + '</b>' : d > TD ? '<span style="opacity:.4">впереди</span>' : p.inv_need ? '<span class="neg">✖</span>' : '—') + '</td>'; }).join('') +
               '<td>' + (p.inv_other ? fmtq(p.inv_other) : '—') + '</td><td>' + (p.inv_total ? '<b>' + fmtq(p.inv_total) + '</b>' : '0') + '</td></tr>' +
-              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 14 : 13) + IS.length + 2) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
+              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 15 : 14) + IS.length + 2) + '">' + (p.days.length ? p.days.map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') : 'сверхурочных дней нет') +
                 (p.noout ? '<br>⚠️ дней без отметки выхода: ' + p.noout + ' (минуты этих дней не посчитаны)' : '') + '</td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
-          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
+          '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + F(D.work_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.qual || 0); }, 0)) + '</b></td>' +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_other || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_total || 0); }, 0)) + '</b></td></tr>' +
