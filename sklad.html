@@ -1101,9 +1101,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e8dd0db1', newBuild = '';
+  var BUILD = 'ac6dbdea', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795509435' || 0;
+  var BUILD_AT = +'1795509972' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3768,35 +3768,46 @@
       if ((zinvTab === 'conf' && !D.admin) || (zinvTab === 'secs' && !D.edit) || zinvTab === 'people') zinvTab = 'list';
       var y0 = window.scrollY;
       var ppl = '<datalist id="zinvppl">' + (D.people_list || []).map(function (p) { return '<option value="' + esc(p) + '">'; }).join('') + '</datalist>';
-      // 24.11.2026 (руководитель): две кнопки — «Созданные» и «Подтверждённые»; выбора месяца сверху нет — списки сами по месяцам (месяц · год)
-      var G = D.groups || [], CR = D.created || [];
-      var nOk = G.reduce(function (a, g) { return a + g.docs.length; }, 0);
+      // 24.11.2026 (руководитель): две кнопки — «Созданные» и «Подтверждённые»; внутри сначала год, потом месяц (где что-то есть), потом список
+      var CR = D.created || [], OKM = D.ok_months || {};
+      var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+      var MH = function (name, extra) { return '<div class="msec">' + esc(String(name).toUpperCase()) + (extra ? ' · ' + extra : '') + '</div>'; };
+      var madeM = {};
+      CR.forEach(function (c) { var k = String(c.at).slice(0, 7); if (k.length === 7) madeM[k] = (madeM[k] || 0) + 1; });
+      var nOk = Object.keys(OKM).reduce(function (a, k) { return a + (OKM[k] || 0); }, 0);
       var h = ppl + '<div class="osg zit">' + [['made', '🆕', 'Созданные', CR.length, 'c2'], ['list', '✅', 'Подтверждённые', nOk, 'c1']].map(function (t) {
           return '<div class="ob ' + t[4] + (zinvTab === t[0] ? ' on' : '') + '" data-zt="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b>' + (t[3] !== '' ? '<u>' + t[3] + '</u>' : '') + '</div>';
         }).join('') + '</div>';
-      var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-      var MH = function (name, extra) { return '<div class="msec">' + esc(String(name).toUpperCase()) + (extra ? ' · ' + extra : '') + '</div>'; };
+      if (zinvTab === 'made' || zinvTab === 'list') {
+        var CNT = zinvTab === 'made' ? madeM : OKM;
+        var ms = Object.keys(CNT).filter(function (k) { return CNT[k] > 0; });
+        if (ms.indexOf(D.month) < 0) ms.push(D.month);
+        var yrs = ms.map(function (k) { return k.slice(0, 4); }).filter(function (y, i, a) { return a.indexOf(y) === i; }).sort().reverse();
+        var yr = D.month.slice(0, 4);
+        h += '<div class="crt-l">Год</div><div class="crt-g gr">' + yrs.map(function (y) {
+          var n = ms.filter(function (k) { return k.slice(0, 4) === y; }).reduce(function (a, k) { return a + (CNT[k] || 0); }, 0);
+          return '<div class="cg' + (y === yr ? ' on' : '') + '" data-zy="' + y + '">' + y + '<small>' + n + '</small></div>';
+        }).join('') + '</div>';
+        h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.filter(function (k) { return k.slice(0, 4) === yr; }).sort().map(function (k) {
+          return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-zm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + (CNT[k] || 0) + '</small></div>';
+        }).join('') + '</div>';
+      }
+      var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
       if (zinvTab === 'made') {
-        var byM = {}, ord = [];
-        CR.forEach(function (c) { var k = String(c.at).slice(0, 7); if (!byM[k]) { byM[k] = []; ord.push(k); } byM[k].push(c); });
-        h += ord.length ? ord.map(function (k) {
-          var nm = (MONN[+k.slice(5, 7)] || k.slice(5, 7)) + ' ' + k.slice(0, 4);
-          return MH(nm, byM[k].length) + byM[k].map(function (c) {
-            return '<div class="zpf' + (c.cx ? ' cx' : '') + '"><span class="nn">' + esc(String(c.at).slice(8, 10) + '.' + String(c.at).slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(c.name) + '</b>' +
-              '<small>' + esc(String(c.at).slice(11, 16)) + ' · ' + esc(c.by) + ' · ' + c.n + ' строк</small></div><b style="font-size:12px;white-space:nowrap">' + esc(c.state) + '</b></div>';
-          }).join('');
-        }).join('') : '<div class="empty">Созданных инвентаризаций пока нет</div>';
+        var list_ = CR.filter(function (c) { return String(c.at).slice(0, 7) === D.month; });
+        h += MH(mname, list_.length) + (list_.length ? list_.map(function (c) {
+          return '<div class="zpf' + (c.cx ? ' cx' : '') + '"><span class="nn">' + esc(String(c.at).slice(8, 10) + '.' + String(c.at).slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' + esc(c.name) + '</b>' +
+            '<small>' + esc(String(c.at).slice(11, 16)) + ' · ' + esc(c.by) + ' · ' + c.n + ' строк</small></div><b style="font-size:12px;white-space:nowrap">' + esc(c.state) + '</b></div>';
+        }).join('') : '<div class="empty" style="padding:10px">В этом месяце созданных нет</div>');
         h += '<div class="note">Созданные — подсчёты в мини-аппе («📋 Инвент. → Подсчёт»). После подтверждения и проведения в ERP инвентаризация появится в «✅ Подтверждённые» с бонусом.</div>';
       } else if (zinvTab === 'list') {
-        h += G.map(function (g) {
-          var r0 = MH(g.name, g.err ? 'ERP не ответил' : g.docs.length + (g.total ? ' · ' + fmtq(g.total) + ' сум' : ''));
-          if (!g.docs.length) return r0 + (g.err ? '' : '<div class="empty" style="padding:10px">Подтверждённых нет</div>');
-          return r0 + g.docs.map(card).join('') +
-            g.people.map(function (p) { return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b><small>разделов: ' + p.n + '</small></div><b>' + fmtq(p.sum) + ' сум</b></div>'; }).join('') +
-            (g.n_cancel ? '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + g.n_cancel + ' — не оплачиваются</div>' : '');
-        }).join('');
-        h += '<div class="note">Подтверждённые — проведены в ERP. Нажмите — расчёт по разделам и кто получает. Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. ' +
-          'Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
+        var okd = D.docs.filter(function (x) { return !x.cancelled; }), ncx = D.docs.length - okd.length;
+        h += MH(mname, okd.length + (D.total ? ' · ' + fmtq(D.total) + ' сум' : '')) + (okd.length ? okd.map(card).join('') : '<div class="empty" style="padding:10px">В этом месяце подтверждённых нет</div>');
+        if (D.people.length) h += '<div class="crt-l">Кому за ' + esc(mname.toLowerCase()) + '</div>' + D.people.map(function (p) {
+          return '<div class="zpf"><span class="nn">👤</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b><small>разделов: ' + p.n + '</small></div><b>' + fmtq(p.sum) + ' сум</b></div>'; }).join('');
+        if (ncx) h += '<div class="note" style="margin-top:4px">✖ отменено в ERP: ' + ncx + ' — не оплачиваются</div>';
+        h += '<div class="note">Подтверждённые — проведены в ERP. Нажмите — расчёт по разделам и кто получает' + (D.can_fix ? '; там же ✏️ изменить людей или 🗑 удалить бонус (сохраняется после подтверждения)' : '') + '. ' +
+          'Оплачивается только пересчёт из мини-аппа; раздел — раз в месяц. Несколько человек — по минутам Face ID за день × роль (ответственный ×1,2); склады Ташкента — поровну.</div>';
       }
       if (zinvTab === 'made' || zinvTab === 'list') h += (D.edit ? '<div class="zlinks">' + '<button class="btn2" data-zt="secs">🗂 Разделы</button>' + (D.admin ? '<button class="btn2" data-zt="conf">⚙️ Настройки</button>' : '') + '</div>' : '');
       else h += '<div class="zlinks"><button class="btn2" data-zt="list">‹ Назад к инвентаризациям</button></div>';
@@ -3817,6 +3828,21 @@
               if (s.shares.length) c += s.shares.map(function (sh) { return '<div class="zisr"><span>👤 ' + esc(sh[0]) + ' <small>· ' + esc(sh[2]) + (sh[3] != null ? ' · ' + sh[3] + ' мин' : '') + '</small></span><b>' + fmtq(sh[1]) + '</b></div>'; }).join('') +
                 (s.shares.length > 1 || (s.help || []).length ? '<div class="zim">' + (s.by_min ? '⏱ доля — по минутам Face ID × роль' : '⚖️ доля — поровну × роль (нет минут Face ID' + (x.start && x.end ? '' : ' или времени начала и конца') + ')') + '</div>' : '');
               else if (s.no_team) c += '<div class="zim zw">👥 у раздела нет ответственного — сумма никому не начислена</div>';
+              if (s.ovr) c += '<div class="zim zw">✏️ изменено вручную' + (s.ovr.off ? ' — бонус удалён' : '') + ' · ' + esc(s.ovr.by) + ' ' + esc(String(s.ovr.at).slice(8, 10) + '.' + String(s.ovr.at).slice(5, 7) + ' ' + String(s.ovr.at).slice(11, 16)) + '</div>';
+              if (D.can_fix) {   // 24.11.2026 (руководитель): изменить / удалить — сохраняется только после «Сохранить?»
+                var fk = x.id + ':' + s.k;
+                if (zinvOpen['f' + fk]) {
+                  c += '<div class="zrf" data-fx="' + fk + '"><label><small>Ответственный</small><select class="txt" data-f="resp"><option value="">—</option>' +
+                    (D.members || []).map(function (m_) { return '<option' + (m_ === s.resp ? ' selected' : '') + '>' + esc(m_) + '</option>'; }).join('') + '</select></label>' +
+                    '<small class="zl">Помогали</small><div class="zhl">' + (D.members || []).map(function (m_) {
+                      return '<label class="zck"><input type="checkbox" data-h="' + esc(m_) + '"' + ((s.help || []).indexOf(m_) >= 0 ? ' checked' : '') + '> ' + esc(m_) + '</label>'; }).join('') + '</div>' +
+                    '<div class="zlinks"><button class="go" data-fsave="' + fk + '">💾 Сохранить</button><button class="btn2" data-fx0="' + fk + '">Отмена</button></div></div>';
+                } else {
+                  c += '<div class="zlinks"><button class="btn2" data-fxo="' + fk + '">✏️ Изменить</button>' +
+                    (s.ovr && s.ovr.off ? '' : '<button class="btn2" data-foff="' + fk + '">🗑 Удалить бонус</button>') +
+                    (s.ovr ? '<button class="btn2" data-frs="' + fk + '">↩ Как по правилу</button>' : '') + '</div>';
+                }
+              }
               c += '<div class="zim">' + (s.resp ? '👥 ' + esc(s.resp) + (s.help.length ? ' + ' + esc(s.help.join(', ')) : '') + ' · ' +
                 (s.days === 'sat' ? '📅 только суббота' : '🗓 каждый рабочий день') + ' (с ' + esc(s.rule_from) + ')' : '🗂 раздел не настроен — вкладка «Разделы»') + '</div>';
               return c + '</div>';
@@ -3873,6 +3899,34 @@
       }
       B.innerHTML = h; window.scrollTo(0, y0);
       Array.prototype.forEach.call(B.querySelectorAll('[data-zm]'), function (el) { el.onclick = function () { load('/api/zp_inv', { month: el.getAttribute('data-zm') }, draw); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zy]'), function (el) {   // год → последний месяц этого года, где что-то есть
+        el.onclick = function () {
+          var y = el.getAttribute('data-zy'), C2 = zinvTab === 'made' ? madeM : OKM;
+          var k = Object.keys(C2).filter(function (q) { return q.slice(0, 4) === y && C2[q] > 0; }).sort().pop() || (y + '-12');
+          load('/api/zp_inv', { month: k }, draw);
+        };
+      });
+      var fixSend = function (fk, body, q_) {
+        var go_ = function (yes) {
+          if (!yes) return;
+          body.month = zinvMonth; body.doc = fk.split(':')[0]; body.sec = fk.split(':')[1];
+          call('/api/zp_inv_team', body, 30000).then(function (q) { if (!q.ok) return say(q.text); haptic('success'); zinvOpen['f' + fk] = false; draw(q); }).catch(ivErr);
+        };
+        try { tg.showConfirm(q_, go_); } catch (e) { go_(confirm(q_)); }
+      };
+      Array.prototype.forEach.call(B.querySelectorAll('[data-fxo]'), function (b) { b.onclick = function () { zinvOpen['f' + b.getAttribute('data-fxo')] = true; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-fx0]'), function (b) { b.onclick = function () { zinvOpen['f' + b.getAttribute('data-fx0')] = false; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-foff]'), function (b) { b.onclick = function () { fixSend(b.getAttribute('data-foff'), { mode: 'off' }, 'Удалить бонус этого раздела? Сумма станет 0.'); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-frs]'), function (b) { b.onclick = function () { fixSend(b.getAttribute('data-frs'), { mode: 'reset' }, 'Вернуть как по правилу раздела?'); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-fsave]'), function (b) {
+        b.onclick = function () {
+          var fk = b.getAttribute('data-fsave'), f = B.querySelector('[data-fx="' + fk + '"]');
+          var resp = f.querySelector('[data-f="resp"]').value;
+          if (!resp) return say('Выберите ответственного.');
+          var help = Array.prototype.map.call(f.querySelectorAll('[data-h]:checked'), function (i) { return i.getAttribute('data-h'); });
+          fixSend(fk, { mode: 'set', resp: resp, help: help }, 'Сохранить изменение?\n' + resp + (help.length ? ' + ' + help.join(', ') : ''));
+        };
+      });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zt]'), function (el) { el.onclick = function () { haptic('light'); zinvTab = el.getAttribute('data-zt'); draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zo]'), function (el) { el.onclick = function () { var k = el.getAttribute('data-zo'); zinvOpen[k] = !zinvOpen[k]; draw(D); }; });
       Array.prototype.forEach.call(B.querySelectorAll('.zrf'), function (f) {
