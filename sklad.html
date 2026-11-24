@@ -1210,9 +1210,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6bc98305', newBuild = '';
+  var BUILD = '74b2d47b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795534882' || 0;
+  var BUILD_AT = +'1795535067' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4702,8 +4702,7 @@
         '<div class="zpf" style="flex-wrap:wrap"><div class="t"><b style="text-transform:none">🕕 Конец работы</b></div><input class="txt" type="time" id="otend" style="width:110px" value="' + esc(C.end) + '"></div>' +
         '<small class="zl">Рабочие дни (отмеченные; остальные дни — сверхурочно)</small><div class="zd2">' + WDN.map(function (n, i) {
           return '<label class="zck big"><input type="checkbox" data-wd="' + i + '"' + (wk.indexOf(i) >= 0 ? ' checked' : '') + '> ' + n + '</label>'; }).join('') + '</div>' +
-        '<div class="zpf" style="flex-wrap:wrap"><div class="t"><b style="text-transform:none">💵 Ставка за 1 час сверхурочно</b><small>одна для всех · сумма = минуты ÷ 60 × ставка</small></div>' +
-        '<input class="txt" id="othour" inputmode="numeric" style="width:120px" placeholder="сум" value="' + (C.hour || '') + '"></div>' +
+        // 24.11.2026 (руководитель): «Ставка за 1 час» убрана — только надбавка, %
         // 24.11.2026 (руководитель): надбавка за сверхурочные, % — к ставке минуты из зарплаты (таблица зарплаты)
         '<div class="zpf" style="flex-wrap:wrap"><div class="t"><b style="text-transform:none">📈 Надбавка за сверхурочные, %</b><small>итог сверхурочно (мин) × зарплата ÷ норма × (1 + %)</small></div>' +
         '<input class="txt" id="otpct" inputmode="decimal" style="width:120px" placeholder="%" value="' + (C.pct || '') + '"></div>' +
@@ -4716,7 +4715,20 @@
       if (!D.have) {
         h += '<div class="empty">Отчёта посещения за ' + esc(mname.toLowerCase()) + ' ещё нет. Загрузите: 💵 Расчёт зарплаты → 📋 Посещение → 📎 Загрузить.</div>';
       } else {
-        h += otTable(D, C, mname, otOpen);
+        // 24.11.2026 (руководитель): как было — сотрудники и их сверхурочные; сумма — надбавка (мин × зарплата ÷ норма × (1 + %));
+        // таблица зарплаты здесь не показывается (она — в 💵 Расчёт зарплаты завода)
+        var mn = D.min || {};
+        h += '<div class="crt-g st3"><div class="cb eq"><b>' + HM(mn.m) + '</b><span>☀️ раньше начала</span></div>' +
+          '<div class="cb"><b>' + HM(mn.e) + '</b><span>🌙 позже конца</span></div><div class="cb"><b>' + HM(mn.w) + '</b><span>📅 нерабочие дни</span></div></div>';
+        h += '<div class="zisum"><b>' + fmtq(D.ot_pay_total || 0) + ' сум</b><span>надбавка сверхурочно · ' + esc(mname.toLowerCase()) + ' · ' + (D.ot_pct || 0) + ' % · к оплате ' + HM(mn.net) + '</span></div>';
+        h += D.people.filter(function (p) { return !p.nofid; }).map(function (p, i) {
+          var op = otOpen[p.who];
+          return '<div class="zpf" data-ow="' + esc(p.who) + '" style="flex-wrap:wrap"><span class="nn">' + (p.no || i + 1) + '</span><div class="t"><b style="text-transform:none">' + esc(p.who) + '</b>' +
+            '<small>' + (p.pos ? esc(p.pos) + ' · ' : '') + '☀️ ' + HM(p.m) + ' · 🌙 ' + HM(p.e) + ' · 📅 ' + HM(p.w) + (p.diff < 0 ? ' · недоработка ' + HM(-p.diff) : '') + '</small>' +
+            (op ? '<small>' + ((p.days || []).map(function (r) { return esc(r.day.slice(8, 10) + '.' + r.day.slice(5, 7) + ' ' + r.wd) + ': ' + esc(r.why); }).join('<br>') || 'сверхурочных дней нет') + '</small>' : '') +
+            '</div><b style="text-align:right">' + HM(p.net) + '<br><span style="color:#c46a00">' + (p.ot_pay ? fmtq(p.ot_pay) + ' сум' : (p.net > 0 && !p.salary ? 'нет зарплаты' : '0')) + '</span></b></div>';
+        }).join('');
+        h += '<div class="note">Справа — итог сверхурочно (сверхурочно минус недоработка) и надбавка: минуты × (зарплата ÷ норма месяца) × (1 + %). Зарплата — из «👔 Должностей». Нажмите строку — дни.</div>';
       }
       h += '<div class="msec">ЖУРНАЛ</div>' + ((D.log || []).map(function (l) { return '<div class="zlog">' + esc(l.at) + ' · ' + esc(l.by) + ' · ' + esc(l.text) + '</div>'; }).join('') || '<div class="empty" style="padding:8px">Пока изменений нет</div>');
       B.innerHTML = h; window.scrollTo(0, y0);
@@ -4728,10 +4740,10 @@
       $('otsave').onclick = function () {
         var b = this, fi = B.querySelector('[data-otm]:checked'), frm = fi ? fi.getAttribute('data-otm') : D.month;
         var days = Array.prototype.map.call(B.querySelectorAll('[data-wd]:checked'), function (i) { return +i.getAttribute('data-wd'); });
-        var conf = { start: $('otst').value, end: $('otend').value, days: days, hour: $('othour').value.replace(/\s/g, '') || 0,
+        var conf = { start: $('otst').value, end: $('otend').value, days: days,
                      pct: ($('otpct').value || '0').replace(/\s/g, '').replace(',', '.') };
         var q_ = 'Правила сверхурочных с ' + frm + ':\nработа ' + conf.start + '–' + conf.end + ', рабочие дни: ' + days.map(function (i) { return WDN[i]; }).join(', ') +
-          '\nставка ' + conf.hour + ' сум за час, надбавка ' + conf.pct + ' %. Сохранить?';
+          '\nнадбавка ' + conf.pct + ' %. Сохранить?';
         var go_ = function (yes) {
           if (!yes) return;
           b.disabled = true;
