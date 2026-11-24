@@ -1127,9 +1127,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd3b95d16', newBuild = '';
+  var BUILD = '8740991b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795518548' || 0;
+  var BUILD_AT = +'1795519052' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1219,7 +1219,7 @@
   // (список рисуется из памяти и свежим, каждая отрисовка заново просит дополнения) — лимит 240 запросов в минуту кончался.
   // Теперь одинаковый запрос ЧТЕНИЯ в пределах 4 с не уходит на сервер второй раз: получает тот же ответ.
   // Любое действие (провести, взять, сохранить…) сразу сбрасывает эту память — после действия данные всегда свежие.
-  var RD_PATH = /^\/api\/(menu|flow|ship_docs|ship_places_all|places|wh|win|os|pmv|rsx|cert|qc|med|zp|zp_view|zp_bonus|zp_inv|inv_stock|ost|invd_all|invd_list|invd_get|inv_doc|task|scheme|acc|spec_data)$/;
+  var RD_PATH = /^\/api\/(menu|flow|ship_docs|ship_places_all|places|wh|win|os|pmv|rsx|cert|qc|med|zp|zp_view|zp_bonus|zp_inv|zp_batch|inv_stock|ost|invd_all|invd_list|invd_get|inv_doc|task|scheme|acc|spec_data)$/;
   var rdMemo = {};
   function call(path, body, timeout) {
     if (!RD_PATH.test(path)) { rdMemo = {}; return call0(path, body, timeout); }
@@ -4157,6 +4157,78 @@
       });
     });
   }
+  // 24.11.2026 (руководитель): 🎁 Бонусы → 🏭 За партию — каждому сотруднику завода сумма за одну выпущенную партию
+  // (линия: Перечисление / Терминал / обе). Партии — выпуск из ERP с 1-го по сегодня; ставки — с месяца, всё в журнал.
+  var zbMonth = '', zbOpen = {};
+  function showZpBatch() {
+    var me = cur;
+    view.innerHTML = subTop('zp', 'Бонусы · За партию') + '<div id="zb"><div class="spin">Считаю партии по ERP…</div></div>';
+    bindTabs();
+    var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    var LN = { per: 'Перечисление', ter: 'Терминал', all: 'Обе линии' };
+    function draw(D) {
+      if (cur !== me) return;
+      var B = $('zb'); if (!B) return;
+      if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
+      zbMonth = D.month;
+      var y0 = window.scrollY;
+      var ms = [];
+      for (var k = '2026-11'; k <= D.cur; ) { ms.push(k); var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } k = y + '-' + (m < 10 ? '0' : '') + m; }
+      var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
+      var h = '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.map(function (k) {
+        return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-bm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
+      h += '<div class="crt-g st3"><div class="cb eq"><b>' + D.n.all + '</b><span>партий' + (D.month === D.cur ? ' с 1-го по сегодня' : ' за месяц') + '</span></div>' +
+        '<div class="cb"><b>' + D.n.per + '</b><span>Перечисление</span></div><div class="cb"><b>' + D.n.ter + '</b><span>Терминал</span></div></div>';
+      h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>бонус за партии · ' + esc(mname.toLowerCase()) + '</span></div>';
+      // сотрудники и ставки
+      h += '<div class="msec">СОТРУДНИКИ ЗАВОДА · СТАВКА ЗА 1 ПАРТИЮ</div><div class="zbf">';
+      h += (D.staff || []).map(function (w) {
+        var r = (D.rates || {})[w] || {}, p = (D.people || []).filter(function (q) { return q.who === w; })[0];
+        return '<div class="zpf zbr" data-w="' + esc(w) + '"><div class="t"><b style="text-transform:none">' + esc(w) + '</b>' +
+          '<small>' + (p ? p.n + ' партий × ' + fmtq(p.rate) + ' = <b>' + fmtq(p.sum) + ' сум</b>' : 'ставки нет') + '</small></div>' +
+          '<input class="txt" inputmode="numeric" placeholder="сум" style="width:90px" data-f="sum" value="' + (r.sum || '') + '">' +
+          '<select class="txt" data-f="line" style="width:120px">' + ['all', 'per', 'ter'].map(function (l) { return '<option value="' + l + '"' + ((r.line || 'all') === l ? ' selected' : '') + '>' + LN[l] + '</option>'; }).join('') + '</select></div>';
+      }).join('') + '</div>';
+      h += '<small class="zl">С какого месяца действуют ставки</small><div class="zd2">' +
+        '<label class="zck big"><input type="checkbox" data-zbm="' + D.month + '" checked> с этого — ' + esc(mname) + '</label>' +
+        '<label class="zck big"><input type="checkbox" data-zbm="' + D.next_month + '"> со следующего</label></div>' +
+        '<div class="ivbar"><button class="go" id="zbsave">💾 Сохранить ставки</button></div>';
+      // по дням
+      h += '<div class="msec">ПАРТИИ ПО ДНЯМ</div>' + ((D.days || []).map(function (d) {
+        var op = zbOpen[d.day];
+        return '<div class="zpf" data-zbd="' + d.day + '"><span class="nn">' + esc(d.day.slice(8, 10) + '.' + d.day.slice(5, 7)) + '</span><div class="t"><b style="text-transform:none">' +
+          (d.per + d.ter) + ' партий</b><small>Перечисление ' + d.per + ' · Терминал ' + d.ter + '</small>' +
+          (op ? '<small>' + d.items.map(function (b) { return '№' + esc(b.num) + ' ' + esc(b.item) + ' · ' + LN[b.line] + ' · ' + fmtq(b.qty) + ' шт · ' + esc(b.at.slice(11, 16)); }).join('<br>') + '</small>' : '') +
+          '</div><b>' + (op ? '▲' : '▼') + '</b></div>';
+      }).join('') || '<div class="empty" style="padding:10px">Партий в этом месяце пока нет</div>');
+      h += '<div class="note">Партия — заказ производства, выпущенный в ERP. Сумма человека = партии его линии с 1-го числа × его ставка. Ставки меняются с месяца, прошлые месяцы — по своим ставкам.</div>';
+      h += '<div class="msec">ЖУРНАЛ ИЗМЕНЕНИЙ</div>' + ((D.log || []).map(function (l) { return '<div class="zlog">' + esc(l.at) + ' · ' + esc(l.by) + ' · ' + esc(l.text) + '</div>'; }).join('') || '<div class="empty" style="padding:8px">Пока изменений нет</div>');
+      B.innerHTML = h; window.scrollTo(0, y0);
+      Array.prototype.forEach.call(B.querySelectorAll('[data-bm]'), function (el) { el.onclick = function () { load('/api/zp_batch', { month: el.getAttribute('data-bm') }, draw); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zbd]'), function (el) { el.onclick = function () { var k = el.getAttribute('data-zbd'); zbOpen[k] = !zbOpen[k]; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zbm]'), function (i) {
+        i.onchange = function () { Array.prototype.forEach.call(B.querySelectorAll('[data-zbm]'), function (j) { j.checked = j === i; }); };
+      });
+      $('zbsave').onclick = function () {
+        var ppl = {}, b = this;
+        Array.prototype.forEach.call(B.querySelectorAll('.zbr'), function (r) {
+          var s = r.querySelector('[data-f="sum"]').value.replace(/\s/g, '');
+          if (+s > 0) ppl[r.getAttribute('data-w')] = { sum: +s, line: r.querySelector('[data-f="line"]').value };
+        });
+        var fi = B.querySelector('[data-zbm]:checked'), frm = fi ? fi.getAttribute('data-zbm') : D.month;
+        var q_ = 'Сохранить ставки за партию с ' + frm + '?\n' + Object.keys(ppl).map(function (w) { return w + ' — ' + ppl[w].sum + ' (' + LN[ppl[w].line] + ')'; }).join('\n');
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true;
+          call('/api/zp_batch_set', { month: zbMonth, from: frm, people: ppl }, 30000).then(function (q) {
+            b.disabled = false; if (!q.ok) return say(q.text); haptic('success'); say('Сохранено: ' + q.text); draw(q);
+          }).catch(function (e) { b.disabled = false; ivErr(e); });
+        };
+        try { tg.showConfirm(q_.slice(0, 250), go_); } catch (e) { go_(confirm(q_)); }
+      };
+    }
+    load('/api/zp_batch', { month: zbMonth }, draw);
+  }
   // 23.11.2026 (руководитель): 🎁 Бонусы — строки «кому · за что · ✅ сделано · сумма», итог считается сам
   // (только строки с ✅): по сотруднику и за месяц. Каждое изменение сохраняется сразу.
   var bonMonth = '', bonPend = null;
@@ -4171,8 +4243,11 @@
       // 24.11.2026 (руководитель): в «Бонусах» — только виды бонусов квадратами; месяц, суммы и «Добавить» — внутри каждого вида.
       // Новый вид бонуса — новый квадрат здесь. Ручные строки (zp_bonus.json) не удалены — просто не показываются.
       if (true) {
-        B.innerHTML = zpInvOn ? '<div class="osg"><div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div></div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
+        var tl = (zpInvOn ? '<div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div>' : '') +
+          (isAdmin ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div>' : '');   // 24.11.2026: новое — пока только руководителю
+        B.innerHTML = tl ? '<div class="osg">' + tl + '</div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
         if ($('zinvgo')) $('zinvgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpInv); };
+        if ($('zbgo')) $('zbgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpBatch); };
         return;
       }
       bonMonth = D.month;
