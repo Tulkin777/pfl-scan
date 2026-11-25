@@ -642,6 +642,22 @@
   .zpf { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; }
   .zpf .nn { min-width: 20px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; }
   .zpf .t { flex: 1; min-width: 0; } .zpf .t b { display: block; font-size: 15px; text-transform: capitalize; } .zpf .t small { color: var(--hint); font-size: 12px; }
+  /* 25.11.2026: 📋 Посещение — применённый отчёт месяца */
+  .dvm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 6px; max-width: 860px; } .dvm b { font-size: 15px; }
+  .dvst { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: var(--bg2); color: var(--hint); }
+  .dvst.ok { background: #d9f5e1; color: #17693a; font-weight: 700; } .dvst.warn { background: #fff1cc; color: #8a5a00; font-weight: 700; }
+  .zpf.dvsel { background: #e7f8ec; color: #13261a; box-shadow: inset 4px 0 0 #22a559; } .zpf.dvx { opacity: .6; }
+  .dvon { white-space: nowrap; font-size: 12px; font-weight: 800; color: #17693a; background: #c9f0d6; padding: 6px 9px; border-radius: 10px; }
+  .dvoff { white-space: nowrap; font-size: 12px; color: var(--hint); padding: 0 4px; }
+  .dvap { width: auto; margin: 0; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #4aa3ff, #1f6fd6); box-shadow: 0 3px 0 #164f9a; }
+  .dvpan { max-width: 860px; } .dvbox { background: var(--bg2); border: 2px solid #4aa3ff; border-radius: 12px; padding: 10px 12px; margin: -2px 0 10px; }
+  .dvcmp { display: flex; gap: 8px; margin: 8px 0; } .dvcmp > div { flex: 1; background: var(--bg); border-radius: 10px; padding: 6px 8px; } .dvcmp small { display: block; color: var(--hint); font-size: 11px; }
+  .dvneed { background: #fff1cc; color: #5c3d00; border-radius: 10px; padding: 8px; margin: 6px 0; font-size: 13px; font-weight: 700; }
+  .dvrow { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 0; font-weight: 400; } .dvrow > span { flex: 1; min-width: 0; } .dvrow i { font-style: normal; color: var(--hint); }
+  .dvrow select { flex: 1.3; min-width: 0; padding: 6px; border-radius: 8px; font-size: 13px; }
+  .dvok { font-size: 13px; margin: 6px 0; } .dvok summary { cursor: pointer; font-weight: 700; color: #17693a; } .dvok small { color: var(--hint); }
+  .dvbtn { display: flex; gap: 8px; } .dvbtn button { flex: 1; margin: 0; }
+  .dvsrc { font-size: 13px; border-radius: 10px; padding: 7px 10px; margin: 6px 0; max-width: 860px; } .dvsrc.ok { background: #e7f8ec; color: #17693a; } .dvsrc.warn { background: #fff1cc; color: #8a5a00; font-weight: 700; }
   .zpf .cdl { width: 42px; height: 36px; padding: 0; margin: 0; border-radius: 10px; font-size: 17px; background: var(--bg); }
   .crt-l { font-size: 11px; font-weight: 800; color: var(--hint); text-transform: uppercase; letter-spacing: .3px; margin: 2px 2px 4px; }
   .crt-g { display: grid; gap: 6px; margin: 0 0 10px; max-width: 860px; }
@@ -1260,9 +1276,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6c9aed38', newBuild = '';
+  var BUILD = 'f3c4fdb6', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795585144' || 0;
+  var BUILD_AT = +'1795585566' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4369,6 +4385,69 @@
       });
     });
   }
+  // 25.11.2026 (руководитель): отчётов посещения за месяц может быть несколько — применён один (✅), остальные не используются.
+  // Месяц — по содержимому файла. «Применить» → сверка имён с «Должностями» → табель, таблица зарплаты, сверхурочные месяца.
+  function davKind(f) { return /keldi|ketdi/i.test(f.id) ? 'Таблица Keldi-Ketdi' : /\.csv$/i.test(f.id) ? 'Выгрузка Face ID' : 'Отчёт посещения'; }
+  function davList(fs, can) {
+    var by = [], g = {};
+    fs.forEach(function (f) { var k = f.ym || '?'; if (!g[k]) { g[k] = []; by.push(k); } g[k].push(f); });
+    return by.map(function (k) {
+      var L = g[k], on = L.filter(function (f) { return f.on; })[0];
+      var st = on ? '<span class="dvst ok">✅ применён №' + on.no + '</span>'
+        : L.length > 1 ? '<span class="dvst warn">⚠️ не выбран · сейчас по последнему загруженному</span>'
+        : '<span class="dvst">один файл · ' + (can ? 'можно подтвердить' : 'используется') + '</span>';
+      return '<div class="dvm"><b>📅 ' + esc(L[0].month || 'месяц не определён') + '</b>' + st + '</div>' + L.map(function (f) {
+        var r = f.on ? '<span class="dvon">✅ Применён</span>'
+          : !f.ok ? '<span class="dvoff">не читается</span>'
+          : can ? '<button class="dvap" data-dap="' + esc(f.id) + '">Применить</button>'
+          : '<span class="dvoff">' + (on ? 'не используется' : '—') + '</span>';
+        return '<div class="zpf' + (f.on ? ' dvsel' : on ? ' dvx' : '') + '" data-zv="dav" data-id="' + esc(f.id) + '"><span class="nn">' + f.no + '</span><div class="t"><b>' + davKind(f) + '</b><small>' +
+          esc(f.at) + ' · ' + f.kb + ' КБ' + (f.ok ? ' · ' + f.people + ' чел. · ' + f.days + ' дн.' : '') + (f.dup_no ? ' · 📎 такой же файл, как №' + f.dup_no : '') +
+          (f.on ? '<br>применил ' + esc(f.on_by || '') + ' ' + esc(f.on_at || '') + ' · в зарплате этот' : '') + ' · 👁 смотреть ниже</small></div>' + r +
+          '<button class="cdl" data-zg="dav" data-id="' + esc(f.id) + '" title="Скачать — в личку бота">⬇️</button></div><div class="dvpan" data-dpan="' + esc(f.id) + '"></div>';
+      }).join('');
+    }).join('');
+  }
+  function davBind(B, reload) {
+    Array.prototype.forEach.call(B.querySelectorAll('[data-dap]'), function (b) {
+      b.onclick = function (ev) {
+        ev.stopPropagation(); haptic('light');
+        var id = b.getAttribute('data-dap'), pan = B.querySelector('[data-dpan="' + CSS.escape(id) + '"]');
+        if (pan.innerHTML) { pan.innerHTML = ''; return; }
+        pan.innerHTML = '<div class="spin">Сверяю имена с «Должностями»…</div>';
+        call('/api/zp_dav', { act: 'check', file: id }, 60000).then(function (c) {
+          if (!c.ok) { pan.innerHTML = '<div class="empty">' + esc(c.text || 'Не получилось') + '</div>'; return; }
+          var opt = function (r) {
+            var sug = (r.sug || []).map(function (s) { return '<option value="' + esc(s.pid) + '">похоже: ' + esc(s.who) + '</option>'; }).join('');
+            return '<select data-dmap="' + esc(r.raw) + '"><option value="">— кто это? —</option>' + sug + '<option value="new">➕ новый сотрудник</option>' +
+              c.staff.map(function (s) { return '<option value="' + esc(s.pid) + '">' + esc(s.who) + '</option>'; }).join('') + '</select>';
+          };
+          var ok = c.rows.filter(function (r) { return r.pid; }), need = c.rows.filter(function (r) { return !r.pid; });
+          var HOW = { same: '=', alias: '🔗', auto: '≈', manual: '✋' };
+          pan.innerHTML = '<div class="dvbox"><b>Применить для «' + esc(c.month) + '» этот файл?</b>' +
+            '<div class="dvcmp"><div><small>будет</small><b>' + c.people + ' чел. · ' + c.days + ' дн.</b></div>' +
+            (c.cur ? '<div><small>сейчас (' + esc(c.cur.at) + ')</small><b>' + c.cur.people + ' чел. · ' + c.cur.days + ' дн.</b></div>' : '<div><small>сейчас</small><b>не выбран</b></div>') + '</div>' +
+            (need.length ? '<div class="dvneed">⚠️ Не нашёл в «Должностях» — выберите, кто это (запомню):' + need.map(function (r) { return '<div class="dvrow"><span>' + esc(r.raw) + '</span>' + opt(r) + '</div>'; }).join('') + '</div>' : '') +
+            '<details class="dvok"><summary>✓ имена сопоставлены: ' + ok.length + ' из ' + c.rows.length + '</summary>' + ok.map(function (r) {
+              return '<div class="dvrow"><span>' + esc(r.raw) + '</span><i>' + (HOW[r.how] || '') + '</i><span>' + esc(r.who) + '</span></div>'; }).join('') +
+            '<small>= то же имя · ≈ похожее имя · 🔗 запомнено раньше</small></details>' +
+            '<div class="note" style="margin:6px 0">После «Применить» табель, таблица зарплаты, сверхурочные и должности за ' + esc(c.month) + ' считаются по этому файлу; другие файлы месяца не используются. Ручные правки табеля остаются (где время в файле другое — будет ⚠️). Вернуть — «Применить» у другого файла.</div>' +
+            '<div class="dvbtn"><button class="go" data-dgo>✅ Применить</button><button data-dno>Отмена</button></div></div>';
+          pan.querySelector('[data-dno]').onclick = function () { pan.innerHTML = ''; };
+          pan.querySelector('[data-dgo]').onclick = function () {
+            var mp = {}, miss = [];
+            Array.prototype.forEach.call(pan.querySelectorAll('[data-dmap]'), function (s) { if (s.value) mp[s.getAttribute('data-dmap')] = s.value; else miss.push(s.getAttribute('data-dmap')); });
+            if (miss.length) { haptic('warning'); say('Выберите, кто это: ' + miss.join(', ')); return; }
+            var g = this; g.disabled = true; g.textContent = '⏳ Считаю табель…';
+            call('/api/zp_dav', { act: 'apply', file: id, map: mp }, 600000).then(function (q) {
+              haptic(q.ok_act ? 'success' : 'warning'); say(q.text || (q.ok_act ? 'Готово' : 'Не получилось'));
+              if (q.ok_act) reload(); else { g.disabled = false; g.textContent = '✅ Применить'; }
+            }).catch(function (e) { g.disabled = false; g.textContent = '✅ Применить'; ivErr(e); });
+          };
+        }).catch(function (e) { pan.innerHTML = ''; ivErr(e); });
+      };
+    });
+  }
   function showZpPart(k) {
     var me = cur, t = ZPT[k];
     view.innerHTML = subTop('zp', t[2]) + '<div id="zpp"><div class="spin">Загрузка…</div></div>';
@@ -4395,6 +4474,7 @@
         var P2 = D.parts[p]; if (!P2) return;
         var fs = P2.files || [];
         h += '<div class="msec">' + esc(P2.title.toUpperCase()) + ' · ' + fs.length + '</div>';
+        if (p === 'dav' && fs.length) { h += davList(fs, D.dav_pick); return; }   // 25.11.2026: по месяцам, ✅ применённый
         h += fs.length ? fs.map(function (f, i) {
           return '<div class="zpf" data-zv="' + p + '" data-id="' + esc(f.id) + '"><span class="nn">' + (i + 1) + '</span><div class="t"><b>' + esc(f.month || f.id) + '</b><small>' + esc(f.at) + ' · ' + f.kb + ' КБ · 👁 смотреть ниже</small></div>' +
             '<button class="cdl" data-zg="' + p + '" data-id="' + esc(f.id) + '" title="Скачать — в личку бота">⬇️</button></div>';
@@ -4416,7 +4496,7 @@
           '<div class="note">Ставка за 1 партию — по должности (🎁 Бонусы → 🏭 За партию). Партии — выпуск в ERP с 1-го числа. Сумма = ставка × партии; после увольнения партии не считаются.</div>';
       });
       // 23.11.2026 (руководитель): таблица сразу ниже — смотреть, что начислено и что удержано, не скачивая
-      var first = B.querySelector('[data-zv]');
+      var first = B.querySelector('.dvsel[data-zv]') || B.querySelector('[data-zv]');   // 25.11.2026: сначала применённый отчёт посещения
       if (first) zpView(first.getAttribute('data-zv'), first.getAttribute('data-id'));
       if ($('zptab')) (function () {   // 24.11.2026: табель месяца (как в «Сверхурочных»), правила — там же
         // 24.11.2026 (руководитель): сначала год (2026–2030), нажал — годы исчезают, 12 месяцев этого года; выбрал месяц —
@@ -4444,6 +4524,9 @@
               if (!T.have) x += '<div class="note" style="margin-top:0">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — минуты появятся после загрузки (📋 Посещение → 📎 Загрузить). Бонусы месяца — уже в таблице.</div>';
               // 25.11.2026 (руководитель): подтверждённый месяц — зелёная плашка сверху
               if (T.confirm) x += '<div class="zpconf ok">✅ <b>Зарплата за ' + esc(mn.toLowerCase()) + ' подтверждена</b><small>' + esc(T.confirm.by) + ' · ' + esc(T.confirm.at) + ' — месяц закрыт: исправлять табель и начинать долги с этого месяца нельзя</small></div>';
+              var DV = T.dav;   // 25.11.2026 (руководитель): по какому отчёту посещения посчитан месяц
+              if (DV && DV.picked) x += '<div class="dvsrc ok">📋 Посещение: ✅ применён файл №' + (DV.no || '?') + ' · ' + DV.people + ' чел. · ' + DV.days + ' дн. · ' + esc(DV.by) + ' ' + esc(DV.at) + (DV.n > 1 ? ' · других файлов месяца: ' + (DV.n - 1) + ' (не используются)' : '') + '</div>';
+              else if (DV && DV.have) x += '<div class="dvsrc warn">📋 Посещение: ' + (DV.n > 1 ? '⚠️ файлов за месяц ' + DV.n + ', ни один не выбран — посчитано по последнему загруженному. ' : 'файл не подтверждён. ') + 'Выбрать: 📋 Посещение → «Применить».</div>';
               x += otTable(T, T.conf || {}, mn, op);
               // внизу — «✅ Подтвердить» (только руководитель, доступ сотрудников к таблице не важен)
               if (T.confirm) x += isAdmin ? '<div class="ivbar"><button class="btn2" id="zpunconf">↩ Снять подтверждение за ' + esc(mn.toLowerCase()) + '</button></div>' : '';
@@ -4487,6 +4570,7 @@
       Array.prototype.forEach.call(B.querySelectorAll('[data-zsub]'), function (el) {
         el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} var q = el.getAttribute('data-zsub'); go(function () { if (q === 'staff') showZpStaff(); else showZpPart(q); }); };
       });
+      davBind(B, function () { showZpPart(k); });
       if ($('zpup')) $('zpup').onclick = function () {
         var b = this; b.disabled = true; b.textContent = '⏳';
         call('/api/zp_dav_up', {}, 60000).then(function (q) { haptic(q.ok ? 'success' : 'warning'); say(q.text); b.disabled = false; b.textContent = '📎 Загрузить отчёт посещения'; })
