@@ -575,6 +575,12 @@
   .dhead .dn { font-size: 26px; font-weight: 900; } .dhead .ds { margin-left: auto; font-weight: 900; font-size: 14px; background: rgba(255,255,255,.22); border-radius: 10px; padding: 4px 10px; }
   .rt2.big { font-size: 14px; }
   .tl div { font-size: 14px; padding: 5px 0; border-top: 1px solid rgba(127,127,127,.15); } .tl .nx { color: var(--hint); }
+  /* 25.11.2026: авто-перемещение — решение */
+  .mvdec { margin: 6px 0; padding: 8px 10px; border-radius: 12px; font-size: 13px; } .mvdec small { display: block; opacity: .75; font-size: 11px; margin-top: 2px; }
+  .mvdec.wait { background: #fff6d6; border: 2px dashed #e0a800; } .mvdec.ok { background: #e3f6ea; color: #136b3a; font-weight: 700; } .mvdec.no { background: #fde8e8; color: #a32020; font-weight: 700; }
+  .mvdb { display: flex; gap: 8px; margin-top: 6px; } .mvdb button { flex: 1; border: 0; border-radius: 10px; padding: 10px 6px; font-weight: 800; font-size: 14px; color: #fff; cursor: pointer; }
+  .mvdb .dok { background: linear-gradient(150deg, #3cc47a, #1c8f54); box-shadow: 0 3px 0 #0f6a3b; } .mvdb .dno { background: linear-gradient(150deg, #f06b6b, #c62828); box-shadow: 0 3px 0 #8e1b1b; }
+  .mvdr button { display: block; width: 100%; margin-top: 5px; border: 1px solid rgba(198,40,40,.35); background: #fff; color: #a32020; border-radius: 10px; padding: 8px; font-weight: 700; text-align: left; cursor: pointer; } .mvdr small { margin-top: 6px; }
   .act-give { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; box-shadow: 0 4px 0 #a85f00; margin-top: 8px; }
   .act-acc { background: linear-gradient(150deg, #4fd68a, #17964a) !important; box-shadow: 0 4px 0 #0f6f36; margin-top: 8px; }
   .act-road { background: linear-gradient(150deg, #8b7bff, #4b39c9) !important; box-shadow: 0 4px 0 #34278f; margin-top: 8px; }
@@ -1310,9 +1316,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '4ff7ee3b', newBuild = '';
+  var BUILD = '832d0b37', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795597780' || 0;
+  var BUILD_AT = +'1795598385' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2498,6 +2504,46 @@
     if (c.indexOf('[АВТО]') === 0) return '<div class="mvauto">🤖 Авто · ' + esc(c.replace(/^\[АВТО\]\s*/, '')) + '</div>';
     return '';
   }
+  // 25.11.2026 (руководитель): авто-перемещение — предложение автомата: «✅ Подтверждаю» / «❌ Отказываю» (с причиной).
+  // Ручное — уже подтверждено, кнопок нет. Отказ — автомат сам отменяет свой документ в ERP; решения идут в статистику.
+  var MV_REJ = ['Не нужно в Ташкенте сейчас', 'Нет машины / не сегодня', 'Другая партия', 'Количество не то', 'Другое'];
+  function mvDecHtml(x, canDec) {
+    var a = x.auto;
+    if (!a) return '';
+    var t = function (s) { return s ? esc(String(s).slice(8, 10) + '.' + String(s).slice(5, 7) + ' ' + String(s).slice(11, 16)) : ''; };
+    if (a.dec === 'ok') return '<div class="mvdec ok">✅ Подтверждено · ' + esc(a.by) + ' · ' + t(a.dec_at) + '</div>';
+    if (a.dec === 'no') return '<div class="mvdec no">❌ Отказано · ' + esc(a.by) + ' · ' + esc(a.reason) + '<small>' + (a.cancel_at ? 'документ отменён в ERP' : '⏳ автомат отменяет документ в ERP (до минуты)') + '</small></div>';
+    if (x.step !== 'new') return '';
+    return '<div class="mvdec wait" data-mvd="' + esc(x.id) + '"><b>🤖 Автопредложение — ждёт решения</b>' +
+      (canDec ? '<div class="mvdb"><button type="button" class="dok" data-dok="' + esc(x.id) + '">✅ Подтверждаю</button><button type="button" class="dno" data-dno="' + esc(x.id) + '">❌ Отказываю</button></div><div class="mvdr"></div>'
+        : '<small>решает сотрудник с правом «➕ Создать» перемещения</small>') + '</div>';
+  }
+  function mvDecBind(root, reload) {
+    var send = function (id, dec, rs, q_) {
+      var go_ = function (yes) {
+        if (!yes) return;
+        call('/api/mv_auto_dec', { id: id, dec: dec, reason: rs || '' }, 30000).then(function (r) {
+          haptic(r.ok_act ? 'success' : 'warning'); say(r.text);
+          delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; reload();
+        }).catch(fail);
+      };
+      try { tg.showConfirm(q_, go_); } catch (e) { go_(confirm(q_)); }
+    };
+    Array.prototype.forEach.call(root.querySelectorAll('[data-dok]'), function (b) {
+      b.onclick = function (ev) { ev.stopPropagation(); var id = b.getAttribute('data-dok'); send(id, 'ok', '', 'Подтверждаете авто-перемещение №' + id + '?\nПосле этого его можно собирать и передавать.'); };
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('[data-dno]'), function (b) {
+      b.onclick = function (ev) {
+        ev.stopPropagation();
+        var id = b.getAttribute('data-dno'), box = b.parentNode.parentNode.querySelector('.mvdr');
+        box.innerHTML = '<small>Почему отказываете?</small>' + MV_REJ.map(function (t) { return '<button type="button" data-rs="' + esc(t) + '">' + esc(t) + '</button>'; }).join('');
+        Array.prototype.forEach.call(box.querySelectorAll('[data-rs]'), function (c) {
+          c.onclick = function (e2) { e2.stopPropagation(); var rs = c.getAttribute('data-rs'); send(id, 'no', rs, 'Отказать по авто-перемещению №' + id + '?\nПричина: ' + rs + '\nАвтомат отменит документ в ERP и эту партию 3 дня не предложит.'); };
+        });
+      };
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('.mvdec'), function (el) { el.addEventListener('click', function (ev) { if (ev.target.tagName === 'BUTTON') ev.stopPropagation(); }); });
+  }
   function trkBar(step, inside) {   // inside — внутри склада: без «в дороге» и «прибыло» (машины нет)
     var SS = inside ? MSTEPS.filter(function (s) { return s[0] !== 'road' && s[0] !== 'came'; }) : MSTEPS;
     var i = SS.map(function (s) { return s[0]; }).indexOf(step);
@@ -2509,11 +2555,12 @@
     load2('/api/flow', { kind: 'mv' }, function (r) {
       if (!document.body.contains(box)) return;
       var all0 = (r.rows || []).filter(function (x) { return x.step !== 'cancel'; });
+      var pm0 = r.perm || {}, canDec = !!(r.admin || (pm0.lv === 2 && (pm0.acts || []).indexOf('create') >= 0));   // 25.11.2026: решение по авто
       var card = function (x) {
         // 23.11.2026 (руководитель): «Синимаг +2» вводило в заблуждение (взяли один товар) — весь список, с номерами 1, 2, 3…
         var tot = x.lines.reduce(function (a, y) { return a + (+y.qty || 0); }, 0);
         return '<div class="tcard st-' + x.step + '" data-mv="' + esc(x.id) + '"><div class="th"><b>№' + esc(x.id) + '</b><span>' + dtf2(x.date) + '</span></div>' +
-          mvBadge(x) +
+          mvBadge(x) + mvDecHtml(x, canDec) +
           '<div class="rt2"><span class="fr">' + esc(x.src) + '</span><i>→</i><span class="to">' + esc(x.dst) + '</span></div>' +
           '<div class="mvlist"><div class="mvlh">' + x.lines.length + ' поз · ' + n(tot) + ' шт</div>' + x.lines.map(function (y, j) {
             var fq = formOf(y.name);
@@ -2525,6 +2572,7 @@
           trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]) + (x.drv && x.drv.taken ? '<div class="tdrv">🚛 забрал · ' + esc(x.drv.driver) + '</div>' : x.drv && x.drv.handed ? '<div class="tdrv">📦 передал · ' + esc(x.drv.handed_by || '') + '</div>' : '') + '</div>';
       };
       var openCards = function () {
+        mvDecBind(box, function () { showMoves(box); });   // 25.11.2026: ✅ / ❌ по авто-перемещению
         Array.prototype.forEach.call(box.querySelectorAll('[data-mv]'), function (el) {
           el.onclick = function () {
             var id = el.getAttribute('data-mv');
@@ -2788,7 +2836,7 @@
       var SN = { new: '🟡 СОЗДАНО', ready: '📦 ГОТОВО К ОТПРАВКЕ', road: '🚛 В ДОРОГЕ', came: '🏁 ПРИБЫЛО', ok: '🟢 ПРИНЯТО', cancel: '⚪ ОТМЕНЕНО' };
       var h = subTop('mv', 'Перемещения · ' + dirName(x.dir));
       h += '<div class="dhead st-' + x.step + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[x.step] + '</div></div>' +
-        mvBadge(x) + '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
+        mvBadge(x) + mvDecHtml(x, can('create')) + '<div class="rt2 big"><span class="fr">📤 ' + esc(x.src) + '</span><i>→</i><span class="to">📥 ' + esc(x.dst) + '</span></div>' + trkBar(x.step, String(x.dir).split('→')[0] === String(x.dir).split('→')[1]);
       // 23.11.2026 (руководитель): у каждой строки — название и место (как в отгрузке): посмотрел — нажал «Забрал»
       var anyPl = x.lines.some(function (y) { return (y.places || []).length; });
       // 23.11.2026 (руководитель): до «Передал» — откуда брать (склад завода); после — куда ставить (Ташкент, задача «Принять»)
@@ -2823,7 +2871,9 @@
       // только потом «🚛 Забрал» (право «Забрал»). Без водителя, никого не информируем.
       // 23.11.2026 (руководитель «Да»): «Передал» и «Принял» — через бота склада (скан QR места в задаче склада)
       // 23.11.2026 (руководитель): на каждом шаге два варианта — сразу (без скана, место из задачи бота) или через скан места
-      if (x.step === 'new' && can('send') && x.from_wh) h += '<button class="main act-give" data-nos="give">📦 Передал</button>' +
+      var autoWait = x.auto && x.auto.dec !== 'ok';   // 25.11.2026: авто без «✅ Подтверждаю» — не передавать
+      if (x.step === 'new' && autoWait) h += '<div class="note">🤖 Это автопредложение: сначала «✅ Подтверждаю» (или «❌ Отказываю») — потом «📦 Передал».</div>';
+      else if (x.step === 'new' && can('send') && x.from_wh) h += '<button class="main act-give" data-nos="give">📦 Передал</button>' +
         '<button class="plbl2" data-gotask="' + x.from_wh + '">📷 Передал через скан места — склад завода</button>';
       else if (x.step === 'new' && !inside) h += '<div class="note">Ждём «📦 Передал» от склада «откуда» — потом появится «🚛 Забрал».</div>';
       if (!inside && x.step === 'ready' && can('drive')) h += '<button class="main act-road" data-act="take">🚛 Забрал</button>';
@@ -2838,6 +2888,7 @@
         '<div class="note">Собрать и принять — в окне склада (как в группе). Кнопки видит тот, у кого есть право в «👥 Доступ».</div>';
       view.innerHTML = h;
       bindTabs();
+      mvDecBind(view, function () { showMove(id); });   // 25.11.2026: ✅ / ❌ по авто-перемещению
       Array.prototype.forEach.call(view.querySelectorAll('[data-nos]'), function (b) {
         b.onclick = function () {   // без скана: бот снимает / ставит все партии перемещения по местам из своих задач
           var act = b.getAttribute('data-nos'), t0 = b.textContent;
