@@ -1310,9 +1310,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7b31f1eb', newBuild = '';
+  var BUILD = '5452b1f5', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795597235' || 0;
+  var BUILD_AT = +'1795597587' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5526,7 +5526,8 @@
         return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-pm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
       h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>' + KT + ' · ' + esc(mname) + ' · ' + D.n + ' шт</span></div>';
       // новый бонус
-      var opts = D.people.filter(function (p) { return !p.gone; }).map(function (p) { return '<option value="' + esc(p.id) + '">' + (p.no ? p.no + '. ' : '') + esc(p.who) + (p.pos ? ' · ' + esc(p.pos) : '') + '</option>'; }).join('');
+      // 25.11.2026 (руководитель): уволенный — в списке, если в этом месяце ещё работал (бонус — только по месяц увольнения)
+      var opts = D.people.filter(function (p) { return !p.gone || p.worked; }).map(function (p) { return '<option value="' + esc(p.id) + '">' + (p.no ? p.no + '. ' : '') + esc(p.who) + (p.gone ? ' · 🚪 уволен с ' + esc((p.gone_from || '').slice(8, 10) + '.' + (p.gone_from || '').slice(5, 7)) : p.pos ? ' · ' + esc(p.pos) : '') + '</option>'; }).join('');
       h += '<div class="msec">➕ НОВЫЙ БОНУС</div><div class="zpf" style="display:block">' +
         '<small class="zl">Кому</small><select class="txt" id="spp" style="width:100%;margin:4px 0"><option value="">— выберите сотрудника —</option>' + opts + '</select>' +
         '<small class="zl">Сумма в месяц, сум</small><input class="txt" id="sps" inputmode="numeric" placeholder="сум" style="width:100%;margin:4px 0">' +
