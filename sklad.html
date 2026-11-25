@@ -1316,9 +1316,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '832d0b37', newBuild = '';
+  var BUILD = '2246c618', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795598385' || 0;
+  var BUILD_AT = +'1795598540' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1638,7 +1638,7 @@
     var TABN = { zav: 'Склады › Склад завода', tas: 'Склады › Склад Ташкента', cert: 'Разрешительные документы', wh: 'Склады', zp: 'Зарплата', inv: 'Инвентаризация', ost: 'Остаток', mv: 'Движение › Перемещения', inc: 'Движение › Приходы', ret: 'Движение › Возврат', ship: 'Движение › Отгрузка' };
     if (!path && TABN[active] && TABN[active] !== ttl) path = TABN[active];
     // 23.11.2026 (руководитель): ⛶ во весь экран / 🔄 обновить / 👥 доступ — и на внутренних экранах, не только на главном
-    var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
+    var rbs = '<div class="nrb">' + (canFull() ? '<div class="rb" data-fs="1" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') + HFB() +
       '<div class="rb" data-rf="1" title="Обновить">🔄</div>' + (isAdmin ? '<div class="rb" data-ac="1" title="Доступ">👥</div>' : '') +
       (tg ? '<div class="rb ext" data-ex="1" title="Выйти">' + PWR + '</div>' : '') + '</div>';
     // руководитель 23.11: кнопки — на ВСЕХ экранах всегда; телефон — строкой сверху справа, компьютер — в шапке
@@ -1652,7 +1652,7 @@
   document.addEventListener('click', function (e) {   // «Назад» на любом внутреннем экране
     var b = e.target.closest && e.target.closest('[data-back]');
     if (b) { try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {} if (backHook && backHook()) return; goBack(); return; }
-    var c = e.target.closest && e.target.closest('[data-fs],[data-rf],[data-ac],[data-ex]');
+    var c = e.target.closest && e.target.closest('[data-fs],[data-hf],[data-rf],[data-ac],[data-ex]');
     if (!c) return;
     try { tg.HapticFeedback.impactOccurred('light'); } catch (x) {}
     if (c.hasAttribute('data-ex')) {   // 23.11.2026 (руководитель): ✖ выйти из мини-аппа одним нажатием, без второго вопроса
@@ -1662,6 +1662,7 @@
       try { tg.close(); } catch (x) {}
       return;
     }
+    if (c.hasAttribute('data-hf')) return halfScreen();   // 25.11.2026: окно на 40 % экрана
     if (c.hasAttribute('data-fs')) { try { if (tg.isFullscreen) tg.exitFullscreen(); else tg.requestFullscreen(); } catch (x) {} }
     else if (c.hasAttribute('data-rf')) { if (cur) cur(); }
     else go(showAcc);
@@ -5779,7 +5780,7 @@
       var h = asName ? '<div class="asbar">👁 Так видит ' + esc(asName) + '<span style="flex:1"></span><button id="asx">✖️ Выйти</button></div>' : '';
       // руководитель 22.11: вместо «N задач» — маленькая строка «обновлено», числа — на самих вкладках
       h += '<div class="mtop sm"><div class="t"><div class="ts">🕒 обновлено ' + esc(r.at.split(' ').pop()) + (old ? ' · обновляю…' : '') + '</div></div>' +
-        (canFull() ? '<div class="rb" id="fsb" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') +
+        (canFull() ? '<div class="rb" id="fsb" title="Во весь экран">' + (tg.isFullscreen ? '🗗' : '⛶') + '</div>' : '') + HFB() +
         '<div class="rb" id="ref" title="Обновить">🔄</div>' +
         (r.admin ? '<div class="rb" id="acc" title="Доступ">👥</div>' : '') +
         (tg ? '<div class="rb ext" data-ex="1" title="Выйти">' + PWR + '</div>' : '') + '</div>';   // 23.11: ✖ выйти из мини-аппа
@@ -7112,6 +7113,24 @@
         } catch (e) {}
       });
     }).catch(function () { start(); });   // сервер не ответил — не мешаем работать
+  }
+  // 25.11.2026 (руководитель): рядом с ⛶ — ◧ «окно на 40 % экрана» (только компьютер: на телефоне окна нет).
+  // Выходит из «во весь экран» и просит окно Telegram стать 40 % ширины экрана справа, во всю высоту. Если Telegram
+  // не даёт странице менять своё окно — подсказка: потянуть за край, Telegram запомнит размер окна.
+  function canHalf() { try { return !!tg && /^(tdesktop|macos|weba|webk|unigram)$/.test(String(tg.platform || '')); } catch (e) { return false; } }
+  function HFB() { return canHalf() ? '<div class="rb" data-hf="1" title="Окно на 40 % экрана">◧</div>' : ''; }
+  function halfScreen() {
+    var fit = function () {
+      var W = screen.availWidth || 0, H = screen.availHeight || 0, w = Math.round(W * 0.4);
+      if (!W || !H) return say('Размер экрана не известен — потяните окно за край.');
+      try { window.resizeTo(w, H); window.moveTo((screen.availLeft || 0) + W - w, screen.availTop || 0); } catch (e) {}
+      setTimeout(function () {
+        if (Math.abs((window.outerWidth || 0) - w) <= 40) return say('◧ Окно — 40 % экрана.');
+        say('◧ Вышел из «во весь экран». Telegram не даёт странице менять размер своего окна — потяните окно за левый край до ~40 % экрана (' + w + ' точек): Telegram запомнит размер.');
+      }, 600);
+    };
+    try { if (tg.isFullscreen) { tg.exitFullscreen(); return setTimeout(fit, 700); } } catch (e) {}
+    fit();
   }
   function canFull() {   // во весь экран — Telegram 8.0+ (телефон и компьютер)
     try { return !!(tg && tg.requestFullscreen && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')); } catch (e) { return false; }
