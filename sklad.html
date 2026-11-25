@@ -1407,9 +1407,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8a424669', newBuild = '';
+  var BUILD = 'e5fdb0c1', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795614720' || 0;
+  var BUILD_AT = +'1795615149' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2924,6 +2924,20 @@
   var INC_ST = [[2, 'Сырьё', 'Перечисление'], [1, 'Сырьё', 'Терминал'], [6, 'ГП завод', 'Перечисление'], [5, 'ГП завод', 'Терминал'],
                 [4, 'ГП Ташкент', 'Перечисление'], [3, 'ГП Ташкент', 'Терминал'], [7, 'Gynomedix Ташкент', 'Перечисление'], [8, 'Gynomedix Ташкент', 'Терминал']];
   var incN = null;   // { store, meta, sup: {id,name}, client: {...}, gr, find, wfind, sel: {pid: {q, p}}, doc }
+  // 25.11.2026 (руководитель): «✅ Входной контроль» (ERP «Новый» → «Принял ВК») — только приход из архива отгрузки; пишет бот склада
+  function incVk(id, store, b, done) {
+    var q = 'Принять приход №' + id + ' входным контролем в ERP?\nСтатус станет «Принял ВК». Остатки не меняются — проведение дальше в ERP.';
+    var go_ = function (y) {
+      if (!y) return;
+      var t0 = b.textContent; b.disabled = true; b.textContent = '⏳ Принимаю в ERP…';
+      try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+      call('/api/inc_accept', { id: id, store: store }, 125000).then(function (r) {
+        haptic(r.ok ? 'success' : 'warning'); say(r.text || (r.ok ? 'Принято' : 'Не принято'));
+        if (r.ok) { b.textContent = '✅ Принят ВК'; if (done) done(); } else { b.disabled = false; b.textContent = t0; }
+      }).catch(function (e) { b.disabled = false; b.textContent = t0; fail(e); });
+    };
+    try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+  }
   function showIncNew(pl) {
     var me = cur;
     if (!incN) incN = { store: 0, meta: null, sup: null, client: null, gr: 0, find: '', wfind: '', sel: {}, doc: '' };
@@ -3082,11 +3096,17 @@
             if (!r.ok) { say(r.text || 'Не создано'); b.disabled = false; b.textContent = '✅ Создать приход'; return; }
             delete mem[ck('/api/flow' + JSON.stringify({ kind: 'inc' }))];
             try { localStorage.removeItem('pfl:' + ck('/api/flow' + JSON.stringify({ kind: 'inc' }))); } catch (e) {}
-            var st = S.store; incN = null;
+            var st = S.store, arch = !!S.from; incN = null;
             view.innerHTML = subTop('wh', '📥 Приход создан') + '<div class="incpick"><span>' + esc(r.text) + '</span></div>' +
-              '<div class="note">Дальше в ERP: приём ВК и проведение. Тестовый — можно сразу отменить.</div>' +
+              (arch ? '<button class="main" id="incVk" style="margin-bottom:8px;background:linear-gradient(150deg,#4fc3a1,#1f8a6a)">✅ Входной контроль · принять №' + esc(r.id) + '</button>' +
+                '<div class="note">Дальше: входной контроль (кнопка выше), потом проведение в ERP.</div>'
+                : '<div class="note">Дальше в ERP: приём ВК и проведение. Тестовый — можно сразу отменить.</div>') +
               '<button class="main" id="incBack">⬅ К приходам</button><button id="incCancel" style="margin-top:8px">✖ Отменить приход №' + esc(r.id) + ' в ERP</button>';
             bindTabs();
+            if ($('incVk')) $('incVk').onclick = function () {
+              var c0 = $('incCancel');
+              incVk(r.id, st, this, function () { if (c0) c0.style.display = 'none'; });   // принят ВК — «Отменить» здесь уже не работает
+            };
             $('incBack').onclick = function () { goBack(); };
             $('incCancel').onclick = function () {
               var c = this, q2 = 'Отменить приход №' + r.id + ' в ERP? Он «Новый» — остатки не менялись.';
@@ -3607,7 +3627,7 @@
                 go(function () { showIncNew('tg'); });
               };
               if (r.dup) {
-                var q2 = 'Из этой отгрузки уже есть приход №' + r.dup.id + (r.dup.status === 2 ? ' (проведён)' : ' («Новый»)') + '.\nСоздать ещё один?';
+                var q2 = 'Из этой отгрузки уже есть приход №' + r.dup.id + (r.dup.status === 3 ? ' (проведён)' : r.dup.status === 2 ? ' (принят ВК)' : ' («Новый»)') + '.\nСоздать ещё один?';
                 try { tg.showConfirm(q2, function (y) { if (y) open(); }); } catch (e) { if (confirm(q2)) open(); }
               } else open();
             }).catch(function (e) { back(); fail(e); });
@@ -3641,16 +3661,20 @@
         var fq = formOf(y.name);
         return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b></div>';
       }).join('') + '</div>';
-      var T = [['🟡', x.date, 'создан в ERP · ' + x.author, true],
-               ['🟢', null, x.status === 2 ? 'проведён в ERP' : 'ждём: проведение в ERP', x.status === 2]];
+      var T = [['🟡', x.date, 'создан в ERP · ' + x.author, true]];
+      if (kind === 'inc') T.push(['🔎', null, x.vk || x.status === 2 ? 'принят входным контролем (ВК)' : 'ждём: входной контроль (ВК)', !!(x.vk || x.status === 2)]);
+      T.push(['🟢', null, x.status === 2 ? 'проведён в ERP' : 'ждём: проведение в ERP', x.status === 2]);
       if (kind === 'inc') T.push(['📍', null, x.placed === true ? 'поставлен на полку' : x.placed === false ? 'ждём: кладовщик поставит на полку' : x.status !== 2 ? 'потом: кладовщик поставит на полку' : 'полка — нет данных по этому складу', x.placed === true]);
       h += '<div class="box"><h3>Ход</h3><div class="tl">' + T.map(function (t) {
         return '<div class="' + (t[3] ? '' : 'nx') + '">' + t[0] + ' ' + (t[1] ? '<b>' + dtf2(t[1]) + '</b> ' : '') + esc(t[2]) + '</div>';
       }).join('') + '</div></div>';
+      // 25.11.2026 (руководитель): приход из архива отгрузки («Новый») — «✅ Входной контроль» здесь (пока только руководителю)
+      if (kind === 'inc' && x.arch && isAdmin) h += '<button class="main" id="incVk" style="margin-bottom:8px;background:linear-gradient(150deg,#4fc3a1,#1f8a6a)">✅ Входной контроль · принять №' + esc(x.id) + '</button>';
       if (x.to_wh) h += '<button class="main" data-go="' + x.to_wh + '">➡ Склад «куда»' + (kind === 'inc' && x.placed === false ? ' · поставить на полку' : '') + '</button>';
       h += '<div class="note">Провести — в ERP; поставить на место — в окне склада (как в группе).</div>';
       view.innerHTML = h;
       bindTabs();
+      if ($('incVk')) $('incVk').onclick = function () { incVk(x.id, x.st, this, function () { lastSig = null; delete mem[ck('/api/flow' + JSON.stringify({ kind: 'inc' }))]; }); };
       Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
         b.onclick = function () {
           var w = b.getAttribute('data-go'), it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(w) >= 0; })[0];
