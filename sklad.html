@@ -643,6 +643,21 @@
   .zpf .nn { min-width: 20px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; }
   .zpf .t { flex: 1; min-width: 0; } .zpf .t b { display: block; font-size: 15px; text-transform: capitalize; } .zpf .t small { color: var(--hint); font-size: 12px; }
   .ott td.sp2c b { color: #7a3fc4; } .ott td.payc { background: #e6f7ec; } .ott td.payc b { font-size: 15px; }
+  /* 25.11.2026: 📅 Рабочий день */
+  .wdsrc { font-size: 13px; border-radius: 10px; padding: 7px 10px; margin: 6px 0; background: var(--bg2); max-width: 860px; } .wdsrc.ok { background: #e7f8ec; color: #17693a; } .wdsrc.warn { background: #fff1cc; color: #8a5a00; }
+  .wdnone { background: #e8f1ff; color: #123a73; border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-weight: 700; max-width: 860px; }
+  .wdp { display: flex; align-items: center; gap: 8px; border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; border-left: 5px solid; color: #1b1b1b; }
+  .wdp.wdf { background: #e7f8ec; border-color: #22a559; } .wdp.wdh { background: #fff4dd; border-color: #e39a12; } .wdp.wdo { background: #eef1f6; border-color: #8a94a6; }
+  .wdn { flex: 1; min-width: 0; } .wdn b { display: block; font-size: 15px; } .wdn small { display: block; font-size: 12px; color: #5b6474; } .wdn .wdw { color: #34507a; }
+  .wdhr { width: 78px; text-align: right; } .wdhr b { font-size: 15px; } .wdhr small { display: block; font-size: 11px; color: #8a5a00; }
+  .wdbar { height: 6px; border-radius: 4px; background: rgba(0,0,0,.08); margin-top: 4px; overflow: hidden; } .wdbar i { display: block; height: 100%; background: #22a559; }
+  .wdp.wdh .wdbar i { background: #e39a12; }
+  .msec.wdft { color: #17693a; } .msec.wdht { color: #a26200; } .msec.wdot { color: #5b6474; }
+  .wdmsg { white-space: pre-wrap; background: var(--bg2); border-radius: 12px; padding: 10px 12px; font: 13px/1.45 -apple-system, Segoe UI, Roboto, sans-serif; max-width: 520px; margin: 0 0 6px; }
+  .wdset { margin: 12px 0; max-width: 860px; } .wdset summary { cursor: pointer; font-weight: 800; padding: 8px 0; }
+  .wdnt { border-collapse: collapse; width: 100%; max-width: 420px; } .wdnt td, .wdnt th { padding: 3px 4px; text-align: left; font-size: 13px; } .wdnt input { width: 70px; padding: 6px; }
+  .wdrow { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; } .wdrow label { font-size: 12px; color: var(--hint); display: flex; flex-direction: column; gap: 3px; } .wdrow input.txt { width: 110px; }
+  .wdset label.ck { flex-direction: row; align-items: center; color: inherit; font-size: 14px; }
   .zsgone { margin-top: 8px; background: #fff0f0; color: #3a1414; border: 2px solid #f2b8b8; border-radius: 12px; padding: 8px 10px; } .zsgone small { color: #8a5a5a; }
   /* 25.11.2026: 📋 Посещение — применённый отчёт месяца */
   .dvm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 6px; max-width: 860px; } .dvm b { font-size: 15px; }
@@ -1279,9 +1294,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e264bfa6', newBuild = '';
+  var BUILD = '0f986616', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795589143' || 0;
+  var BUILD_AT = +'1795591331' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4284,7 +4299,8 @@
               pay: ['y', '💵', 'Расчёт зарплаты завода', 'вариант Камола · ведомость'],
               bon: ['p', '🎁', 'Бонусы', 'за что · ✅ сделано · сумма'],   // 23.11.2026 (руководитель)
               staff: ['k', '👔', 'Должности', 'сотрудники завода · история'],
-              debt: ['r', '💳', 'Долги', 'долги сотрудников · удержание по %'] };   // 25.11.2026 (руководитель)   // 24.11.2026 (руководитель)
+              debt: ['r', '💳', 'Долги', 'долги сотрудников · удержание по %'],
+              wd: ['g', '📅', 'Рабочий день', 'кому работать завтра · кого на содержание'] };   // 25.11.2026 (руководитель)   // 25.11.2026 (руководитель)   // 24.11.2026 (руководитель)
   // 25.11.2026 (руководитель): 💰 Зарплата → 💳 Долги — по каждому сотруднику (из «👔 Должности») несколько долгов:
   // сумма, % в месяц (удерживается из зарплаты каждый месяц), с какого месяца. Удержание месяца уходит в табель
   // месяца (колонка «Удержание в счёт долга»), остаток долга уменьшается сам.
@@ -4368,14 +4384,14 @@
       zpInvOn = !!D.inv_bonus;   // 24.11.2026: 📋 бонус за инвентаризацию — кнопка внутри «Бонусов»
       zpAcc = D.zacc || {};   // 25.11.2026: доступ к таблицам зарплаты (👥 Доступ): 1 смотреть, 2 исправлять
       // 24.11.2026 (руководитель): в «Зарплате» две кнопки рядом — «Расчёт зарплаты завода» (внутри посещение и табель) и «Бонусы»
-      var ks = ['pay', 'bon', 'debt'].filter(function (k) { return k === 'debt' ? zpAcc.zp_debt >= 1 : k === 'bon' ? !!D.bonus || zpBonAny() : (D.parts.pay || D.parts.dav || D.parts.tab || zpAcc.zp_month >= 1); });   // 25.11.2026: по «👥 Доступу»
+      var ks = ['pay', 'bon', 'debt', 'wd'].filter(function (k) { return k === 'wd' ? !!D.workday : k === 'debt' ? zpAcc.zp_debt >= 1 : k === 'bon' ? !!D.bonus || zpBonAny() : (D.parts.pay || D.parts.dav || D.parts.tab || zpAcc.zp_month >= 1); });   // 25.11.2026: по «👥 Доступу»
       if (!ks.length) { box.innerHTML = '<div class="empty">Разделы зарплаты вам пока не даны</div>'; return; }
       var odd = ks.length % 2 === 1;
       box.innerHTML = '<div class="mgrid">' + ks.map(function (k, i) {
-        var t = ZPT[k], f = k === 'bon' || k === 'debt' ? null : ((D.parts.pay || D.parts.dav || D.parts.tab || {}).files || [])[0];
+        var t = ZPT[k], f = k === 'bon' || k === 'debt' || k === 'wd' ? null : ((D.parts.pay || D.parts.dav || D.parts.tab || {}).files || [])[0];
         var c = k === 'bon' && D.bonus.inv_only ? '📋 за инвентаризацию'
           : k === 'bon' ? (D.inv_bonus || !D.bonus ? (D.inv_bonus ? '📋 инвентаризация' : 'бонусы завода') : 'виды бонусов')   // 24.11.2026: суммы — внутри каждого вида бонуса
-          : k === 'debt' ? t[3]
+          : k === 'debt' || k === 'wd' ? t[3]
           : (f ? 'последний: ' + esc(f.month || f.at) : 'файлов пока нет') + '<br>' + (k === 'pay' ? 'внутри: ' + ['pay', 'dav', 'tab'].filter(function (q) { return D.parts[q]; }).map(function (q) { return { pay: 'расчёт', dav: 'посещение', tab: 'табель' }[q]; }).join(' · ') : t[3]);
         return '<div class="tile cat ' + t[0] + (odd && i === ks.length - 1 ? ' wide' : '') + '" data-zp="' + k + '"><div class="e">' + t[1] + '</div>' +
           '<div class="n">' + t[2] + '</div><div class="c">' + c + '</div></div>';
@@ -4383,10 +4399,75 @@
       Array.prototype.forEach.call(box.querySelectorAll('[data-zp]'), function (el) {
         el.onclick = function () {
           var k = el.getAttribute('data-zp'); try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-          go(function () { if (k === 'debt') showZpDebt(); else if (k === 'bon' && D.bonus && D.bonus.inv_only && !zpBonAny()) showZpInv(); else if (k === 'bon') showZpBonus(); else showZpPart(k); });
+          go(function () { if (k === 'wd') showZpWorkday(); else if (k === 'debt') showZpDebt(); else if (k === 'bon' && D.bonus && D.bonus.inv_only && !zpBonAny()) showZpInv(); else if (k === 'bon') showZpBonus(); else showZpPart(k); });
         };
       });
     });
+  }
+  // 25.11.2026 (руководитель): 💰 Зарплата → 📅 Рабочий день — рекомендация Камола: кому работать, кого домой на содержание.
+  // Работа — по плану производства дня (Нодир) и нормам на партию; свободно ≥ 3 ч — домой; нет производства — всех на содержание.
+  // Рекомендация — руководителю в личку (авто в рабочий день во время отправки) и кнопкой «📩».
+  function showZpWorkday() {
+    var me = cur, st = { day: '' };
+    view.innerHTML = subTop('zp', 'Зарплата · Рабочий день') + '<div id="zwd"><div class="spin">Считаю план и людей…</div></div>';
+    bindTabs();
+    var K = { full: ['✅ Весь день', 'wdf'], half: ['🌗 Часть дня, потом домой', 'wdh'], home: ['🏠 Домой на содержание', 'wdo'] };
+    var GR = ['СИРОП', 'КАПЛЯ', 'РАСТВОР', 'КАПСУЛА', 'СВЕЧА', 'ТАБЛЕТКА'];
+    function get() { load('/api/zp_workday', { day: st.day }, function (R) { if (cur !== me) return; paint(R); }); }
+    function act(body, ask) {
+      var go_ = function (yes) { if (!yes) return; call('/api/zp_workday_set', body, 60000).then(function (q) { haptic(q.ok_act ? 'success' : 'warning'); say(q.text || ''); if (q.ok_act) get(); }).catch(ivErr); };
+      if (ask) { try { tg.showConfirm(ask, go_); } catch (e) { go_(confirm(ask)); } } else go_(true);
+    }
+    function paint(R) {
+      var B = $('zwd'); if (!B) return;
+      if (!R.ok) { B.innerHTML = '<div class="empty">' + esc(R.text || 'Нет данных') + '</div>'; return; }
+      st.day = R.day;
+      var C = R.conf, x = '';
+      x += '<div class="osg">' + (R.days || []).map(function (d, i) { return '<div class="ob ' + ['c1', 'c3', 'c4'][i % 3] + (d[0] === R.day ? ' on' : '') + '" data-wday="' + d[0] + '"><i>📅</i><b>' + esc(d[1]) + '</b></div>'; }).join('') + '</div>';
+      var bP = 0, bT = 0; R.rows.forEach(function (r) { if (r.line === 'P') bP += r.batches; else bT += r.batches; });
+      x += '<div class="crt-g st3"><div class="cb eq"><b>' + (bP + bT) + '</b><span>партий (П ' + bP + ' · Т ' + bT + ')</span></div>' +
+        '<div class="cb"><b>≈ ' + fmtq(R.need_h) + ' ч</b><span>работы</span></div>' +
+        '<div class="cb"><b>' + (R.n_full + R.n_half) + ' из ' + R.people.length + '</b><span>работают · домой ' + R.n_home + '</span></div></div>';
+      x += '<div class="wdsrc ' + (R.src === 'move' ? 'ok' : R.src === 'forecast' ? 'warn' : '') + '">📋 План ' + esc(R.show) + ': ' + esc(R.src_txt) + '</div>';
+      if (!C.checked) x += '<div class="dvsrc warn">⚠️ Нормы на партию — стартовые (часы и люди не записаны нигде). Проверьте внизу в «⚙️ Нормы» и отметьте «проверены».</div>';
+      if (R.rows.length) x += '<div class="zbct"><table><tr><th>Линия</th><th>Продукт</th><th>Вид</th><th>Партий</th><th>Норма</th></tr>' + R.rows.map(function (r) {
+        var n = C.norms[r.group] || [6, 3]; return '<tr><td>' + (r.line === 'P' ? 'Перечисление' : 'Терминал') + '</td><td>' + esc(r.short) + '</td><td>' + esc(r.group) + '</td><td class="r">' + r.batches + '</td><td class="r">' + n[0] + ' ч × ' + n[1] + ' чел.</td></tr>'; }).join('') + '</table></div>';
+      else x += '<div class="wdnone">🏭 Производства нет — всех производственных можно отпустить на содержание' + (R.next_empty ? ' (и ' + esc(R.next_show) + ' тоже нет — сразу на 2 дня)' : '') + '.</div>';
+      ['full', 'half', 'home'].forEach(function (k) {
+        var L = R.people.filter(function (p) { return p.kind === k; }); if (!L.length) return;
+        x += '<div class="msec ' + K[k][1] + 't">' + K[k][0] + ' · ' + L.length + '</div>' + L.map(function (p) {
+          return '<div class="wdp ' + K[k][1] + '"><div class="wdn"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || 'без должности') + '</small>' +
+            (p.what.length ? '<small class="wdw">' + esc(p.what.join(' · ')) + '</small>' : '') + '</div>' +
+            '<div class="wdhr"><b>' + (k === 'home' ? 'дома' : fmtq(p.h) + ' ч') + '</b>' + (k === 'half' ? '<small>до ' + esc(p.until) + '</small>' : '') +
+            '<div class="wdbar"><i style="width:' + Math.min(100, Math.round(p.h / R.shift_h * 100)) + '%"></i></div></div></div>';
+        }).join('');
+      });
+      if (R.always.length) x += '<div class="note">👔 Всегда на месте (не в расчёте): ' + esc(R.always.map(function (p) { return p.who; }).join(', ')) + '</div>';
+      x += '<div class="msec">📩 СООБЩЕНИЕ В ЛИЧКУ</div><pre class="wdmsg">' + esc(R.text) + '</pre>' +
+        (R.sent ? '<div class="note">Отправлено ' + esc(R.sent.at) + ' · ' + esc(R.sent.by) + '</div>' : '<div class="note">Само уйдёт ' + (C.on ? 'в рабочий день в ' + esc(C.send_at) + ' (на следующий рабочий день)' : '— автоотправка выключена') + '.</div>') +
+        '<div class="ivbar"><button class="go" id="wdsend">📩 Отправить мне сейчас</button></div>';
+      x += '<details class="wdset"><summary>⚙️ Нормы и правила</summary>' +
+        '<div class="note" style="margin:4px 0">Норма на 1 партию: сколько часов и сколько людей заняты (вместе с начальником участка).</div>' +
+        '<table class="wdnt"><tr><th>Вид</th><th>часов</th><th>людей</th></tr>' + GR.map(function (g) { var n = C.norms[g] || [6, 3];
+          return '<tr><td>' + g + '</td><td><input class="txt" inputmode="decimal" data-nh="' + g + '" value="' + n[0] + '"></td><td><input class="txt" inputmode="numeric" data-nn="' + g + '" value="' + n[1] + '"></td></tr>'; }).join('') +
+        '<tr><td>Мойка + упаковка</td><td><input class="txt" inputmode="decimal" id="wdph" value="' + C.pack[0] + '"></td><td><input class="txt" inputmode="numeric" id="wdpn" value="' + C.pack[1] + '"></td></tr></table>' +
+        '<div class="wdrow"><label>Смена, ч<input class="txt" inputmode="decimal" id="wdsh" value="' + C.shift_h + '"></label><label>Домой, если свободно ≥ ч<input class="txt" inputmode="decimal" id="wdmh" value="' + C.min_h + '"></label></div>' +
+        '<div class="wdrow"><label>Отправлять в<input class="txt" type="time" id="wdat" value="' + esc(C.send_at) + '"></label><label class="ck"><input type="checkbox" id="wdon"' + (C.on ? ' checked' : '') + '> отправлять сам</label></div>' +
+        '<label class="zl">Всегда на месте (слова в должности, через запятую)</label><input class="txt" id="wdal" value="' + esc(C.always.join(', ')) + '" style="width:100%">' +
+        '<label class="ck" style="display:block;margin:8px 0"><input type="checkbox" id="wdck"' + (C.checked ? ' checked' : '') + '> нормы проверены</label>' +
+        '<div class="ivbar"><button class="go" id="wdsave">💾 Сохранить</button></div>' +
+        (R.log && R.log.length ? '<div class="msec">ЖУРНАЛ</div>' + R.log.slice(-8).reverse().map(function (l) { return '<div class="zlog">' + esc(l.text) + '<br><small>' + esc(l.by) + ' · ' + esc(l.at) + '</small></div>'; }).join('') : '') +
+        '</details>';
+      B.innerHTML = x;
+      Array.prototype.forEach.call(B.querySelectorAll('[data-wday]'), function (el) { el.onclick = function () { haptic('light'); st.day = el.getAttribute('data-wday'); B.innerHTML = '<div class="spin">Считаю…</div>'; get(); }; });
+      $('wdsend').onclick = function () { act({ act: 'send', day: R.day }, 'Отправить рекомендацию на ' + R.show + ' вам в личку бота?'); };
+      $('wdsave').onclick = function () {
+        var nm = {}; GR.forEach(function (g) { nm[g] = [B.querySelector('[data-nh="' + g + '"]').value.replace(',', '.'), B.querySelector('[data-nn="' + g + '"]').value]; });
+        act({ act: 'conf', norms: nm, pack: [$('wdph').value.replace(',', '.'), $('wdpn').value], shift_h: $('wdsh').value.replace(',', '.'), min_h: $('wdmh').value.replace(',', '.'),
+              send_at: $('wdat').value, on: $('wdon').checked, checked: $('wdck').checked, always: $('wdal').value.split(',') });
+      };
+    }
+    get();
   }
   // 25.11.2026 (руководитель): отчётов посещения за месяц может быть несколько — применён один (✅), остальные не используются.
   // Месяц — по содержимому файла. «Применить» → сверка имён с «Должностями» → табель, таблица зарплаты, сверхурочные месяца.
@@ -5111,11 +5192,11 @@
   function zpb(p) { return (+p.salary || 0) + (+p.batch || 0) + (+p.qual || 0) + (+p.spec || 0); }   // зарплата с бонусами
   function pct1(p) { return p.norm ? Math.round(p.shift / p.norm * 1000) / 10 : 0; }   // % в смену от нормы (как на экране)
   function zpf(p) { return Math.round(zpb(p) * pct1(p) / 100); }   // зарплата с бонусами по факту
-  // 25.11.2026 (руководитель): спец. бонусы без посещения — не в общей сумме, а в конце: к выдаче = остаток − долг + спец. без посещения
-  function zpg(p) { return (p.nofid ? 0 : zpf(p)) + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0) + (+p.inv_total || 0); }   // общая сумма
-  // к выдаче: остаток (общая − на карту) − удержание долга + спец. без посещения; в 1С за месяц человека нет — на карту 0;
+  // 25.11.2026 (руководитель, позже): спец. бонусы без посещения — колонка после «Бонус за инвентаризацию итого» и входят в общую сумму
+  function zpg(p) { return (p.nofid ? 0 : zpf(p)) + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0) + (+p.inv_total || 0) + (+p.spec2 || 0); }   // общая сумма
+  // к выдаче: остаток (общая − на карту) − удержание долга (спец. без посещения уже в общей сумме); в 1С за месяц человека нет — на карту 0;
   // данных 1С за месяц ещё нет — null (не посчитать)
-  function zpPay(p, D) { var card = p.card != null ? +p.card : (D.card_have ? 0 : null); return card == null ? null : zpg(p) - card - (+p.debt_due || 0) + (+p.spec2 || 0); }
+  function zpPay(p, D) { var card = p.card != null ? +p.card : (D.card_have ? 0 : null); return card == null ? null : zpg(p) - card - (+p.debt_due || 0); }
   function otTable(D, C, mname, otOpen) {
     var h = '';
     // остаток: плюс — зелёный «+», минус — красный «−», ноль — 0
@@ -5132,7 +5213,7 @@
     setTimeout(ottNavInit, 0);   // 24.11.2026: панель прокрутки — после вставки в страницу
     h += '<div class="ottnav"><button type="button" data-ottl title="Влево">◀</button><div class="ottbar"><div class="ottthumb"></div></div><span class="ottpos"></span>' +
       '<button type="button" data-ottr title="Вправо">▶</button></div><div class="ottbox"><div class="ottw" tabindex="0"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы · по посещению', 'сум') + th('Зарплата с бонусами', 'итого, сум') + th('В смену от нормы', '%') + th('Зарплата с бонусами по факту', 'сум = итог × % от нормы') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Общая сумма', 'по факту + надбавка + инвент., сум') + th('Поступление на карту', 'из 1С за месяц, после налогов, сум') + th('Остаток (разница)', 'общая сумма − на карту, сум') + th('Удержание в счёт долга', 'из 💳 Долгов за месяц, сум') + th('Спец. бонусы завода · без посещения', 'из 🌟 Специальных, целиком, сум') + th('К выдаче', 'остаток − долг + спец. без посещения, сум') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы · по посещению', 'сум') + th('Зарплата с бонусами', 'итого, сум') + th('В смену от нормы', '%') + th('Зарплата с бонусами по факту', 'сум = итог × % от нормы') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Спец. бонусы завода · без посещения', 'из 🌟 Специальных, целиком, сум') + th('Общая сумма', 'по факту + надбавка + инвент. + спец. без посещения, сум') + th('Поступление на карту', 'из 1С за месяц, после налогов, сум') + th('Остаток (разница)', 'общая сумма − на карту, сум') + th('Удержание в счёт долга', 'из 💳 Долгов за месяц, сум') + th('К выдаче', 'остаток − долг, сум') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             // 25.11.2026 (руководитель): ✏️ — есть ручные правки (дни или итог), ⚠️ — итог вручную не сходится с днями
@@ -5164,7 +5245,9 @@
               // 24.11.2026 (руководитель): инвентаризация по субботам — сумма; должен был (в правиле раздела), а нет — ✖
               IS.map(function (d) { var v = (p.inv || {})[d] || 0; return '<td>' + (v ? '<b>' + fmtq(v) + '</b>' : d > TD ? '<span style="opacity:.4">впереди</span>' : p.inv_need ? '<span class="neg">✖</span>' : '—') + '</td>'; }).join('') +
               '<td>' + (p.inv_other ? fmtq(p.inv_other) : '—') + '</td><td>' + (p.inv_total ? '<b>' + fmtq(p.inv_total) + '</b>' : '0') + '</td>' +
-              // 24.11.2026 (руководитель): общая сумма = зарплата с бонусами по факту + стоимость надбавки сверхурочно + бонус за инвентаризацию
+              // 25.11.2026 (руководитель): 🌟 спец. бонусы завода без посещения — после инвентаризации, целиком (% отработки не влияет)
+              '<td class="sp2c">' + (p.spec2 ? '<b>+' + fmtq(p.spec2) + '</b>' + (p.spec2_n > 1 ? '<small>' + p.spec2_n + ' бонуса</small>' : '') : '0') + '</td>' +
+              // общая сумма = по факту + стоимость надбавки + инвентаризация + спец. без посещения
               '<td class="grandc"><b>' + fmtq(zpg(p)) + '</b></td>' +
               // 24.11.2026 (руководитель): поступление на карту — 1С «Начисление зарплаты» за выбранный месяц: начислено − НДФЛ (аванс + окончательный)
               '<td class="cardc">' + (p.card != null ? '<b>' + fmtq(p.card) + '</b><small>' + fmtq(p.card_acc) + ' − НДФЛ ' + fmtq(p.card_ndfl) + '</small>' : '<span style="opacity:.5">' + (D.card_have ? 'нет в 1С' : '—') + '</span>') + '</td>' +
@@ -5172,10 +5255,8 @@
               '<td class="restc">' + (p.card != null ? restH(zpg(p) - p.card) : '<span style="opacity:.5">—</span>') + '</td>' +
               // 25.11.2026 (руководитель): удержание в счёт долга за месяц (💳 Долги), ниже — сколько долга останется
               '<td class="debtc">' + (p.debt_due ? '<b>−' + fmtq(p.debt_due) + '</b><small>останется ' + fmtq(p.debt_left || 0) + '</small>' : (p.debt_left ? '<span style="opacity:.6">0</span><small>долг ' + fmtq(p.debt_left) + '</small>' : '—')) + '</td>' +
-              // 25.11.2026 (руководитель): 🌟 спец. бонусы завода без посещения — целиком, % отработки не влияет; выдаются сверх карты
-              '<td class="sp2c">' + (p.spec2 ? '<b>+' + fmtq(p.spec2) + '</b>' + (p.spec2_n > 1 ? '<small>' + p.spec2_n + ' бонуса</small>' : '') : '0') + '</td>' +
               // 25.11.2026 (руководитель): к выдаче = остаток (разница) − удержание в счёт долга + спец. бонусы без посещения
-              (function () { var v = zpPay(p, D); return '<td class="payc">' + (v == null ? '<span style="opacity:.5">—</span><small>нет данных 1С</small>' : restH(v) + '<small>' + (p.card == null ? 'нет в 1С: карта 0 · ' : '') + fmtq(zpg(p) - (p.card != null ? +p.card : 0)) + ' − ' + fmtq(+p.debt_due || 0) + ' + ' + fmtq(+p.spec2 || 0) + '</small>') + '</td>'; })() + '</tr>' +
+              (function () { var v = zpPay(p, D); return '<td class="payc">' + (v == null ? '<span style="opacity:.5">—</span><small>нет данных 1С</small>' : restH(v) + '<small>' + (p.card == null ? 'нет в 1С: карта 0 · ' : '') + fmtq(zpg(p) - (p.card != null ? +p.card : 0)) + ' − ' + fmtq(+p.debt_due || 0) + '</small>') + '</td>'; })() + '</tr>' +
               (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 25 : 24) + IS.length + 2) + '"><div class="otdwrap">' + otDaysHtml(p, D) + '</div></td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
@@ -5189,11 +5270,11 @@
           '<td class="otcc"><b class="otpill">' + fmtq(D.people.reduce(function (a, p) { return a + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0); }, 0)) + '</b></td>' +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_other || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_total || 0); }, 0)) + '</b></td>' +
+          '<td class="sp2c"><b>+' + fmtq(D.people.reduce(function (a, p) { return a + (+p.spec2 || 0); }, 0)) + '</b></td>' +
           '<td class="grandc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + zpg(p); }, 0)) + '</b></td>' +
           '<td class="cardc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.card || 0); }, 0)) + '</b></td>' +
           '<td class="restc">' + restH(D.people.reduce(function (a, p) { return a + (p.card != null ? zpg(p) - p.card : 0); }, 0)) + '</td>' +
           '<td class="debtc"><b>−' + fmtq(D.people.reduce(function (a, p) { return a + (p.debt_due || 0); }, 0)) + '</b></td>' +
-          '<td class="sp2c"><b>+' + fmtq(D.people.reduce(function (a, p) { return a + (+p.spec2 || 0); }, 0)) + '</b></td>' +
           '<td class="payc">' + (D.card_have ? restH(D.people.reduce(function (a, p) { return a + (zpPay(p, D) || 0); }, 0)) : '<span style="opacity:.5">—</span>') + '</td></tr>' +
           '</tbody></table></div></div>';
     if (D.batch_cnt) h += '<div class="zbcsum"><b>' + fmtq(D.batch_total || 0) + ' сум</b><span>🏭 бонус за партии · ' + esc(mname.toLowerCase()) + ' · вышло партий по ERP: <b>' + D.batch_cnt.all +
@@ -5201,7 +5282,7 @@
       (!D.batch_total && D.batch_rates_from && D.month < D.batch_rates_from ? '<br>⚠️ ставки за партию и должности вписаны с ' + esc(D.batch_rates_from) + ' — за этот месяц не по чему считать' : '') + '</span></div>';
     h += '<div class="note">💳 Поступление на карту — из 1С (документы «Начисление зарплаты» за ' + esc(mname.toLowerCase()) + ': аванс и окончательный расчёт): начислено − НДФЛ. ' +
       (D.card_have ? 'Данные 1С от ' + esc(D.card_at || '') + (D.card_unassigned ? '; в 1С есть удержания ' + fmtq(D.card_unassigned) + ' сум без привязки к сотруднику — в суммах не учтены' : '') + '.' : 'Данных 1С за этот месяц ещё нет.') + '</div>';
-    h += '<div class="note">💰 К выдаче = остаток (общая сумма − на карту) − удержание в счёт долга + 🌟 спец. бонусы завода без посещения (они не входят в общую сумму и выдаются целиком сверх карты). Кого нет в 1С за месяц — на карту 0, к выдаче вся общая сумма. Минус — переплачено.</div>';   // 25.11.2026
+    h += '<div class="note">💰 Общая сумма = по факту + надбавка + инвентаризация + 🌟 спец. бонусы завода без посещения (целиком, % отработки не влияет). К выдаче = остаток (общая сумма − на карту) − удержание в счёт долга. Кого нет в 1С за месяц — на карту 0, к выдаче вся общая сумма. Минус — переплачено.</div>';   // 25.11.2026
     if ((D.inv_unmatched || []).length) h += '<div class="note">Бонус за инвентаризацию: не нашёл в «Должностях» завода — ' + esc(D.inv_unmatched.join(', ')) + ' (их суммы здесь не показаны).</div>';
     h += '<div class="note">Инвентаризация: по субботам — сумма из 📋 Бонус за инвентаризацию; ✖ — человек в правиле раздела, а в эту субботу бонуса нет (не сделано или 0).</div>';
     h += '<div class="note">Разница = «в смену» − норма (меньше нормы — минус, норма и больше — 0). Итог сверхурочно = сверхурочно − недоработка, не меньше 0: сначала сверхурочные закрывают недоработку, остаток оплачивается. ' +
