@@ -642,6 +642,7 @@
   .zpf { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; }
   .zpf .nn { min-width: 20px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; }
   .zpf .t { flex: 1; min-width: 0; } .zpf .t b { display: block; font-size: 15px; text-transform: capitalize; } .zpf .t small { color: var(--hint); font-size: 12px; }
+  .ott td.sp2c b { color: #7a3fc4; } .ott td.payc { background: #e6f7ec; } .ott td.payc b { font-size: 15px; }
   .zsgone { margin-top: 8px; background: #fff0f0; color: #3a1414; border: 2px solid #f2b8b8; border-radius: 12px; padding: 8px 10px; } .zsgone small { color: #8a5a5a; }
   /* 25.11.2026: 📋 Посещение — применённый отчёт месяца */
   .dvm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 6px; max-width: 860px; } .dvm b { font-size: 15px; }
@@ -1277,9 +1278,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '318d291f', newBuild = '';
+  var BUILD = 'a744d0b3', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795586522' || 0;
+  var BUILD_AT = +'1795587260' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4547,9 +4548,10 @@
           };
           if ($('zpconfgo')) $('zpconfgo').onclick = function () {
             var T = st.T, snap = (T.people || []).map(function (p) { var g = zpg(p);
-              return { sid: p.sid, who: p.who, grand: g, card: p.card != null ? p.card : null, rest: p.card != null ? g - p.card : null, debt: p.debt_due || 0 }; });
+              return { sid: p.sid, who: p.who, grand: g, card: p.card != null ? p.card : null, rest: p.card != null ? g - p.card : null, debt: p.debt_due || 0,
+                       spec2: +p.spec2 || 0, pay: zpPay(p, T) }; });   // 25.11.2026: спец. без посещения и к выдаче
             var sum = function (k) { return snap.reduce(function (a, x) { return a + (+x[k] || 0); }, 0); };
-            cfSend({ act: 'confirm', snap: snap }, 'Подтвердить зарплату за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '?\nОбщая сумма: ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')) + '\nПосле подтверждения месяц закрывается.');
+            cfSend({ act: 'confirm', snap: snap }, 'Подтвердить зарплату за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '?\nОбщая сумма: ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')) + '\nСпец. без посещения: ' + fmtq(sum('spec2')) + '\nК выдаче: ' + fmtq(sum('pay')) + '\nПосле подтверждения месяц закрывается.');
           };
           if ($('zpunconf')) $('zpunconf').onclick = function () { cfSend({ act: 'undo' }, 'Снять подтверждение? Месяц снова откроется для исправлений.'); };
           Array.prototype.forEach.call(Z.querySelectorAll('[data-ow]'), function (el) { el.onclick = function () { var w = el.getAttribute('data-ow'); op[w] = !op[w]; paint(); }; });
@@ -5041,7 +5043,11 @@
   function zpb(p) { return (+p.salary || 0) + (+p.batch || 0) + (+p.qual || 0) + (+p.spec || 0); }   // зарплата с бонусами
   function pct1(p) { return p.norm ? Math.round(p.shift / p.norm * 1000) / 10 : 0; }   // % в смену от нормы (как на экране)
   function zpf(p) { return Math.round(zpb(p) * pct1(p) / 100); }   // зарплата с бонусами по факту
-  function zpg(p) { return (p.nofid ? 0 : zpf(p)) + (+p.spec2 || 0) + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0) + (+p.inv_total || 0); }   // общая сумма
+  // 25.11.2026 (руководитель): спец. бонусы без посещения — не в общей сумме, а в конце: к выдаче = остаток − долг + спец. без посещения
+  function zpg(p) { return (p.nofid ? 0 : zpf(p)) + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0) + (+p.inv_total || 0); }   // общая сумма
+  // к выдаче: остаток (общая − на карту) − удержание долга + спец. без посещения; в 1С за месяц человека нет — на карту 0;
+  // данных 1С за месяц ещё нет — null (не посчитать)
+  function zpPay(p, D) { var card = p.card != null ? +p.card : (D.card_have ? 0 : null); return card == null ? null : zpg(p) - card - (+p.debt_due || 0) + (+p.spec2 || 0); }
   function otTable(D, C, mname, otOpen) {
     var h = '';
     // остаток: плюс — зелёный «+», минус — красный «−», ноль — 0
@@ -5058,7 +5064,7 @@
     setTimeout(ottNavInit, 0);   // 24.11.2026: панель прокрутки — после вставки в страницу
     h += '<div class="ottnav"><button type="button" data-ottl title="Влево">◀</button><div class="ottbar"><div class="ottthumb"></div></div><span class="ottpos"></span>' +
       '<button type="button" data-ottr title="Вправо">▶</button></div><div class="ottbox"><div class="ottw" tabindex="0"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
-          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы · по посещению', 'сум') + th('Зарплата с бонусами', 'итого, сум') + th('В смену от нормы', '%') + th('Зарплата с бонусами по факту', 'сум = итог × % от нормы') + th('Спец. бонусы · без посещения', 'сум, целиком') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Общая сумма', 'по факту + спец. без посещения + надбавка + инвент., сум') + th('Поступление на карту', 'из 1С за месяц, после налогов, сум') + th('Остаток (разница)', 'общая сумма − на карту, сум') + th('Удержание в счёт долга', 'из 💳 Долгов за месяц, сум') + '</tr></thead><tbody>' +
+          th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы · по посещению', 'сум') + th('Зарплата с бонусами', 'итого, сум') + th('В смену от нормы', '%') + th('Зарплата с бонусами по факту', 'сум = итог × % от нормы') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Общая сумма', 'по факту + надбавка + инвент., сум') + th('Поступление на карту', 'из 1С за месяц, после налогов, сум') + th('Остаток (разница)', 'общая сумма − на карту, сум') + th('Удержание в счёт долга', 'из 💳 Долгов за месяц, сум') + th('Спец. бонусы завода · без посещения', 'из 🌟 Специальных, целиком, сум') + th('К выдаче', 'остаток − долг + спец. без посещения, сум') + '</tr></thead><tbody>' +
           D.people.map(function (p, i) {
         var op = otOpen[p.who];
             // 25.11.2026 (руководитель): ✏️ — есть ручные правки (дни или итог), ⚠️ — итог вручную не сходится с днями
@@ -5084,8 +5090,6 @@
               '<td class="pctc"><b>' + (p.nofid ? '—' : (p.norm ? (Math.round(p.shift / p.norm * 1000) / 10).toLocaleString('ru') : 0) + ' %') + '</b></td>' +
               // 24.11.2026 (руководитель): по факту = зарплата с бонусами × % в смену от нормы
               '<td class="factc"><b>' + (p.nofid ? '—' : fmtq(zpf(p))) + '</b>' + (p.nofid ? '' : '<small>' + fmtq(zpb(p)) + ' × ' + pct1(p).toLocaleString('ru') + ' %</small>') + '</td>' +
-              // 25.11.2026 (руководитель): 🌟 спец. бонусы без посещения — целиком, % отработки не влияет
-              '<td>' + (p.spec2 ? '<b style="color:#7a3fc4">' + fmtq(p.spec2) + '</b>' + (p.spec2_n > 1 ? '<small>' + p.spec2_n + ' бонуса</small>' : '') : '0') + '</td>' +
               // 24.11.2026 (руководитель): стоимость надбавки = надбавка (мин) × стоимость минуты (зарплата ÷ норма месяца)
               '<td class="otcc">' + (p.ot_min && p.ot_rate ? '<b class="otpill">' + fmtq(Math.round(p.ot_min * p.ot_rate)) + '</b><small>' + F(p.ot_min) + ' мин × ' + fmtq(Math.round(p.ot_rate * 100) / 100) + '</small>'
                 : (p.ot_min && !p.salary ? '<span style="opacity:.5">нет зарплаты</span>' : '0')) + '</td>' +
@@ -5099,8 +5103,12 @@
               // 24.11.2026 (руководитель): остаток = общая сумма − поступление на карту (минус — переплачено, плюс — доплатить)
               '<td class="restc">' + (p.card != null ? restH(zpg(p) - p.card) : '<span style="opacity:.5">—</span>') + '</td>' +
               // 25.11.2026 (руководитель): удержание в счёт долга за месяц (💳 Долги), ниже — сколько долга останется
-              '<td class="debtc">' + (p.debt_due ? '<b>−' + fmtq(p.debt_due) + '</b><small>останется ' + fmtq(p.debt_left || 0) + '</small>' : (p.debt_left ? '<span style="opacity:.6">0</span><small>долг ' + fmtq(p.debt_left) + '</small>' : '—')) + '</td></tr>' +
-              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 24 : 23) + IS.length + 2) + '"><div class="otdwrap">' + otDaysHtml(p, D) + '</div></td></tr>' : '');
+              '<td class="debtc">' + (p.debt_due ? '<b>−' + fmtq(p.debt_due) + '</b><small>останется ' + fmtq(p.debt_left || 0) + '</small>' : (p.debt_left ? '<span style="opacity:.6">0</span><small>долг ' + fmtq(p.debt_left) + '</small>' : '—')) + '</td>' +
+              // 25.11.2026 (руководитель): 🌟 спец. бонусы завода без посещения — целиком, % отработки не влияет; выдаются сверх карты
+              '<td class="sp2c">' + (p.spec2 ? '<b>+' + fmtq(p.spec2) + '</b>' + (p.spec2_n > 1 ? '<small>' + p.spec2_n + ' бонуса</small>' : '') : '0') + '</td>' +
+              // 25.11.2026 (руководитель): к выдаче = остаток (разница) − удержание в счёт долга + спец. бонусы без посещения
+              (function () { var v = zpPay(p, D); return '<td class="payc">' + (v == null ? '<span style="opacity:.5">—</span><small>нет данных 1С</small>' : restH(v) + '<small>' + (p.card == null ? 'нет в 1С: карта 0 · ' : '') + fmtq(zpg(p) - (p.card != null ? +p.card : 0)) + ' − ' + fmtq(+p.debt_due || 0) + ' + ' + fmtq(+p.spec2 || 0) + '</small>') + '</td>'; })() + '</tr>' +
+              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 25 : 24) + IS.length + 2) + '"><div class="otdwrap">' + otDaysHtml(p, D) + '</div></td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
           '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
@@ -5110,20 +5118,22 @@
           // итог % — вся смена всех ÷ вся норма всех (кто есть в отчёте посещения)
           (function () { var a = 0, b = 0; D.people.forEach(function (p) { if (!p.nofid) { a += p.shift || 0; b += p.norm || 0; } }); return '<td class="pctc"><b>' + (b ? (Math.round(a / b * 1000) / 10).toLocaleString('ru') : 0) + ' %</b></td>'; })() +
           '<td class="factc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.nofid ? 0 : zpf(p)); }, 0)) + '</b></td>' +
-          '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.spec2 || 0); }, 0)) + '</b></td>' +
           '<td class="otcc"><b class="otpill">' + fmtq(D.people.reduce(function (a, p) { return a + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0); }, 0)) + '</b></td>' +
           IS.map(function (d) { return '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (((p.inv || {})[d]) || 0); }, 0)) + '</b></td>'; }).join('') +
           '<td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_other || 0); }, 0)) + '</b></td><td><b>' + fmtq(D.people.reduce(function (a, p) { return a + (p.inv_total || 0); }, 0)) + '</b></td>' +
           '<td class="grandc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + zpg(p); }, 0)) + '</b></td>' +
           '<td class="cardc"><b>' + fmtq(D.people.reduce(function (a, p) { return a + (+p.card || 0); }, 0)) + '</b></td>' +
           '<td class="restc">' + restH(D.people.reduce(function (a, p) { return a + (p.card != null ? zpg(p) - p.card : 0); }, 0)) + '</td>' +
-          '<td class="debtc"><b>−' + fmtq(D.people.reduce(function (a, p) { return a + (p.debt_due || 0); }, 0)) + '</b></td></tr>' +
+          '<td class="debtc"><b>−' + fmtq(D.people.reduce(function (a, p) { return a + (p.debt_due || 0); }, 0)) + '</b></td>' +
+          '<td class="sp2c"><b>+' + fmtq(D.people.reduce(function (a, p) { return a + (+p.spec2 || 0); }, 0)) + '</b></td>' +
+          '<td class="payc">' + (D.card_have ? restH(D.people.reduce(function (a, p) { return a + (zpPay(p, D) || 0); }, 0)) : '<span style="opacity:.5">—</span>') + '</td></tr>' +
           '</tbody></table></div></div>';
     if (D.batch_cnt) h += '<div class="zbcsum"><b>' + fmtq(D.batch_total || 0) + ' сум</b><span>🏭 бонус за партии · ' + esc(mname.toLowerCase()) + ' · вышло партий по ERP: <b>' + D.batch_cnt.all +
       '</b> (Перечисление ' + D.batch_cnt.per + ', Терминал ' + D.batch_cnt.ter + ')' +
       (!D.batch_total && D.batch_rates_from && D.month < D.batch_rates_from ? '<br>⚠️ ставки за партию и должности вписаны с ' + esc(D.batch_rates_from) + ' — за этот месяц не по чему считать' : '') + '</span></div>';
     h += '<div class="note">💳 Поступление на карту — из 1С (документы «Начисление зарплаты» за ' + esc(mname.toLowerCase()) + ': аванс и окончательный расчёт): начислено − НДФЛ. ' +
       (D.card_have ? 'Данные 1С от ' + esc(D.card_at || '') + (D.card_unassigned ? '; в 1С есть удержания ' + fmtq(D.card_unassigned) + ' сум без привязки к сотруднику — в суммах не учтены' : '') + '.' : 'Данных 1С за этот месяц ещё нет.') + '</div>';
+    h += '<div class="note">💰 К выдаче = остаток (общая сумма − на карту) − удержание в счёт долга + 🌟 спец. бонусы завода без посещения (они не входят в общую сумму и выдаются целиком сверх карты). Кого нет в 1С за месяц — на карту 0, к выдаче вся общая сумма. Минус — переплачено.</div>';   // 25.11.2026
     if ((D.inv_unmatched || []).length) h += '<div class="note">Бонус за инвентаризацию: не нашёл в «Должностях» завода — ' + esc(D.inv_unmatched.join(', ')) + ' (их суммы здесь не показаны).</div>';
     h += '<div class="note">Инвентаризация: по субботам — сумма из 📋 Бонус за инвентаризацию; ✖ — человек в правиле раздела, а в эту субботу бонуса нет (не сделано или 0).</div>';
     h += '<div class="note">Разница = «в смену» − норма (меньше нормы — минус, норма и больше — 0). Итог сверхурочно = сверхурочно − недоработка, не меньше 0: сначала сверхурочные закрывают недоработку, остаток оплачивается. ' +
