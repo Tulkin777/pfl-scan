@@ -1381,9 +1381,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'a5629374', newBuild = '';
+  var BUILD = '3e1d7a3b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795606058' || 0;
+  var BUILD_AT = +'1795606168' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5365,7 +5365,7 @@
     var g = (D.people || []).reduce(function (a, p) { return a + zpg(p); }, 0);
     return (D.acks || []).map(function (k) { return { by: k.by, at: k.at, grand: +k.grand || 0, same: (+k.grand || 0) === g, now: g }; });
   }
-  function zpAckLine(D) { var L = zpAckList(D); return '👁 Ознакомлен: ' + (L.length ? L.map(function (k) { return k.by.split(' ').slice(0, 2).join(' ') + (k.same ? ' ✅' : ' ⚠️ суммы изменились'); }).join(', ') : 'ещё никто'); }
+  function zpAckLine(D) { var L = zpAckList(D), k = L[L.length - 1]; return '👁 Начальник завода: ' + (k ? 'ознакомлен ' + zpAt(k.at) + (k.same ? ' ✅' : ' ⚠️ суммы изменились') : 'ещё не ознакомлен'); }
   // 25.11.2026 (руководитель): две кнопки в один ряд — слева 👁 Ознакомлен, справа ✅ Подтверждение.
   // Нажатая кнопка остаётся «залитой» и показывает кто и когда; чужая кнопка — пунктир «ждём».
   function zpAt(s) { s = String(s || ''); return /^\d{4}-\d\d-\d\d/.test(s) ? s.slice(8, 10) + '.' + s.slice(5, 7) + ' в ' + s.slice(11, 16) : s; }
@@ -5378,20 +5378,19 @@
     };
     // слева — ознакомление
     var A;
-    if (last && last.same) A = b('ack done', '', '👁', 'Ознакомлен', zpWho(last.by) + '<br>' + zpAt(last.at), fr === 'ack');
+    if (last && last.same) A = b('ack done', '', '👁', 'Ознакомлен', 'Начальник завода<br>' + zpAt(last.at), fr === 'ack');   // 25.11.2026 (руководитель): без фамилий — должность и время
     else if (last && canAck) A = b('ack warn act', 'zpackgo', '⚠️', 'Ознакомиться снова', 'суммы изменились после ' + zpAt(last.at) + '<br>было ' + fmtq(last.grand) + ' · сейчас ' + fmtq(last.now));
-    else if (last) A = b('ack warn', '', '⚠️', 'Ознакомлен — суммы изменились', zpWho(last.by) + ' · ' + zpAt(last.at) + '<br>было ' + fmtq(last.grand) + ' · сейчас ' + fmtq(last.now));
+    else if (last) A = b('ack warn', '', '⚠️', 'Ознакомлен — суммы изменились', 'Начальник завода · ' + zpAt(last.at) + '<br>было ' + fmtq(last.grand) + ' · сейчас ' + fmtq(last.now));
     else if (canAck) A = b('ack act', 'zpackgo', '👁', 'Ознакомлен', 'нажмите, когда проверили таблицу');
     else A = b('ack wait', '', '⏳', 'Ознакомление', 'начальник завода ещё не отметил');
     // справа — подтверждение
     var C, mnl = esc(mn.toLowerCase());
     if (ED) C = isAdmin ? b('conf warn act', 'zpconfgo', '✏️', 'Подтвердить изменения', 'будет версия ' + ((CF.ver || 1) + 1) + ' · открыто ' + zpAt(ED.at))
                         : b('conf warn', '', '✏️', 'Идёт изменение', 'руководитель исправляет · ' + zpAt(ED.at));
-    else if (CF) C = b('conf done', '', '✅', 'Подтверждено' + ((CF.ver || 1) > 1 ? ' · v' + CF.ver : ''), zpWho(CF.by) + '<br>' + zpAt(CF.at), fr === 'conf');
+    else if (CF) C = b('conf done', '', '✅', 'Подтверждено' + ((CF.ver || 1) > 1 ? ' · v' + CF.ver : ''), 'Руководитель<br>' + zpAt(CF.at), fr === 'conf');
     else if (isAdmin) C = b('conf act', 'zpconfgo', '✅', 'Подтвердить', 'зарплату за ' + mnl + ' — месяц закроется');
     else C = b('conf wait', '', '⏳', 'Подтверждение', 'руководитель ещё не подтвердил');
     var h = '<div class="zpsign"><div class="zsh">Зарплата за ' + mnl + '</div><div class="zsrow">' + A + C + '</div>';
-    if (L.length > 1) h += '<div class="zsmore">👁 ' + L.map(function (k) { return zpWho(k.by) + ' ' + zpAt(k.at) + (k.same ? ' ✅' : ' ⚠️'); }).join(' · ') + '</div>';
     if (isAdmin && ED) h += '<div class="zslinks"><button class="zsl" id="zpeditx">✕ Отменить изменение (остаётся версия ' + (CF.ver || 1) + ')</button></div>';
     else if (isAdmin && CF) h += '<div class="zslinks"><button class="zsl" id="zpedit">✏️ Изменить</button><button class="zsl" id="zpunconf">↩ Снять подтверждение</button></div>';
     h += '<div class="zsnote">👁 — только отметка, ничего не меняет · ✅ — закрывает месяц, долги со следующего</div>';
