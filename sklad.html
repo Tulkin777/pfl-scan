@@ -888,6 +888,7 @@
   .ott td.restc b { font-size: 13.5px; } .ott td.restc .rpos { color: #138a43; } .ott td.restc .rneg { color: #c62828; }
   .ott td.debtc { color: #c62828; } .ott td.debtc b { font-size: 13.5px; }
   .zpconf { margin: 10px 0; padding: 12px 14px; border-radius: 14px; background: var(--tg-theme-secondary-bg-color, #eef1f5); } .zpconf b { display: block; font-size: 15px; }
+  .zpconf.ed { background: #fff4dc; border: 2px solid #f0a020; color: #6b4200; }
   .zpconf small { display: block; opacity: .7; margin: 3px 0 8px; } .zpconf.ok { background: linear-gradient(135deg, #2fb36b, #1c8f64); color: #fff; } .zpconf.ok small { opacity: .9; margin-bottom: 0; }
   .ott td.no { font-size: 16px; font-weight: 800; text-align: center; } .ott td.nf { text-align: center; color: #999; font-style: italic; }
   .ott td.nm { text-align: left; white-space: normal; min-width: 150px; } .ott .neg { color: #c62828; } .ott .pos { color: #1b7f3b; } .ott tr[data-ow] { cursor: pointer; }
@@ -1278,9 +1279,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'a744d0b3', newBuild = '';
+  var BUILD = 'cd5b8eba', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795587260' || 0;
+  var BUILD_AT = +'1795587844' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4471,7 +4472,8 @@
         if (zpAcc.zp_month >= 1) h += '<div class="msec">📊 РАСЧЁТ ЗАРПЛАТЫ · ТАБЕЛЬ МЕСЯЦА</div><div id="zptab"><div class="spin">Считаю по отчёту посещения…</div></div>';
       }
       if (k === 'dav' && D.parts.tab) h += '<div class="osg"><div class="ob c3" data-zsub="tab"><i>' + ZPT.tab[1] + '</i><b>' + ZPT.tab[2] + '</b></div></div>';   // 24.11.2026: табель — внутри посещения
-      var parts = k === 'pay' ? ['pay', 'ved'] : [k];
+      // 25.11.2026 (руководитель): в расчёте ниже табеля ничего не нужно — файлы расчёта и ведомости убраны (повторяли посещение)
+      var parts = k === 'pay' ? [] : [k];
       parts.forEach(function (p) {
         var P2 = D.parts[p]; if (!P2) return;
         var fs = P2.files || [];
@@ -4482,10 +4484,10 @@
             '<button class="cdl" data-zg="' + p + '" data-id="' + esc(f.id) + '" title="Скачать — в личку бота">⬇️</button></div>';
         }).join('') : '<div class="empty" style="padding:14px">Файлов пока нет</div>';
       });
-      h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). Нажмите строку — таблица этого месяца ниже.</div>' +
-        '<div id="zpv"></div>' + (k === 'pay' ? '<div id="zpbc"></div>' : '');
+      if (k !== 'pay') h += '<div class="note">⬇️ — файл придёт вам в личку бота склада и через 1 час удалится (сохраните). Нажмите строку — таблица этого месяца ниже.</div>' +
+        '<div id="zpv"></div>';
       B.innerHTML = h;
-      if (k === 'pay') load('/api/zp_batch_calc', {}, function (Q) {   // 24.11.2026 (руководитель): внизу — расчёт за партии этого месяца
+      if (k === 'pay' && $('zpbc')) load('/api/zp_batch_calc', {}, function (Q) {   // 24.11.2026 (руководитель): внизу — расчёт за партии этого месяца
         var X = $('zpbc'); if (!X || cur !== me || !Q.ok) return;
         var MN = ['', 'январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
         var ppl = (Q.people || []).filter(function (p) { return p.rate || p.sum; });
@@ -4505,17 +4507,20 @@
         // ниже таблица; «⬅ Назад» с месяцев — снова к годам. Открывается сразу на текущем месяце.
         var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], op = {};
         var now = new Date(), curY = String(now.getFullYear()), curM = curY + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
-        var st = { step: 'm', y: curY, m: curM, T: null };
+        var st = { step: 'm', y: curY, m: curM < ZP_FIRST ? ZP_FIRST : curM, T: null };
+        // 25.11.2026 (руководитель): годы — с 2026 по текущий (2027 появится сам в январе, со всеми месяцами)
+        function zYears() { var a = []; for (var y = 2026; y <= Math.max(2026, +curY); y++) a.push(String(y)); return a; }
         function paint() {
           var Z = $('zptab'); if (!Z || cur !== me) return;
           var x = '';
           if (st.step === 'y') {
-            x += '<div class="crt-l">Год</div><div class="osg zyy5">' + ['2026', '2027', '2028', '2029', '2030'].map(function (y, i) {
+            x += '<div class="crt-l">Год</div><div class="osg zyy5">' + zYears().map(function (y, i) {
               return '<div class="ob ' + ['c1', 'c3', 'c4', 'c2', 'c7'][i] + (y === st.y ? ' on' : '') + '" data-zy="' + y + '"><i>📅</i><b>' + y + '</b></div>'; }).join('') + '</div>';
             x += '<div class="note" style="margin-top:0">Выберите год — откроются его 12 месяцев.</div>';
           } else {
             x += '<div class="crt-l">' + st.y + ' · месяц</div><div class="crt-g gr zym6">' + MONN.slice(1).map(function (n, i) {
               var k = st.y + '-' + ('0' + (i + 1)).slice(-2);
+              if (k < ZP_FIRST) return '';   // 25.11.2026 (руководитель): 2026 — только октябрь, ноябрь, декабрь
               return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '" title="' + esc(n) + '">' + (((st.T && st.T.confirmed) || []).indexOf(k) >= 0 ? '✅ ' : '') + ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i] +'<small>' + st.y + '</small></div>'; }).join('') + '</div>';
             var T = st.T;
             if (!T) x += '<div class="spin">Считаю…</div>';
@@ -4525,14 +4530,26 @@
               // таблица есть всегда — бонусы месяца (за партию, без брака) видны и без отчёта посещения
               if (!T.have) x += '<div class="note" style="margin-top:0">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — минуты появятся после загрузки (📋 Посещение → 📎 Загрузить). Бонусы месяца — уже в таблице.</div>';
               // 25.11.2026 (руководитель): подтверждённый месяц — зелёная плашка сверху
-              if (T.confirm) x += '<div class="zpconf ok">✅ <b>Зарплата за ' + esc(mn.toLowerCase()) + ' подтверждена</b><small>' + esc(T.confirm.by) + ' · ' + esc(T.confirm.at) + ' — месяц закрыт: исправлять табель и начинать долги с этого месяца нельзя</small></div>';
+              var CF = T.confirm, ED = CF && CF.editing;   // 25.11.2026 (руководитель): изменение подтверждённой — новая версия
+              if (ED) x += '<div class="zpconf ed">✏️ <b>Идёт изменение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>подтверждена была версия ' + (CF.ver || 1) + ' · открыл ' + esc(ED.by) + ' ' + esc(ED.at) + ' — исправьте табель; внизу «✅ Подтвердить изменения» — будет версия ' + ((CF.ver || 1) + 1) + '</small></div>';
+              else if (CF) x += '<div class="zpconf ok">✅ <b>Зарплата за ' + esc(mn.toLowerCase()) + ' подтверждена' + ((CF.ver || 1) > 1 ? ' · версия ' + CF.ver : '') + '</b><small>' + esc(CF.by) + ' · ' + esc(CF.at) + ' — месяц закрыт: исправлять табель и начинать долги с этого месяца нельзя</small></div>';
               var DV = T.dav;   // 25.11.2026 (руководитель): по какому отчёту посещения посчитан месяц
               if (DV && DV.picked) x += '<div class="dvsrc ok">📋 Посещение: ✅ применён файл №' + (DV.no || '?') + ' · ' + DV.people + ' чел. · ' + DV.days + ' дн. · ' + esc(DV.by) + ' ' + esc(DV.at) + (DV.n > 1 ? ' · других файлов месяца: ' + (DV.n - 1) + ' (не используются)' : '') + '</div>';
               else if (DV && DV.have) x += '<div class="dvsrc warn">📋 Посещение: ' + (DV.n > 1 ? '⚠️ файлов за месяц ' + DV.n + ', ни один не выбран — посчитано по последнему загруженному. ' : 'файл не подтверждён. ') + 'Выбрать: 📋 Посещение → «Применить».</div>';
               x += otTable(T, T.conf || {}, mn, op);
               // внизу — «✅ Подтвердить» (только руководитель, доступ сотрудников к таблице не важен)
-              if (T.confirm) x += isAdmin ? '<div class="ivbar"><button class="btn2" id="zpunconf">↩ Снять подтверждение за ' + esc(mn.toLowerCase()) + '</button></div>' : '';
-              else x += isAdmin ? '<div class="zpconf"><b>Подтверждение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>после проверки таблицы; после подтверждения месяц закрывается, долги начинаются со следующего месяца</small>' +
+              if (ED) x += isAdmin ? '<div class="zpconf ed"><b>Подтвердить изменения за ' + esc(mn.toLowerCase()) + '</b><small>сохранится версия ' + ((CF.ver || 1) + 1) + ' и список, у кого и что изменилось; прежние версии останутся в истории</small>' +
+                '<button class="go" id="zpconfgo">✅ Подтвердить изменения</button><button class="btn2" id="zpeditx" style="margin-top:8px;width:100%">Отменить изменение (остаётся версия ' + (CF.ver || 1) + ')</button></div>'
+                : '<div class="note">✏️ Руководитель изменяет зарплату за ' + esc(mn.toLowerCase()) + '.</div>';
+              else if (CF) x += isAdmin ? '<div class="ivbar" style="flex-wrap:wrap;gap:8px"><button class="go" id="zpedit">✏️ Изменить подтверждённую зарплату</button><button class="btn2" id="zpunconf">↩ Снять подтверждение</button></div>' : '';
+              if (CF && (CF.versions || []).length) x += '<div class="msec" style="margin-top:10px">🗂 ВЕРСИИ ЗАРПЛАТЫ · ' + esc(mn.toUpperCase()) + '</div>' + CF.versions.slice().reverse().map(function (v) {
+                var NM = { grand: 'общая сумма', card: 'на карту', rest: 'остаток', debt: 'удержание долга' };
+                return '<div class="zlog"><b>' + (v.ver === CF.ver && !ED ? '✅ ' : '🗄 ') + 'Версия ' + v.ver + '</b> · ' + esc(v.by) + ' · ' + esc(v.at) + ' · общая сумма <b>' + fmtq((v.total || {}).grand || 0) + '</b>' +
+                  (v.ver === 1 ? '<br><small>первое подтверждение</small>' : !(v.changes || []).length ? '<br><small>суммы не изменились</small>' :
+                    '<br><small>изменилось у ' + v.changes.length + ' чел.:</small>' + v.changes.map(function (c) {
+                      return '<br>• ' + esc(c.who) + ': ' + Object.keys(c.ch).map(function (k) { return NM[k] + ' ' + fmtq(c.ch[k][0]) + ' → <b>' + fmtq(c.ch[k][1]) + '</b>'; }).join(', '); }).join('')) + '</div>';
+              }).join('');
+              if (!CF) x += isAdmin ? '<div class="zpconf"><b>Подтверждение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>после проверки таблицы; после подтверждения месяц закрывается, долги начинаются со следующего месяца</small>' +
                 '<button class="go" id="zpconfgo">✅ Подтвердить зарплату за ' + esc(mn.toLowerCase()) + '</button></div>'
                 : '<div class="note">⏳ Зарплата за ' + esc(mn.toLowerCase()) + ' ещё не подтверждена руководителем.</div>';
               x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
@@ -4551,8 +4568,12 @@
               return { sid: p.sid, who: p.who, grand: g, card: p.card != null ? p.card : null, rest: p.card != null ? g - p.card : null, debt: p.debt_due || 0,
                        spec2: +p.spec2 || 0, pay: zpPay(p, T) }; });   // 25.11.2026: спец. без посещения и к выдаче
             var sum = function (k) { return snap.reduce(function (a, x) { return a + (+x[k] || 0); }, 0); };
+            var C0 = T.confirm;
+            if (C0 && C0.editing) return cfSend({ act: 'confirm', snap: snap }, 'Подтвердить изменения за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '? Будет версия ' + ((C0.ver || 1) + 1) + '.\nОбщая сумма: ' + fmtq((C0.total || {}).grand || 0) + ' → ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')));
             cfSend({ act: 'confirm', snap: snap }, 'Подтвердить зарплату за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '?\nОбщая сумма: ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')) + '\nСпец. без посещения: ' + fmtq(sum('spec2')) + '\nК выдаче: ' + fmtq(sum('pay')) + '\nПосле подтверждения месяц закрывается.');
           };
+          if ($('zpedit')) $('zpedit').onclick = function () { cfSend({ act: 'edit' }, 'Изменить подтверждённую зарплату? Месяц откроется для исправлений; после «Подтвердить изменения» сохранится новая версия, прежняя останется в истории.'); };
+          if ($('zpeditx')) $('zpeditx').onclick = function () { cfSend({ act: 'cancel' }, 'Отменить изменение? Месяц снова закроется на прежней версии (сделанные исправления табеля останутся — их видно в таблице).'); };
           if ($('zpunconf')) $('zpunconf').onclick = function () { cfSend({ act: 'undo' }, 'Снять подтверждение? Месяц снова откроется для исправлений.'); };
           Array.prototype.forEach.call(Z.querySelectorAll('[data-ow]'), function (el) { el.onclick = function () { var w = el.getAttribute('data-ow'); op[w] = !op[w]; paint(); }; });
           if (st.T && st.T.ok) otFixBind(Z, st.T, function (q) { if (q !== st.T) st.T = q; var y0 = window.scrollY; paint(); window.scrollTo(0, y0); });   // 25.11.2026: ручные правки табеля
@@ -4593,6 +4614,7 @@
   // 24.11.2026 (руководитель «Да, делай»): 💵 Расчёт зарплаты завода → 👔 Должности. Сотрудники завода (ведомость Камола,
   // Face ID — новые сами, 1С поиском, вручную); должность пишется своими словами + дата начала; смена — новой строкой,
   // старая остаётся в истории с датами. Позже — бонусы по должностям.
+  var ZP_FIRST = '2026-10';   // 25.11.2026 (руководитель): первый месяц расчёта зарплаты и посещения
   var zsF = '*', zsOpen = {}, zsAdd = '', zsQ = '', zsFix = {}, zsOrd = null;
   // цвет должности: у каждой должности свой цвет (по порядку списка должностей, разные — разными цветами); [текст, фон плашки]
   var ZS_PAL = [['#1f62c9', '#e3eeff'], ['#17964a', '#ddf5e6'], ['#c46a00', '#fff0dc'], ['#7f39ad', '#f1e4fa'], ['#c0285e', '#ffe3ee'],
@@ -4679,6 +4701,8 @@
         if (p.next) sub += ' · ⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
         if (D.sal_ok && !p.gone_now) sub += p.cur_sal ? '<span class="zsm">💵 ' + fmtq(p.cur_sal) + ' сум/мес</span>' : '<span class="zsm n">💵 зарплата не вписана</span>';
         if (p.gone && !p.gone_now) sub += ' · 🚪 увольнение с ' + dd(p.gone.from);
+        // 25.11.2026 (руководитель): стаж — сумма всех периодов работы; вернулся — какой раз
+        if (p.tenure) sub += '<span class="zsm" style="color:#1565c0">🕐 ' + (p.gone_now ? 'проработал ' : 'стаж ') + esc(p.tenure) + (p.times > 1 ? ' · ' + p.times + '-й раз' : '') + '</span>';
         var r = (p.gone_now && zsF === '*' && !goneHdr ? (goneHdr = true, '<div class="msec" style="color:#c62828">🚪 УВОЛЕНЫ · ' + gone.length + '</div>') : '') +
           '<div class="zsc' + (p.gone_now ? ' x' : '') + (op ? ' op' : '') + '" style="--zc:' + col + '"><div class="zsr" data-zo="' + p.id + '">' +
           '<span class="zsn">' + (p.no || '—') + '</span><div class="zsb"><div class="zsh"><span class="zsnm">' + esc(p.name) + '</span>' + pill + '</div>' +
@@ -4690,7 +4714,12 @@
             '<div class="note" style="margin:6px 0">В табеле и таблице зарплаты он есть за месяцы, когда ещё работал (до даты увольнения). С месяца после увольнения — не показывается.</div>' +
             '<small class="zl">Другая дата увольнения</small><input class="txt" type="date" data-zgd="' + p.id + '" value="' + p.gone.from + '" style="width:100%;margin:4px 0">' +
             '<button class="go" data-zgfix="' + p.id + '" style="width:100%;margin:2px 0 8px">💾 Изменить дату увольнения</button>' +
-            '<button class="sm" data-zback="' + p.id + '" style="width:100%;margin:0">↩️ Отменить увольнение (работает дальше)</button></div>';
+            '<button class="sm" data-zback="' + p.id + '" style="width:100%;margin:0 0 10px">↩️ Отменить увольнение (ошибка — работает дальше)</button>' +
+            // 25.11.2026 (руководитель): вернулся на работу — новый период, прежний остаётся в истории
+            '<div class="msec" style="margin:4px 0 6px;color:#17964a">🔁 СНОВА ПРИНЯТЬ НА РАБОТУ</div>' +
+            '<small class="zl">С какого числа</small><input class="txt" type="date" data-zrhd="' + p.id + '" value="' + D.today + '" style="width:100%;margin:4px 0">' +
+            '<small class="zl">Должность (пусто — как была: ' + esc(last ? last.title : '—') + ')</small><input class="txt" list="zstl" data-zrht="' + p.id + '" placeholder="' + esc(last ? last.title : 'Напишите должность') + '" style="width:100%;margin:4px 0">' +
+            '<button class="go" data-zrh="' + p.id + '" style="width:100%;margin:2px 0 0">🔁 Снова принять</button></div>';
         }
         if (op) {
           if (!p.gone_now) r += '<div style="margin-top:8px"><small class="zl">' + (p.pos.length ? '🔄 Сменить должность (прежняя останется в истории)' : '👔 Должность') + '</small>' +
@@ -4707,6 +4736,23 @@
               '<br><small>' + esc(x.by) + ' · ' + esc(x.at) + '</small> <button class="sm" data-fx="' + p.id + ':' + x.id + '">✏️</button>' +
               (D.admin ? ' <button class="sm" data-fdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
           }).join('') || '<div class="empty" style="padding:8px">Должность ещё не вписана</div>');
+          // 25.11.2026 (руководитель): история работы — принят / уволен / снова принят; даты можно уточнить, стаж считается сам
+          var em = p.emp || [];
+          r += '<div class="zssal" style="border-color:#90caf9"><div class="msec" style="margin:0 0 6px;color:#1565c0">🕐 ИСТОРИЯ РАБОТЫ · СТАЖ ' + esc((p.tenure || '—').toUpperCase()) + '</div>' +
+            em.slice().reverse().map(function (e) {
+              var k = p.id + ':' + e.id, i = em.indexOf(e) + 1, isLast = e === em[em.length - 1];
+              if (zsFix['e' + k]) return '<div class="zlog" style="display:block"><small class="zl">Принят</small><input class="txt" type="date" data-efr="' + k + '" value="' + e.from + '" style="width:100%;margin-bottom:4px">' +
+                '<small class="zl">Последний рабочий день' + (isLast ? ' (пусто — работает)' : '') + '</small><input class="txt" type="date" data-eto="' + k + '" value="' + (e.to || '') + '" style="width:100%;margin-bottom:4px">' +
+                '<button class="sm" data-eok="' + k + '">💾 Исправить</button><button class="sm" data-ecx="' + k + '">Отмена</button></div>';
+              return '<div class="zlog">' + (e.to ? '🗄 ' : '✅ ') + '<b>' + i + '-й раз</b> · принят <b>' + dd(e.from) + '</b>' + (e.auto ? ' <small>(по первой должности — уточните)</small>' : '') +
+                ' → ' + (e.to ? 'уволен, последний день <b>' + dd(e.to) + '</b>' : '<b>работает</b>') + ' · ' + esc(e.len || '') +
+                '<button class="sm" data-efx="' + k + '">✏️</button>' + (D.admin && !isLast ? '<button class="sm" data-edel="' + k + '">🗑</button>' : '') + '</div>';
+            }).join('') +
+            (zsFix['ea' + p.id] ? '<div class="zlog" style="display:block"><b>➕ Прошлый период работы</b><small class="zl">Принят</small><input class="txt" type="date" data-eafr="' + p.id + '" style="width:100%;margin-bottom:4px">' +
+              '<small class="zl">Последний рабочий день</small><input class="txt" type="date" data-eato="' + p.id + '" style="width:100%;margin-bottom:4px">' +
+              '<button class="sm" data-eaok="' + p.id + '">💾 Добавить</button><button class="sm" data-eacx="' + p.id + '">Отмена</button></div>'
+              : '<button class="sm" data-ea="' + p.id + '" style="margin-top:4px">➕ Добавить прошлый период (работал раньше)</button>') +
+            '<div class="note" style="margin:6px 0 0">Стаж — сумма всех периодов и растёт сам каждый день. Уточните дату первого приёма «✏️».</div></div>';
           if (D.sal_ok) {   // 24.11.2026 (руководитель): зарплата на руку в месяц за полный рабочий месяц, с историей
             var sl = p.sal || [];
             r += '<div class="zssal"><div class="msec" style="margin:0 0 6px;color:#17964a">💵 ЗАРПЛАТА НА РУКУ В МЕСЯЦ</div>' +
@@ -4821,6 +4867,26 @@
         b.onclick = function () { var id = b.getAttribute('data-zgfix'), d = B.querySelector('[data-zgd="' + id + '"]').value;
           if (!d) return say('Укажите дату.');
           send({ act: 'gonefix', id: id, from: d }, nm(id) + ' — уволен с ' + dd(d) + '?', D); };
+      });
+      // 25.11.2026 (руководитель): история работы — снова принять, исправить/добавить/удалить период
+      all('[data-zrh]', function (b) {
+        b.onclick = function () { var id = b.getAttribute('data-zrh'), d = B.querySelector('[data-zrhd="' + id + '"]').value, t = B.querySelector('[data-zrht="' + id + '"]').value.trim();
+          if (!d) return say('Укажите дату приёма.');
+          send({ act: 'rehire', id: id, from: d, title: t }, nm(id) + ' — снова принят с ' + dd(d) + (t ? ', «' + t + '»' : '') + '? Прежняя работа останется в истории.', D); };
+      });
+      all('[data-efx]', function (b) { b.onclick = function () { zsFix['e' + b.getAttribute('data-efx')] = 1; draw(D); }; });
+      all('[data-ecx]', function (b) { b.onclick = function () { delete zsFix['e' + b.getAttribute('data-ecx')]; draw(D); }; });
+      all('[data-eok]', function (b) {
+        b.onclick = function () { var k = b.getAttribute('data-eok'), f = B.querySelector('[data-efr="' + k + '"]').value, t = B.querySelector('[data-eto="' + k + '"]').value;
+          send({ act: 'empfix', id: k.split(':')[0], row: k.split(':')[1], from: f, to: t }, 'Период работы: ' + dd(f) + ' — ' + (t ? dd(t) : 'работает') + '. Сохранить?', D); };
+      });
+      all('[data-edel]', function (b) { b.onclick = function () { var k = b.getAttribute('data-edel'); send({ act: 'empdel', id: k.split(':')[0], row: k.split(':')[1] }, 'Удалить этот период работы (ошибочный)?', D); }; });
+      all('[data-ea]', function (b) { b.onclick = function () { zsFix['ea' + b.getAttribute('data-ea')] = 1; draw(D); }; });
+      all('[data-eacx]', function (b) { b.onclick = function () { delete zsFix['ea' + b.getAttribute('data-eacx')]; draw(D); }; });
+      all('[data-eaok]', function (b) {
+        b.onclick = function () { var id = b.getAttribute('data-eaok'), f = B.querySelector('[data-eafr="' + id + '"]').value, t = B.querySelector('[data-eato="' + id + '"]').value;
+          if (!f || !t) return say('Нужны обе даты.');
+          send({ act: 'empadd', id: id, from: f, to: t }, 'Добавить период работы ' + dd(f) + ' — ' + dd(t) + '?', D); };
       });
       all('[data-zdelp]', function (b) { b.onclick = function () { send({ act: 'delperson', id: b.getAttribute('data-zdelp') }, 'Убрать ' + nm(b.getAttribute('data-zdelp')) + ' из списка?', D); }; });
       all('[data-zren]', function (b) {
