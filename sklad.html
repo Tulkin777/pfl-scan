@@ -1279,9 +1279,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'cd5b8eba', newBuild = '';
+  var BUILD = 'e264bfa6', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795587844' || 0;
+  var BUILD_AT = +'1795589143' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4507,7 +4507,9 @@
         // ниже таблица; «⬅ Назад» с месяцев — снова к годам. Открывается сразу на текущем месяце.
         var MONN = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], op = {};
         var now = new Date(), curY = String(now.getFullYear()), curM = curY + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
-        var st = { step: 'm', y: curY, m: curM < ZP_FIRST ? ZP_FIRST : curM, T: null };
+        // 25.11.2026 (руководитель): сразу первый месяц, где зарплата ещё не подтверждена (сейчас — октябрь)
+        var m0 = D.zp_open && D.zp_open >= ZP_FIRST ? D.zp_open : (curM < ZP_FIRST ? ZP_FIRST : curM);
+        var st = { step: 'm', y: m0.slice(0, 4), m: m0, T: null };
         // 25.11.2026 (руководитель): годы — с 2026 по текущий (2027 появится сам в январе, со всеми месяцами)
         function zYears() { var a = []; for (var y = 2026; y <= Math.max(2026, +curY); y++) a.push(String(y)); return a; }
         function paint() {
@@ -4916,7 +4918,7 @@
       zbMonth = D.month;
       var y0 = window.scrollY;
       var ms = [];
-      for (var k = '2026-11'; k <= D.cur; ) { ms.push(k); var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } k = y + '-' + (m < 10 ? '0' : '') + m; }
+      ms = D.bmonths || [D.month];   // 25.11.2026 (руководитель): с октября 2026; подтверждённый месяц зарплаты — убран
       var mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
       var RP = (D.rates || {}).pos || {};
       var h = '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.map(function (k) {
@@ -5234,7 +5236,7 @@
         '<label class="zck big"><input type="checkbox" data-otm="' + D.next_month + '"> со следующего</label></div><div class="ivbar"><button class="go" id="otsave">💾 Сохранить правила</button></div>' +
         '<div class="note" style="margin-top:0">Сверхурочно: в рабочий день — приход раньше ' + esc(C.start) + ' и уход позже ' + esc(C.end) + '; в нерабочий день (' +
         esc(WDN.filter(function (n, i) { return wk.indexOf(i) < 0; }).join(', ') || 'нет') + ') и в праздники — всё время от входа до выхода. День без отметки выхода — не считается.</div>';
-      h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + (D.months.length ? D.months : [D.month]).map(function (k) {
+      h += '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ((D.bmonths && D.bmonths.length) ? D.bmonths : [D.month]).map(function (k) {   // 25.11.2026: без подтверждённых
         return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-om="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
       if (!D.have) {
         h += '<div class="empty">Отчёта посещения за ' + esc(mname.toLowerCase()) + ' ещё нет. Загрузите: 💵 Расчёт зарплаты → 📋 Посещение → 📎 Загрузить.</div>';
@@ -5295,7 +5297,7 @@
       zqMonth = D.month;
       var y0 = window.scrollY, mname = MONN[+D.month.slice(5, 7)] + ' ' + D.month.slice(0, 4);
       var ms = [];
-      for (var k = '2026-11'; k <= D.cur; ) { ms.push(k); var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } k = y + '-' + (m < 10 ? '0' : '') + m; }
+      ms = D.bmonths || [D.month];   // 25.11.2026 (руководитель): с октября 2026; подтверждённый месяц зарплаты — убран
       var h = '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.map(function (k) {
         return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-qm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
       h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>без брака и замечаний · ' + esc(mname.toLowerCase()) + (D.base_total !== D.total ? ' · без снижений было бы ' + fmtq(D.base_total) : '') + '</span></div>';
@@ -5374,7 +5376,8 @@
       var ms = [];
       var nxt = function (k) { var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } return y + '-' + (m < 10 ? '0' : '') + m; };
       var last = nxt(D.cur > D.month ? D.cur : D.month);   // октябрь 2026 … следующий месяц
-      for (var k = '2026-10'; k <= last; k = nxt(k)) ms.push(k);
+      ms = (D.bmonths || []).filter(function (k) { return k <= last; });   // 25.11.2026: без подтверждённых месяцев
+      if (!ms.length) ms = [D.month];
       var h = '<div class="crt-l">Месяц</div><div class="crt-g gr">' + ms.map(function (k) {
         return '<div class="cg' + (k === D.month ? ' on' : '') + '" data-pm="' + k + '">' + esc(MONN[+k.slice(5, 7)]) + '<small>' + k.slice(0, 4) + '</small></div>'; }).join('') + '</div>';
       h += '<div class="zisum"><b>' + fmtq(D.total) + ' сум</b><span>' + KT + ' · ' + esc(mname) + ' · ' + D.n + ' шт</span></div>';
