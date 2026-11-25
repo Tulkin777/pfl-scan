@@ -642,6 +642,7 @@
   .zpf { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; }
   .zpf .nn { min-width: 20px; text-align: center; font-weight: 800; color: var(--hint); font-size: 13px; }
   .zpf .t { flex: 1; min-width: 0; } .zpf .t b { display: block; font-size: 15px; text-transform: capitalize; } .zpf .t small { color: var(--hint); font-size: 12px; }
+  .zsgone { margin-top: 8px; background: #fff0f0; color: #3a1414; border: 2px solid #f2b8b8; border-radius: 12px; padding: 8px 10px; } .zsgone small { color: #8a5a5a; }
   /* 25.11.2026: 📋 Посещение — применённый отчёт месяца */
   .dvm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 6px; max-width: 860px; } .dvm b { font-size: 15px; }
   .dvst { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: var(--bg2); color: var(--hint); }
@@ -1276,9 +1277,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f3c4fdb6', newBuild = '';
+  var BUILD = '318d291f', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795585566' || 0;
+  var BUILD_AT = +'1795586522' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4665,10 +4666,13 @@
         var op = zsOpen[p.id];
         // 24.11.2026 (руководитель): карточка — № по порядку должностей, имя и должность рядом цветной плашкой; уволенные — красным
         var last = p.pos.length ? p.pos[p.pos.length - 1] : null;
+        var lastDay = '';   // 25.11.2026: последний рабочий день уволенного (день до даты увольнения)
+        if (p.gone) { var lx = new Date(p.gone.from + 'T12:00:00'); lx.setDate(lx.getDate() - 1);
+          lastDay = dd(lx.getFullYear() + '-' + ('0' + (lx.getMonth() + 1)).slice(-2) + '-' + ('0' + lx.getDate()).slice(-2)); }
         var col = p.gone_now ? '#c62828' : p.cur ? zsCol(p.cur, 1) : '#9aa3b5';
         var pill = p.gone_now ? '<span class="zsp zsx">🚪 Уволен · ' + dd(p.gone.from) + '</span>'
           : p.cur ? '<span class="zsp" style="' + zsCol(p.cur) + '">' + esc(p.cur) + '</span>' : '<span class="zsp zs0">🆕 без должности</span>';
-        var sub = p.gone_now ? (last ? 'был: <b>' + esc(last.title) + '</b> · ' + dd(last.from) + ' — ' + dd(last.to) : '')
+        var sub = p.gone_now ? (last ? 'был: <b>' + esc(last.title) + '</b> · ' + dd(last.from) + ' — ' + (last.to ? dd(last.to) : lastDay) : '')
           : p.cur ? 'в должности с <b>' + dd(p.cur_from) + '</b>' : (p.hint ? 'в ведомости: ' + esc(p.hint) : 'нажмите, чтобы вписать должность');
         if (p.next) sub += ' · ⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
         if (D.sal_ok && !p.gone_now) sub += p.cur_sal ? '<span class="zsm">💵 ' + fmtq(p.cur_sal) + ' сум/мес</span>' : '<span class="zsm n">💵 зарплата не вписана</span>';
@@ -4678,8 +4682,16 @@
           '<span class="zsn">' + (p.no || '—') + '</span><div class="zsb"><div class="zsh"><span class="zsnm">' + esc(p.name) + '</span>' + pill + '</div>' +
           (sub ? '<div class="zss">' + sub + '</div>' : '') + (p.c1 && p.c1 !== p.name ? '<div class="zss c">1С: ' + esc(p.c1) + '</div>' : '') + '</div>' +
           '<span class="zsv">›</span></div>';
+        if (op && p.gone) {   // 25.11.2026 (руководитель): у уволенного — изменить дату или отменить увольнение
+          r += '<div class="zsgone"><div class="msec" style="margin:0 0 6px;color:#c62828">🚪 УВОЛЬНЕНИЕ</div>' +
+            '<div>Уволен с <b>' + dd(p.gone.from) + '</b> · последний рабочий день <b>' + lastDay + '</b><br><small>' + esc(p.gone.by || '') + ' · ' + esc(p.gone.at || '') + '</small></div>' +
+            '<div class="note" style="margin:6px 0">В табеле и таблице зарплаты он есть за месяцы, когда ещё работал (до даты увольнения). С месяца после увольнения — не показывается.</div>' +
+            '<small class="zl">Другая дата увольнения</small><input class="txt" type="date" data-zgd="' + p.id + '" value="' + p.gone.from + '" style="width:100%;margin:4px 0">' +
+            '<button class="go" data-zgfix="' + p.id + '" style="width:100%;margin:2px 0 8px">💾 Изменить дату увольнения</button>' +
+            '<button class="sm" data-zback="' + p.id + '" style="width:100%;margin:0">↩️ Отменить увольнение (работает дальше)</button></div>';
+        }
         if (op) {
-          r += '<div style="margin-top:8px"><small class="zl">' + (p.pos.length ? '🔄 Сменить должность (прежняя останется в истории)' : '👔 Должность') + '</small>' +
+          if (!p.gone_now) r += '<div style="margin-top:8px"><small class="zl">' + (p.pos.length ? '🔄 Сменить должность (прежняя останется в истории)' : '👔 Должность') + '</small>' +
             '<input class="txt" list="zstl" data-zt="' + p.id + '" placeholder="Напишите должность" style="width:100%;margin:4px 0">' +
             (p.hint && !p.pos.length ? '<button class="sm" data-zh="' + p.id + '" data-v="' + esc(p.hint) + '" style="margin-bottom:6px">взять «' + esc(p.hint) + '» из ведомости</button>' : '') +
             '<small class="zl">С какого числа</small><input class="txt" type="date" data-zd="' + p.id + '" value="' + D.today + '" style="width:100%;margin:4px 0">' +
@@ -4689,7 +4701,7 @@
             if (fx) return '<div class="zlog" style="display:block"><input class="txt" data-fxt="' + p.id + ':' + x.id + '" value="' + esc(x.title) + '" style="width:100%;margin-bottom:4px">' +
               '<input class="txt" type="date" data-fxd="' + p.id + ':' + x.id + '" value="' + x.from + '" style="width:100%;margin-bottom:4px">' +
               '<button class="sm" data-fxs="' + p.id + ':' + x.id + '">💾 Исправить</button> <button class="sm" data-fxc="' + p.id + ':' + x.id + '">Отмена</button></div>';
-            return '<div class="zlog">' + (x.to ? '🗄 ' : '✅ ') + '<b style="color:' + zsCol(x.title, 1) + '">' + esc(x.title) + '</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : 'по сей день') +
+            return '<div class="zlog">' + (x.to ? '🗄 ' : '✅ ') + '<b style="color:' + zsCol(x.title, 1) + '">' + esc(x.title) + '</b> · ' + dd(x.from) + ' — ' + (x.to ? dd(x.to) : p.gone_now && lastDay ? lastDay : 'по сей день') +
               '<br><small>' + esc(x.by) + ' · ' + esc(x.at) + '</small> <button class="sm" data-fx="' + p.id + ':' + x.id + '">✏️</button>' +
               (D.admin ? ' <button class="sm" data-fdel="' + p.id + ':' + x.id + '">🗑</button>' : '') + '</div>';
           }).join('') || '<div class="empty" style="padding:8px">Должность ещё не вписана</div>');
@@ -4711,7 +4723,7 @@
               }).join('') || '<div class="empty" style="padding:6px">Зарплата ещё не вписана</div>') + '</div>';
           }
           r += '<div class="note">Откуда: ' + esc(SRC[p.src] || p.src) + (p.fid ? ' · Face ID: ' + esc(p.fid) : '') + ' · в списке с ' + dd(p.added) + '</div>';
-          r += '<div class="ivbar" style="flex-wrap:wrap;gap:6px">' + (p.gone ? '<button class="sm" data-zback="' + p.id + '">↩️ Вернуть на работу</button>'
+          r += '<div class="ivbar" style="flex-wrap:wrap;gap:6px">' + (p.gone ? ''
             : '<button class="sm red" data-zgone="' + p.id + '">🚪 Уволить с даты выше</button>') +
             '<button class="sm" data-zren="' + p.id + '">✏️ Имя</button>' +
             (D.admin && (p.src === 'manual' || p.src === '1c') ? '<button class="sm" data-zdelp="' + p.id + '">🗑 Убрать из списка</button>' : '') + '</div>' +
@@ -4802,7 +4814,12 @@
           if (!d) return say('Укажите дату выше.');
           send({ act: 'gone', id: id, from: d }, nm(id) + ' — не работает с ' + dd(d) + '?', D); };
       });
-      all('[data-zback]', function (b) { b.onclick = function () { send({ act: 'back', id: b.getAttribute('data-zback') }, nm(b.getAttribute('data-zback')) + ' снова работает?', D); }; });
+      all('[data-zback]', function (b) { b.onclick = function () { send({ act: 'back', id: b.getAttribute('data-zback') }, 'Отменить увольнение — ' + nm(b.getAttribute('data-zback')) + ' работает дальше, должность продолжается?', D); }; });
+      all('[data-zgfix]', function (b) {   // 25.11.2026: исправить дату увольнения
+        b.onclick = function () { var id = b.getAttribute('data-zgfix'), d = B.querySelector('[data-zgd="' + id + '"]').value;
+          if (!d) return say('Укажите дату.');
+          send({ act: 'gonefix', id: id, from: d }, nm(id) + ' — уволен с ' + dd(d) + '?', D); };
+      });
       all('[data-zdelp]', function (b) { b.onclick = function () { send({ act: 'delperson', id: b.getAttribute('data-zdelp') }, 'Убрать ' + nm(b.getAttribute('data-zdelp')) + ' из списка?', D); }; });
       all('[data-zren]', function (b) {
         b.onclick = function () {
@@ -5046,6 +5063,7 @@
         var op = otOpen[p.who];
             // 25.11.2026 (руководитель): ✏️ — есть ручные правки (дни или итог), ⚠️ — итог вручную не сходится с днями
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '<small class="ottarr">' + (op ? '▲' : '▼') + '</small></td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small>' +
+              (p.gone_m ? '<small style="color:#c62828;font-weight:700">🚪 уволен с ' + p.gone_m.slice(8, 10) + '.' + p.gone_m.slice(5, 7) + '.' + p.gone_m.slice(0, 4) + '</small>' : '') +   // 25.11.2026
               (p.nfix || p.shift_fix ? '<small class="fxm">✏️ вручную' + (p.nfix ? ': ' + p.nfix + ' дн.' : '') + (p.shift_fix ? ' · итог' : '') + '</small>' : '') + '</td>' +
               (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц' + (zpAcc.zp_month >= 2 ? ' · нажмите — вписать вручную' : '') + '</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td>' +
               '<td>' + F(p.shift) + (p.shift_fix ? '<small class="fxm">✏️ вручную</small>' : '') + (p.shift_mismatch ? '<small class="neg">⚠️ по дням ' + F(p.shift_days) + '</small>' : '') + '</td>' +
