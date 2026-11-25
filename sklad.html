@@ -935,6 +935,30 @@
   .zpack > small { display: block; opacity: .7; margin: 3px 0 8px; } .zpack .go { margin-top: 8px; width: 100%; background: linear-gradient(180deg, #3d7ee0, #1f5fc0); }
   .zpak { padding: 6px 8px; border-radius: 10px; margin-top: 5px; background: #fff; } .zpak small { display: block; opacity: .7; font-size: 11px; }
   .zpak.ok { border-left: 4px solid #1c8f64; } .zpak.ch { border-left: 4px solid #f0a020; background: #fff8e8; } .zpak.no { opacity: .65; }
+  /* 25.11.2026: панель «👁 Ознакомлен | ✅ Подтверждение» — две кнопки в ряд */
+  .zpsign { margin: 14px 0 10px; padding: 12px; border-radius: 20px; background: var(--tg-theme-secondary-bg-color, #eef1f5); }
+  .zpsign .zsh { font-weight: 800; font-size: 14px; margin: 0 4px 10px; opacity: .85; }
+  .zsrow { display: flex; gap: 10px; align-items: stretch; }
+  .zsb { flex: 1 1 0; min-width: 0; border: 2px solid transparent; border-radius: 16px; padding: 12px 12px 11px; text-align: left; font: inherit; color: inherit;
+         display: flex; flex-direction: column; gap: 3px; background: #fff; transition: transform .1s ease, box-shadow .15s ease, filter .15s; -webkit-tap-highlight-color: transparent; }
+  .zsb .ic { font-size: 22px; line-height: 1.1; align-self: flex-start; transform-origin: 30% 60%; } .zsb .t { font-weight: 800; font-size: 15px; line-height: 1.2; } .zsb .s { font-size: 11.5px; line-height: 1.35; opacity: .82; }
+  button.zsb { cursor: pointer; }
+  .zsb.act.ack { background: linear-gradient(180deg, #5b97f2, #2f6bd0); color: #fff; box-shadow: 0 4px 0 #1f4f9f, 0 8px 16px rgba(47,107,208,.25); }
+  .zsb.act.conf { background: linear-gradient(180deg, #34c27a, #1c9662); color: #fff; box-shadow: 0 4px 0 #137049, 0 8px 16px rgba(28,150,98,.25); }
+  .zsb.act.warn { background: linear-gradient(180deg, #ffbf47, #f09a14); color: #4a2d00; box-shadow: 0 4px 0 #b86f00, 0 8px 16px rgba(240,154,20,.25); }
+  .zsb.act:hover { filter: brightness(1.05); } .zsb.act:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .zsb.done.ack { background: #e8f0ff; border-color: #2f6bd0; color: #1f4e9a; }
+  .zsb.done.conf { background: #e4f7ed; border-color: #1c9662; color: #11663f; }
+  .zsb.warn:not(.act) { background: #fff5df; border-color: #f0a020; color: #6b4200; }
+  .zsb.wait { background: transparent; border: 2px dashed rgba(127,127,127,.35); opacity: .75; }
+  .zsb.pop .ic { animation: zsPop .5s ease; } @keyframes zsPop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .zsmore { margin: 8px 4px 0; font-size: 12px; opacity: .8; }
+  .zslinks { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .zslinks .zsl { flex: 1 1 0; width: auto; margin: 0; min-height: 0; box-shadow: none; }
+  .zsl { border: 0; background: rgba(127,127,127,.13); color: inherit; font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
+  .zsl:active { transform: translateY(1px); }
+  .zsnote { margin: 9px 4px 0; font-size: 11px; opacity: .6; }
+  @media (max-width: 360px) { .zsb { padding: 10px 9px; } .zsb .t { font-size: 13.5px; } }
   .zpconf.ed { background: #fff4dc; border: 2px solid #f0a020; color: #6b4200; }
   .zpconf small { display: block; opacity: .7; margin: 3px 0 8px; } .zpconf.ok { background: linear-gradient(135deg, #2fb36b, #1c8f64); color: #fff; } .zpconf.ok small { opacity: .9; margin-bottom: 0; }
   .ott td.no { font-size: 16px; font-weight: 800; text-align: center; } .ott td.nf { text-align: center; color: #999; font-style: italic; }
@@ -1326,9 +1350,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e5d27aa9', newBuild = '';
+  var BUILD = '7b431795', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795600967' || 0;
+  var BUILD_AT = +'1795605815' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4704,11 +4728,8 @@
               if (DV && DV.picked) x += '<div class="dvsrc ok">📋 Посещение: ✅ применён файл №' + (DV.no || '?') + ' · ' + DV.people + ' чел. · ' + DV.days + ' дн. · ' + esc(DV.by) + ' ' + esc(DV.at) + (DV.n > 1 ? ' · других файлов месяца: ' + (DV.n - 1) + ' (не используются)' : '') + '</div>';
               else if (DV && DV.have) x += '<div class="dvsrc warn">📋 Посещение: ' + (DV.n > 1 ? '⚠️ файлов за месяц ' + DV.n + ', ни один не выбран — посчитано по последнему загруженному. ' : 'файл не подтверждён. ') + 'Выбрать: 📋 Посещение → «Применить».</div>';
               x += otTable(T, T.conf || {}, mn, op);
-              // внизу — «✅ Подтвердить» (только руководитель, доступ сотрудников к таблице не важен)
-              if (ED) x += isAdmin ? '<div class="zpconf ed"><b>Подтвердить изменения за ' + esc(mn.toLowerCase()) + '</b><small>сохранится версия ' + ((CF.ver || 1) + 1) + ' и список, у кого и что изменилось; прежние версии останутся в истории</small>' +
-                '<button class="go" id="zpconfgo">✅ Подтвердить изменения</button><button class="btn2" id="zpeditx" style="margin-top:8px;width:100%">Отменить изменение (остаётся версия ' + (CF.ver || 1) + ')</button></div>'
-                : '<div class="note">✏️ Руководитель изменяет зарплату за ' + esc(mn.toLowerCase()) + '.</div>';
-              else if (CF) x += isAdmin ? '<div class="ivbar" style="flex-wrap:wrap;gap:8px"><button class="go" id="zpedit">✏️ Изменить подтверждённую зарплату</button><button class="btn2" id="zpunconf">↩ Снять подтверждение</button></div>' : '';
+              // 25.11.2026 (руководитель): внизу — одна панель, две кнопки в ряд: слева 👁 Ознакомлен (начальник завода), справа ✅ Подтверждение (руководитель); нажатая — с временем
+              x += zpSignHtml(T, mn, CF, ED);
               if (CF && (CF.versions || []).length) x += '<div class="msec" style="margin-top:10px">🗂 ВЕРСИИ ЗАРПЛАТЫ · ' + esc(mn.toUpperCase()) + '</div>' + CF.versions.slice().reverse().map(function (v) {
                 var NM = { grand: 'общая сумма', card: 'на карту', rest: 'остаток', debt: 'удержание долга' };
                 return '<div class="zlog"><b>' + (v.ver === CF.ver && !ED ? '✅ ' : '🗄 ') + 'Версия ' + v.ver + '</b> · ' + esc(v.by) + ' · ' + esc(v.at) + ' · общая сумма <b>' + fmtq((v.total || {}).grand || 0) + '</b>' +
@@ -4716,10 +4737,6 @@
                     '<br><small>изменилось у ' + v.changes.length + ' чел.:</small>' + v.changes.map(function (c) {
                       return '<br>• ' + esc(c.who) + ': ' + Object.keys(c.ch).map(function (k) { return NM[k] + ' ' + fmtq(c.ch[k][0]) + ' → <b>' + fmtq(c.ch[k][1]) + '</b>'; }).join(', '); }).join('')) + '</div>';
               }).join('');
-              if (!CF) x += isAdmin ? '<div class="zpconf"><b>Подтверждение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>после проверки таблицы; после подтверждения месяц закрывается, долги начинаются со следующего месяца</small>' +
-                '<button class="go" id="zpconfgo">✅ Подтвердить зарплату за ' + esc(mn.toLowerCase()) + '</button></div>'
-                : '<div class="note">⏳ Зарплата за ' + esc(mn.toLowerCase()) + ' ещё не подтверждена руководителем.</div>';
-              x += zpAckHtml(T, mn);   // 25.11.2026 (руководитель): 👁 «Ознакомлен» — начальник завода, ничего не меняет
               x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
             }
           }
@@ -4729,7 +4746,8 @@
           var cfSend = function (body, q_, top) {   // 25.11.2026: подтверждение / снятие — только руководитель; top — строка в начало (не обрежется)
             if (top) q_ = q_.replace('\n', '\n' + top + '\n');
             var go_ = function (yes) { if (!yes) return; body.month = st.m;
-              call('/api/zp_confirm', body, 60000).then(function (q) { if (q.ok === false) return say(q.text); haptic(q.ok_act ? 'success' : 'warning'); say(q.text); st.T = q; paint(); }).catch(ivErr); };
+              call('/api/zp_confirm', body, 60000).then(function (q) { if (q.ok === false) return say(q.text); haptic(q.ok_act ? 'success' : 'warning');
+                window._zsFresh = body.act === 'ack' ? 'ack' : body.act === 'confirm' ? 'conf' : ''; say(q.text); st.T = q; paint(); }).catch(ivErr); };
             try { tg.showConfirm(q_.slice(0, 250), go_); } catch (e) { go_(confirm(q_)); }
           };
           if ($('zpconfgo')) $('zpconfgo').onclick = function () {
@@ -5317,14 +5335,35 @@
     return (D.acks || []).map(function (k) { return { by: k.by, at: k.at, grand: +k.grand || 0, same: (+k.grand || 0) === g, now: g }; });
   }
   function zpAckLine(D) { var L = zpAckList(D); return '👁 Ознакомлен: ' + (L.length ? L.map(function (k) { return k.by.split(' ').slice(0, 2).join(' ') + (k.same ? ' ✅' : ' ⚠️ суммы изменились'); }).join(', ') : 'ещё никто'); }
-  function zpAckHtml(D, mn) {
-    var L = zpAckList(D), me = !isAdmin && zpAcc.zp_ack >= 1;
-    var h = '<div class="zpack"><b>👁 Ознакомление · ' + esc(mn.toLowerCase()) + '</b><small>начальник завода отмечает, что видел таблицу — ничего не меняется, это не подтверждение</small>';
-    h += L.length ? L.map(function (k) {
-      return '<div class="zpak ' + (k.same ? 'ok' : 'ch') + '">' + (k.same ? '✅ ' : '⚠️ ') + '<b>' + esc(k.by) + '</b> — ознакомлен ' + esc(k.at.slice(8, 10) + '.' + k.at.slice(5, 7) + ' ' + k.at.slice(11)) +
-        '<small>общая сумма тогда ' + fmtq(k.grand) + (k.same ? ' — та же, что сейчас' : ' · сейчас ' + fmtq(k.now) + ' — после ознакомления суммы изменились') + '</small></div>'; }).join('')
-      : '<div class="zpak no">⏳ ещё никто не ознакомлен</div>';
-    if (me) h += '<button class="go" id="zpackgo">👁 Ознакомлен с зарплатой за ' + esc(mn.toLowerCase()) + '</button>';
+  // 25.11.2026 (руководитель): две кнопки в один ряд — слева 👁 Ознакомлен, справа ✅ Подтверждение.
+  // Нажатая кнопка остаётся «залитой» и показывает кто и когда; чужая кнопка — пунктир «ждём».
+  function zpAt(s) { s = String(s || ''); return /^\d{4}-\d\d-\d\d/.test(s) ? s.slice(8, 10) + '.' + s.slice(5, 7) + ' в ' + s.slice(11, 16) : s; }
+  function zpWho(s) { return esc(String(s || '').split(' ').slice(0, 2).join(' ')); }
+  function zpSignHtml(D, mn, CF, ED) {
+    var L = zpAckList(D), canAck = !isAdmin && zpAcc.zp_ack >= 1, fr = window._zsFresh || ''; window._zsFresh = '';
+    var last = L.length ? L[L.length - 1] : null;
+    var b = function (cls, id, ic, t, s, pop) {
+      return '<' + (id ? 'button id="' + id + '"' : 'div') + ' class="zsb ' + cls + (pop ? ' pop' : '') + '"><span class="ic">' + ic + '</span><span class="t">' + t + '</span><span class="s">' + s + '</span></' + (id ? 'button' : 'div') + '>';
+    };
+    // слева — ознакомление
+    var A;
+    if (last && last.same) A = b('ack done', '', '👁', 'Ознакомлен', zpWho(last.by) + '<br>' + zpAt(last.at), fr === 'ack');
+    else if (last && canAck) A = b('ack warn act', 'zpackgo', '⚠️', 'Ознакомиться снова', 'суммы изменились после ' + zpAt(last.at) + '<br>было ' + fmtq(last.grand) + ' · сейчас ' + fmtq(last.now));
+    else if (last) A = b('ack warn', '', '⚠️', 'Ознакомлен — суммы изменились', zpWho(last.by) + ' · ' + zpAt(last.at) + '<br>было ' + fmtq(last.grand) + ' · сейчас ' + fmtq(last.now));
+    else if (canAck) A = b('ack act', 'zpackgo', '👁', 'Ознакомлен', 'нажмите, когда проверили таблицу');
+    else A = b('ack wait', '', '⏳', 'Ознакомление', 'начальник завода ещё не отметил');
+    // справа — подтверждение
+    var C, mnl = esc(mn.toLowerCase());
+    if (ED) C = isAdmin ? b('conf warn act', 'zpconfgo', '✏️', 'Подтвердить изменения', 'будет версия ' + ((CF.ver || 1) + 1) + ' · открыто ' + zpAt(ED.at))
+                        : b('conf warn', '', '✏️', 'Идёт изменение', 'руководитель исправляет · ' + zpAt(ED.at));
+    else if (CF) C = b('conf done', '', '✅', 'Подтверждено' + ((CF.ver || 1) > 1 ? ' · v' + CF.ver : ''), zpWho(CF.by) + '<br>' + zpAt(CF.at), fr === 'conf');
+    else if (isAdmin) C = b('conf act', 'zpconfgo', '✅', 'Подтвердить', 'зарплату за ' + mnl + ' — месяц закроется');
+    else C = b('conf wait', '', '⏳', 'Подтверждение', 'руководитель ещё не подтвердил');
+    var h = '<div class="zpsign"><div class="zsh">Зарплата за ' + mnl + '</div><div class="zsrow">' + A + C + '</div>';
+    if (L.length > 1) h += '<div class="zsmore">👁 ' + L.map(function (k) { return zpWho(k.by) + ' ' + zpAt(k.at) + (k.same ? ' ✅' : ' ⚠️'); }).join(' · ') + '</div>';
+    if (isAdmin && ED) h += '<div class="zslinks"><button class="zsl" id="zpeditx">✕ Отменить изменение (остаётся версия ' + (CF.ver || 1) + ')</button></div>';
+    else if (isAdmin && CF) h += '<div class="zslinks"><button class="zsl" id="zpedit">✏️ Изменить</button><button class="zsl" id="zpunconf">↩ Снять подтверждение</button></div>';
+    h += '<div class="zsnote">👁 — только отметка, ничего не меняет · ✅ — закрывает месяц, долги со следующего</div>';
     return h + '</div>';
   }
   function otTable(D, C, mname, otOpen) {
