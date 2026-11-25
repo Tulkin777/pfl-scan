@@ -869,6 +869,8 @@
   .ott td.cardc { color: #1f4f9a; } .ott td.cardc b { font-size: 13.5px; }
   .ott td.restc b { font-size: 13.5px; } .ott td.restc .rpos { color: #138a43; } .ott td.restc .rneg { color: #c62828; }
   .ott td.debtc { color: #c62828; } .ott td.debtc b { font-size: 13.5px; }
+  .zpconf { margin: 10px 0; padding: 12px 14px; border-radius: 14px; background: var(--tg-theme-secondary-bg-color, #eef1f5); } .zpconf b { display: block; font-size: 15px; }
+  .zpconf small { display: block; opacity: .7; margin: 3px 0 8px; } .zpconf.ok { background: linear-gradient(135deg, #2fb36b, #1c8f64); color: #fff; } .zpconf.ok small { opacity: .9; margin-bottom: 0; }
   .ott td.no { font-size: 16px; font-weight: 800; text-align: center; } .ott td.nf { text-align: center; color: #999; font-style: italic; }
   .ott td.nm { text-align: left; white-space: normal; min-width: 150px; } .ott .neg { color: #c62828; } .ott .pos { color: #1b7f3b; } .ott tr[data-ow] { cursor: pointer; }
   .ott tr.otd td { text-align: left; white-space: normal; font-size: 12px; background: rgba(0,0,0,.03); }
@@ -1258,9 +1260,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'cbfbdfc1', newBuild = '';
+  var BUILD = '6c9aed38', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795584905' || 0;
+  var BUILD_AT = +'1795585144' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4300,7 +4302,7 @@
           r += '<div class="zrf" data-pid="' + esc(p.id) + '"><small class="zl">➕ Новый долг</small>' +
             '<div class="zlinks"><input class="txt" inputmode="numeric" placeholder="сумма, сум" data-f="sum" style="width:130px">' +
             '<input class="txt" inputmode="decimal" placeholder="% в месяц" data-f="pct" style="width:100px">' +
-            '<label style="display:inline-flex;align-items:center;gap:4px"><small>с месяца</small><input class="txt" type="month" data-f="from" value="' + D.month + '" min="2026-01" style="width:150px"></label></div>' +   // 25.11.2026: удерживать с любого месяца (напр. с октября)
+            '<select class="txt" data-f="from" style="width:160px">' + (D.open_months || [D.month]).map(function (k) { return '<option value="' + k + '"' + (k === D.month ? ' selected' : '') + '>с ' + esc(mN(k)) + (k < D.cur ? ' (прошлый)' : '') + '</option>'; }).join('') + '</select></div>' +   // 25.11.2026: прошлый месяц — пока зарплата за него не подтверждена
             '<input class="txt" placeholder="примечание — за что долг" data-f="note" style="width:100%;margin-top:6px">' +
             '<div class="zlinks"><button class="go" data-zdadd="' + esc(p.id) + '">💾 Добавить долг</button></div></div>';
         }
@@ -4432,7 +4434,7 @@
           } else {
             x += '<div class="crt-l">' + st.y + ' · месяц</div><div class="crt-g gr zym6">' + MONN.slice(1).map(function (n, i) {
               var k = st.y + '-' + ('0' + (i + 1)).slice(-2);
-              return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '" title="' + esc(n) + '">' + ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i] +'<small>' + st.y + '</small></div>'; }).join('') + '</div>';
+              return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '" title="' + esc(n) + '">' + (((st.T && st.T.confirmed) || []).indexOf(k) >= 0 ? '✅ ' : '') + ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i] +'<small>' + st.y + '</small></div>'; }).join('') + '</div>';
             var T = st.T;
             if (!T) x += '<div class="spin">Считаю…</div>';
             else if (!T.ok) x += '<div class="empty">' + esc(T.text || 'Нет данных') + '</div>';
@@ -4440,13 +4442,32 @@
               var mn = MONN[+T.month.slice(5, 7)] + ' ' + T.month.slice(0, 4);
               // таблица есть всегда — бонусы месяца (за партию, без брака) видны и без отчёта посещения
               if (!T.have) x += '<div class="note" style="margin-top:0">Отчёта посещения за ' + esc(mn.toLowerCase()) + ' ещё нет — минуты появятся после загрузки (📋 Посещение → 📎 Загрузить). Бонусы месяца — уже в таблице.</div>';
+              // 25.11.2026 (руководитель): подтверждённый месяц — зелёная плашка сверху
+              if (T.confirm) x += '<div class="zpconf ok">✅ <b>Зарплата за ' + esc(mn.toLowerCase()) + ' подтверждена</b><small>' + esc(T.confirm.by) + ' · ' + esc(T.confirm.at) + ' — месяц закрыт: исправлять табель и начинать долги с этого месяца нельзя</small></div>';
               x += otTable(T, T.conf || {}, mn, op);
+              // внизу — «✅ Подтвердить» (только руководитель, доступ сотрудников к таблице не важен)
+              if (T.confirm) x += isAdmin ? '<div class="ivbar"><button class="btn2" id="zpunconf">↩ Снять подтверждение за ' + esc(mn.toLowerCase()) + '</button></div>' : '';
+              else x += isAdmin ? '<div class="zpconf"><b>Подтверждение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>после проверки таблицы; после подтверждения месяц закрывается, долги начинаются со следующего месяца</small>' +
+                '<button class="go" id="zpconfgo">✅ Подтвердить зарплату за ' + esc(mn.toLowerCase()) + '</button></div>'
+                : '<div class="note">⏳ Зарплата за ' + esc(mn.toLowerCase()) + ' ещё не подтверждена руководителем.</div>';
               x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
             }
           }
           Z.innerHTML = x;
           Array.prototype.forEach.call(Z.querySelectorAll('[data-zy]'), function (el) { el.onclick = function () { haptic('light'); st.y = el.getAttribute('data-zy'); st.step = 'm'; if (st.m.slice(0, 4) !== st.y) { st.m = ''; st.T = null; } paint(); }; });
           Array.prototype.forEach.call(Z.querySelectorAll('[data-zmo]'), function (el) { el.onclick = function () { haptic('light'); pick(el.getAttribute('data-zmo')); }; });
+          var cfSend = function (body, q_) {   // 25.11.2026: подтверждение / снятие — только руководитель
+            var go_ = function (yes) { if (!yes) return; body.month = st.m;
+              call('/api/zp_confirm', body, 60000).then(function (q) { if (q.ok === false) return say(q.text); haptic(q.ok_act ? 'success' : 'warning'); say(q.text); st.T = q; paint(); }).catch(ivErr); };
+            try { tg.showConfirm(q_.slice(0, 250), go_); } catch (e) { go_(confirm(q_)); }
+          };
+          if ($('zpconfgo')) $('zpconfgo').onclick = function () {
+            var T = st.T, snap = (T.people || []).map(function (p) { var g = zpg(p);
+              return { sid: p.sid, who: p.who, grand: g, card: p.card != null ? p.card : null, rest: p.card != null ? g - p.card : null, debt: p.debt_due || 0 }; });
+            var sum = function (k) { return snap.reduce(function (a, x) { return a + (+x[k] || 0); }, 0); };
+            cfSend({ act: 'confirm', snap: snap }, 'Подтвердить зарплату за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '?\nОбщая сумма: ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')) + '\nПосле подтверждения месяц закрывается.');
+          };
+          if ($('zpunconf')) $('zpunconf').onclick = function () { cfSend({ act: 'undo' }, 'Снять подтверждение? Месяц снова откроется для исправлений.'); };
           Array.prototype.forEach.call(Z.querySelectorAll('[data-ow]'), function (el) { el.onclick = function () { var w = el.getAttribute('data-ow'); op[w] = !op[w]; paint(); }; });
           if (st.T && st.T.ok) otFixBind(Z, st.T, function (q) { if (q !== st.T) st.T = q; var y0 = window.scrollY; paint(); window.scrollTo(0, y0); });   // 25.11.2026: ручные правки табеля
           if (st.step === 'm' && !st.m) { var c = Z.querySelector('.crt-g'); if (c) c.insertAdjacentHTML('afterend', '<div class="note" style="margin-top:0">Выберите месяц — ниже откроется таблица.</div>'); }
@@ -4915,14 +4936,15 @@
     });
     all('[data-fsr]', function (b) { b.onclick = function () { var k = b.getAttribute('data-fsr'), p = P[k] || {}; send({ act: 'shiftreset', key: k, who: p.who || '' }, (p.who || '') + ': «в смену» снова считать по дням?'); }; });
   }
+  // 25.11.2026: формулы таблицы зарплаты — общие (таблица и снимок при «✅ Подтвердить»)
+  function zpb(p) { return (+p.salary || 0) + (+p.batch || 0) + (+p.qual || 0) + (+p.spec || 0); }   // зарплата с бонусами
+  function pct1(p) { return p.norm ? Math.round(p.shift / p.norm * 1000) / 10 : 0; }   // % в смену от нормы (как на экране)
+  function zpf(p) { return Math.round(zpb(p) * pct1(p) / 100); }   // зарплата с бонусами по факту
+  function zpg(p) { return (p.nofid ? 0 : zpf(p)) + (+p.spec2 || 0) + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0) + (+p.inv_total || 0); }   // общая сумма
   function otTable(D, C, mname, otOpen) {
     var h = '';
-    var zpb = function (p) { return (+p.salary || 0) + (+p.batch || 0) + (+p.qual || 0) + (+p.spec || 0); };   // зарплата с бонусами
-    var pct1 = function (p) { return p.norm ? Math.round(p.shift / p.norm * 1000) / 10 : 0; };   // % в смену от нормы (как на экране)
-    var zpf = function (p) { return Math.round(zpb(p) * pct1(p) / 100); };   // зарплата с бонусами по факту
     // остаток: плюс — зелёный «+», минус — красный «−», ноль — 0
     var restH = function (v) { return v > 0 ? '<b class="rpos">+' + fmtq(v) + '</b>' : v < 0 ? '<b class="rneg">−' + fmtq(-v) + '</b>' : '<b>0</b>'; };
-    var zpg = function (p) { return (p.nofid ? 0 : zpf(p)) + (+p.spec2 || 0) + (p.ot_min && p.ot_rate ? Math.round(p.ot_min * p.ot_rate) : 0) + (+p.inv_total || 0); };   // общая сумма
     var IS = D.inv_sats || [];   // 24.11.2026: субботы месяца — колонки бонуса за инвентаризацию
     var TD = (function () { var t = new Date(); return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2); })();
         // 24.11.2026 (руководитель): таблица по колонкам, всё в минутах; сверху — что было в этом месяце
