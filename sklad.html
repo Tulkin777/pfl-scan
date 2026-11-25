@@ -861,6 +861,16 @@
      № и имя закреплены слева, шапка — сверху; тени у краёв показывают, что есть ещё колонки */
   /* 24.11.2026 (руководитель): месяцы — в два ряда по 6, ячейки меньше; годы — в один ряд */
   .crt-g.zym6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; } .crt-g.zym6 .cg { padding: 6px 2px; font-size: 12px; min-width: 0; } .crt-g.zym6 .cg small { font-size: 9.5px; }
+  /* 25.11.2026 (руководитель): месяцы зарплаты — цвет по подтверждению */
+  .crt-g.zym6 .cg.zms { white-space: normal; line-height: 1.2; border: 2px solid transparent; }
+  .crt-g.zym6 .cg.zms.ok { background: linear-gradient(135deg, #2fb36b, #1c8f64); color: #fff; }
+  .crt-g.zym6 .cg.zms.ok small { color: #eafff3; }
+  .crt-g.zym6 .cg.zms.no { background: #fff4dc; color: #6b4200; border-color: #f0b040; }
+  .crt-g.zym6 .cg.zms.no small { color: #a05a00; }
+  .crt-g.zym6 .cg.zms.ed { background: #ffe2a8; color: #6b4200; border-color: #f0a020; }
+  .crt-g.zym6 .cg.zms.ed small { color: #8a4b00; }
+  .crt-g.zym6 .cg.zms.on { border-color: var(--btn, #2481cc); box-shadow: 0 0 0 2px var(--btn, #2481cc) inset, 0 3px 8px rgba(0,0,0,.18); transform: translateY(-1px); }
+  .crt-g.zym6 .cg.zms.ok.on small, .crt-g.zym6 .cg.zms.ok.on { color: #fff; }
   .osg.zyy5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; } .osg.zyy5 .ob { padding: 8px 2px 7px; } .osg.zyy5 .ob i { font-size: 20px; } .osg.zyy5 .ob b { font-size: 12.5px; }
   .ottbox { position: relative; margin: 6px 0; }
   .ottw { container-type: inline-size; overflow: auto; max-height: 72vh; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); overscroll-behavior-x: contain; cursor: grab; outline: none; }
@@ -1316,9 +1326,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '2246c618', newBuild = '';
+  var BUILD = '6a01d2b6', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795598540' || 0;
+  var BUILD_AT = +'1795599079' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4660,11 +4670,13 @@
         // 25.11.2026 (руководитель): сразу первый месяц, где зарплата ещё не подтверждена (сейчас — октябрь)
         var m0 = D.zp_open && D.zp_open >= ZP_FIRST ? D.zp_open : (curM < ZP_FIRST ? ZP_FIRST : curM);
         var st = { step: 'm', y: m0.slice(0, 4), m: m0, T: null };
+        var zMs = { ok: D.zp_confirmed || [], ed: [] };   // 25.11.2026: состояние месяцев — помним, пока грузится другой месяц
         // 25.11.2026 (руководитель): годы — с 2026 по текущий (2027 появится сам в январе, со всеми месяцами)
         function zYears() { var a = []; for (var y = 2026; y <= Math.max(2026, +curY); y++) a.push(String(y)); return a; }
         function paint() {
           var Z = $('zptab'); if (!Z || cur !== me) return;
           var x = '';
+          if (st.T && st.T.confirmed) zMs = { ok: st.T.confirmed, ed: st.T.editing || [] };
           if (st.step === 'y') {
             x += '<div class="crt-l">Год</div><div class="osg zyy5">' + zYears().map(function (y, i) {
               return '<div class="ob ' + ['c1', 'c3', 'c4', 'c2', 'c7'][i] + (y === st.y ? ' on' : '') + '" data-zy="' + y + '"><i>📅</i><b>' + y + '</b></div>'; }).join('') + '</div>';
@@ -4673,7 +4685,10 @@
             x += '<div class="crt-l">' + st.y + ' · месяц</div><div class="crt-g gr zym6">' + MONN.slice(1).map(function (n, i) {
               var k = st.y + '-' + ('0' + (i + 1)).slice(-2);
               if (k < ZP_FIRST) return '';   // 25.11.2026 (руководитель): 2026 — только октябрь, ноябрь, декабрь
-              return '<div class="cg' + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '" title="' + esc(n) + '">' + (((st.T && st.T.confirmed) || []).indexOf(k) >= 0 ? '✅ ' : '') + ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i] +'<small>' + st.y + '</small></div>'; }).join('') + '</div>';
+              // 25.11.2026 (руководитель): цвет кнопки — ✅ подтверждён (зелёный) · ✏️ изменяется (жёлтый) · ⏳ не подтверждён
+              var zs = zMs.ed.indexOf(k) >= 0 ? 'ed' : zMs.ok.indexOf(k) >= 0 ? 'ok' : k <= curM ? 'no' : '';
+              var zt = { ok: '✅ подтверждён', ed: '✏️ изменяется', no: '⏳ не подтверждён' }[zs] || st.y;
+              return '<div class="cg zms ' + zs + (k === st.m ? ' on' : '') + '" data-zmo="' + k + '" title="' + esc(n + (zs ? ' — ' + zt.slice(2) : '')) + '">' + ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i] + ' ' + st.y + '<small>' + zt + '</small></div>'; }).join('') + '</div>';
             var T = st.T;
             if (!T) x += '<div class="spin">Считаю…</div>';
             else if (!T.ok) x += '<div class="empty">' + esc(T.text || 'Нет данных') + '</div>';
