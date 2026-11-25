@@ -648,7 +648,7 @@
   .wdnone { background: #e8f1ff; color: #123a73; border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-weight: 700; max-width: 860px; }
   .wdp { display: flex; align-items: center; gap: 8px; border-radius: 12px; padding: 8px 10px; margin: 0 0 6px; max-width: 860px; border-left: 5px solid; color: #1b1b1b; }
   .wdp.wdf { background: #e7f8ec; border-color: #22a559; } .wdp.wdh { background: #fff4dd; border-color: #e39a12; } .wdp.wdo { background: #eef1f6; border-color: #8a94a6; }
-  .wdn { flex: 1; min-width: 0; } .wdn b { display: block; font-size: 15px; } .wdn small { display: block; font-size: 12px; color: #5b6474; } .wdn .wdw { color: #34507a; }
+  .wdn { flex: 1; min-width: 0; } .wdn b { display: block; font-size: 15px; } .wdn small { display: block; font-size: 12px; color: #5b6474; } .wdn .wdw { color: #34507a; } .wdn .wdy { color: #6b3f00; font-style: italic; }
   .wdhr { width: 78px; text-align: right; } .wdhr b { font-size: 15px; } .wdhr small { display: block; font-size: 11px; color: #8a5a00; }
   .wdbar { height: 6px; border-radius: 4px; background: rgba(0,0,0,.08); margin-top: 4px; overflow: hidden; } .wdbar i { display: block; height: 100%; background: #22a559; }
   .wdp.wdh .wdbar i { background: #e39a12; }
@@ -1294,9 +1294,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '0f986616', newBuild = '';
+  var BUILD = '8cc0974b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795591331' || 0;
+  var BUILD_AT = +'1795591810' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4437,7 +4437,8 @@
         var L = R.people.filter(function (p) { return p.kind === k; }); if (!L.length) return;
         x += '<div class="msec ' + K[k][1] + 't">' + K[k][0] + ' · ' + L.length + '</div>' + L.map(function (p) {
           return '<div class="wdp ' + K[k][1] + '"><div class="wdn"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || 'без должности') + '</small>' +
-            (p.what.length ? '<small class="wdw">' + esc(p.what.join(' · ')) + '</small>' : '') + '</div>' +
+            (p.what.length ? '<small class="wdw">' + esc(p.what.join(' · ')) + '</small>' : '') +
+            (p.why ? '<small class="wdy">↳ ' + esc(p.why) + '</small>' : '') + '</div>' +   // 25.11.2026: почему
             '<div class="wdhr"><b>' + (k === 'home' ? 'дома' : fmtq(p.h) + ' ч') + '</b>' + (k === 'half' ? '<small>до ' + esc(p.until) + '</small>' : '') +
             '<div class="wdbar"><i style="width:' + Math.min(100, Math.round(p.h / R.shift_h * 100)) + '%"></i></div></div></div>';
         }).join('');
