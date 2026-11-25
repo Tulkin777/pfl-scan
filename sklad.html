@@ -1258,9 +1258,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6f041999', newBuild = '';
+  var BUILD = 'cbfbdfc1', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795582045' || 0;
+  var BUILD_AT = +'1795584905' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4300,7 +4300,7 @@
           r += '<div class="zrf" data-pid="' + esc(p.id) + '"><small class="zl">➕ Новый долг</small>' +
             '<div class="zlinks"><input class="txt" inputmode="numeric" placeholder="сумма, сум" data-f="sum" style="width:130px">' +
             '<input class="txt" inputmode="decimal" placeholder="% в месяц" data-f="pct" style="width:100px">' +
-            '<select class="txt" data-f="from" style="width:150px"><option value="' + D.month + '">с ' + esc(mN(D.month)) + '</option><option value="' + nx(D.month) + '">с ' + esc(mN(nx(D.month))) + '</option></select></div>' +
+            '<label style="display:inline-flex;align-items:center;gap:4px"><small>с месяца</small><input class="txt" type="month" data-f="from" value="' + D.month + '" min="2026-01" style="width:150px"></label></div>' +   // 25.11.2026: удерживать с любого месяца (напр. с октября)
             '<input class="txt" placeholder="примечание — за что долг" data-f="note" style="width:100%;margin-top:6px">' +
             '<div class="zlinks"><button class="go" data-zdadd="' + esc(p.id) + '">💾 Добавить долг</button></div></div>';
         }
