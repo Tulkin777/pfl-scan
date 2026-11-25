@@ -1258,9 +1258,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd4bc4457', newBuild = '';
+  var BUILD = '6f041999', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795581475' || 0;
+  var BUILD_AT = +'1795582045' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4853,7 +4853,7 @@
   // вручную. Отчёт посещения не меняется: правки лежат отдельно и накладываются поверх (miniapp/zp_fix.json).
   var otFixEd = {};
   function otDaysHtml(p, D) {
-    var F = function (n) { return fmtq(n || 0); }, A = isAdmin, h = '';
+    var F = function (n) { return fmtq(n || 0); }, A = zpAcc.zp_month >= 2, h = '';   // 25.11.2026: исправлять — «✋» табеля месяца (не только руководитель)
     var ST = { noout: '<span class="neg">нет выхода</span>', absent: '<span class="neg">не пришёл</span>', weekend: '📅 выходной', off: '—' };
     h += '<div class="otdt"><table><thead><tr><th>№</th><th>Дата</th><th>Вход</th><th>Выход</th><th>В смену</th><th>Сверх.</th><th>Опозд.</th><th></th></tr></thead><tbody>' +
       (p.table || []).map(function (t) {
@@ -4877,7 +4877,7 @@
     return h;
   }
   function otFixBind(Z, D, redraw) {   // кнопки правок под таблицей; redraw(новый ответ /api/zp_ot)
-    if (!isAdmin || !D || !D.people) return;
+    if (!(zpAcc.zp_month >= 2) || !D || !D.people) return;
     var P = {}; D.people.forEach(function (p) { P[p.key] = p; });
     var all = function (s, f) { Array.prototype.forEach.call(Z.querySelectorAll(s), f); };
     var send = function (body, ask) {
@@ -4941,7 +4941,7 @@
             // 25.11.2026 (руководитель): ✏️ — есть ручные правки (дни или итог), ⚠️ — итог вручную не сходится с днями
             return '<tr data-ow="' + esc(p.who) + '"><td class="no">' + (p.no || i + 1) + '<small class="ottarr">' + (op ? '▲' : '▼') + '</small></td><td class="nm"><b>' + esc(p.who) + '</b><small>' + esc(p.pos || '') + '</small>' +
               (p.nfix || p.shift_fix ? '<small class="fxm">✏️ вручную' + (p.nfix ? ': ' + p.nfix + ' дн.' : '') + (p.shift_fix ? ' · итог' : '') + '</small>' : '') + '</td>' +
-              (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц' + (isAdmin ? ' · нажмите — вписать вручную' : '') + '</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td>' +
+              (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц' + (zpAcc.zp_month >= 2 ? ' · нажмите — вписать вручную' : '') + '</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td>' +
               '<td>' + F(p.shift) + (p.shift_fix ? '<small class="fxm">✏️ вручную</small>' : '') + (p.shift_mismatch ? '<small class="neg">⚠️ по дням ' + F(p.shift_days) + '</small>' : '') + '</td>' +
               '<td class="' + (p.diff < 0 ? 'neg' : '') + '">' + (p.diff < 0 ? '−' + F(-p.diff) : '0') + '</td><td class="' + (p.late ? 'neg' : '') + '">' + F(p.late) + '</td>' +
               '<td>' + F(p.min) + '<small>' + F(p.m) + ' + ' + F(p.e) + ' + ' + F(p.w) + '</small></td><td class="pos"><b>' + F(p.net) + '</b></td>') + (C.hour ? '<td><b>' + fmtq(p.sum) + '</b></td>' : '') +
