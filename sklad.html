@@ -377,6 +377,28 @@
   .mvbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
            background: var(--tg-theme-bg-color, #fff); box-shadow: 0 -4px 14px rgba(0,0,0,.12); }
   .mvbar > div { flex: 1; min-width: 0; line-height: 1.2; }
+  /* 25.11.2026 (руководитель): «➕ Создать приход» — склад → от кого → товары по виду → № ордера */
+  .incadd { margin: 2px 0 12px; background: linear-gradient(150deg, #8fd16a, #3f9a2a) !important; box-shadow: 0 4px 0 #2c6e1d !important; }
+  .incst { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 6px; }
+  .incst .mvs { font-weight: 800; font-size: 13.5px; }
+  .incst .mvs small { display: block; font-size: 11px; font-weight: 700; opacity: .75; }
+  .incgr { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .incgr .mvs { flex: 1 1 auto; padding: 9px 10px; font-weight: 800; font-size: 13.5px; }
+  .incwho { max-height: 46vh; overflow-y: auto; margin: 0 0 8px; border-radius: 14px; background: var(--bg2, #f1f3f7); padding: 4px; }
+  .incwho div { padding: 10px 10px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .incwho div small { display: block; font-weight: 600; font-size: 11.5px; color: #6b7385; }
+  .incwho div.cl { color: #6b7385; } .incwho div.cl b { color: var(--tg-theme-text-color, #1e1e1e); }
+  .incwho div:active { background: rgba(63,154,42,.15); }
+  .incwho .hd { font-size: 11.5px; font-weight: 900; letter-spacing: .4px; color: #3f9a2a; padding: 8px 10px 2px; cursor: default; }
+  .incpick { display: flex; align-items: center; gap: 8px; background: linear-gradient(150deg, #8fd16a, #3f9a2a); color: #fff; border-radius: 14px;
+    padding: 10px 12px; margin: 0 0 10px; font-weight: 900; box-shadow: 0 4px 0 #2c6e1d; }
+  .incpick span { flex: 1; } .incpick button { width: auto; margin: 0; padding: 7px 10px; border-radius: 10px; font-size: 12.5px; background: #fff; color: #2c6e1d; }
+  .incwarn { background: #fff4d6; color: #7a5200; border-radius: 14px; padding: 10px 12px; margin: 0 0 10px; font-size: 13.5px; font-weight: 700; line-height: 1.35; }
+  .incwarn button { margin: 8px 0 0; }
+  .inci { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 6px; }
+  .inci label { display: block; font-size: 11.5px; font-weight: 800; color: #6b7385; margin: 0 0 3px; }
+  .inci input { width: 100%; height: 40px; box-sizing: border-box; text-align: center; font-size: 16px; font-weight: 900; border: 2px solid #c9d1de; border-radius: 10px; }
+  .incdoc { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 2px solid #d9dde5; font-size: 15px; margin: 0 0 8px; }
   .mvbar b { display: block; font-size: 15px; font-weight: 900; color: var(--tg-theme-text-color, #1e1e1e); }
   .mvbar small { display: block; font-size: 11.5px; color: #6b7385; font-weight: 700; line-height: 1.15; }
   .mvbar button { flex: 0 0 auto; width: auto; margin: 0; padding: 12px 14px; border-radius: 14px; font-weight: 900; font-size: 15px; color: #fff;
@@ -1385,9 +1407,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '3021e1a2', newBuild = '';
+  var BUILD = '5ac8fe4d', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795606656' || 0;
+  var BUILD_AT = +'1795610896' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2895,6 +2917,193 @@
     draw();
     if (S.from && !S.data) load_();
   }
+  // ---------- ➕ Создать приход (руководитель 25.11.2026) ----------
+  // Склад → от кого (поставщики ERP этой линии; клиенты продаж — если такого поставщика нет: «сначала создайте в ERP») →
+  // товары по виду (сырьё · упаковка · тара / сироп · капля · свеча…) с последней ценой → количество и цена → № ордера →
+  // подтверждение → бот склада создаёт приход ERP «Новый» (остатки не меняются; приём ВК и проведение — в ERP).
+  var INC_ST = [[2, 'Сырьё', 'Перечисление'], [1, 'Сырьё', 'Терминал'], [6, 'ГП завод', 'Перечисление'], [5, 'ГП завод', 'Терминал'],
+                [4, 'ГП Ташкент', 'Перечисление'], [3, 'ГП Ташкент', 'Терминал'], [7, 'Gynomedix Ташкент', 'Перечисление'], [8, 'Gynomedix Ташкент', 'Терминал']];
+  var incN = null;   // { store, meta, sup: {id,name}, client: {...}, gr, find, wfind, sel: {pid: {q, p}}, doc }
+  function showIncNew(pl) {
+    var me = cur;
+    if (!incN) incN = { store: 0, meta: null, sup: null, client: null, gr: 0, find: '', wfind: '', sel: {}, doc: '' };
+    var S = incN, PLS = { zr: [2, 1], zg: [6, 5], tg: [4, 3, 7, 8] }[pl || ''] || null;
+    var fq = function (x) { return n(Math.round(x * 1000) / 1000); };
+    var all = function () { var o = {}; ((S.meta && S.meta.groups) || []).forEach(function (g) { g.items.forEach(function (it) { o[it.pid] = it; }); }); return o; };
+    function picked() {
+      var A = all();
+      return Object.keys(S.sel).filter(function (k) { return A[k] && +S.sel[k].q > 0 && S.sel[k].p !== '' && +S.sel[k].p >= 0; })
+        .map(function (k) { return { it: A[k], q: +S.sel[k].q, p: +S.sel[k].p }; });
+    }
+    function sum() { return picked().reduce(function (a, x) { return a + x.q * x.p; }, 0); }
+    function ready() { return S.store && S.sup && picked().length && S.doc.trim(); }
+    function totText() {
+      var p = picked();
+      return p.length ? '<b>' + p.length + ' поз · ' + fq(Math.round(sum())) + ' сум</b><small>' + (S.doc.trim() ? '№ ордера: ' + esc(S.doc.trim()) : '✍️ впишите № ордера') + '</small>'
+        : '<small>' + (!S.store ? 'Выберите склад' : !S.sup ? 'Выберите, от кого приход' : 'Выберите товар, количество и цену') + '</small>';
+    }
+    function whoList() {
+      var f = S.wfind.toLowerCase(), m = S.meta, h = '';
+      var ok = function (s) { return !f || s.toLowerCase().indexOf(f) >= 0; };
+      var su = m.suppliers.filter(function (s) { return ok(s.name); });
+      var cl = m.clients.filter(function (c) { return ok(c.name); });
+      h += '<div class="hd">🏭 ПОСТАВЩИКИ ERP · ' + esc(m.store_name.split(' · ')[1] || '') + ' · ' + su.length + '</div>';
+      h += su.slice(0, 150).map(function (s) {
+        return '<div data-sup="' + s.id + '">🏭 ' + esc(s.name) + '<small>' + (s.last ? 'последний приход ' + esc(s.last.slice(8, 10) + '.' + s.last.slice(5, 7) + '.' + s.last.slice(0, 4)) + ' · всего ' + s.n : 'приходов не было') + '</small></div>';
+      }).join('');
+      if (f || cl.length < 60) {   // клиентов много — показываем, когда ищут
+        h += '<div class="hd">🛒 КЛИЕНТЫ ПРОДАЖ · ' + cl.length + '</div>';
+        h += cl.slice(0, 80).map(function (c) {
+          return '<div class="cl" data-cli="' + c.cid + '">🛒 <b>' + esc(c.name) + '</b><small>' + (c.sup ? 'есть поставщиком ERP' : c.other ? 'поставщик есть только в другой линии: ' + esc(c.other) : 'поставщиком в ERP не заведён') + '</small></div>';
+        }).join('');
+      } else h += '<div class="hd">🛒 КЛИЕНТЫ ПРОДАЖ · ' + cl.length + ' — начните писать название в поиске</div>';
+      if (!su.length && !cl.length) h += '<div>Никого не найдено. Создайте поставщика в ERP и нажмите «🔄 Обновить список».</div>';
+      return h;
+    }
+    function build() {
+      var g = subTop('wh', '📥 Создать приход');
+      g += '<div class="msec">1 · КУДА ПРИШЛО — СКЛАД</div><div class="incst">' + INC_ST.filter(function (s) { return !PLS || PLS.indexOf(s[0]) >= 0; }).map(function (s) {
+        return '<div class="mvs' + (S.store === s[0] ? ' on' : '') + '" data-st="' + s[0] + '">' + esc(s[1]) + '<small>' + esc(s[2]) + '</small></div>';
+      }).join('') + '</div>';
+      if (S.store && !S.meta) g += '<div class="spin">Загрузка поставщиков и товаров из ERP…</div>';
+      if (S.meta) {
+        g += '<div class="note" style="margin:0 0 8px">Оплата: ' + esc(S.meta.pay) + ' · ERP ' + esc(S.meta.at) + '</div>';
+        g += '<div class="msec">2 · ОТ КОГО ПРИХОД</div>';
+        if (S.sup) g += '<div class="incpick"><span>🏭 ' + esc(S.sup.name) + '</span><button id="incSupX">Сменить</button></div>';
+        else if (S.client) g += '<div class="incwarn">🛒 «' + esc(S.client.name) + '» — клиент продаж, поставщиком в ERP' + (S.client.other ? ' есть только в другой линии («' + esc(S.client.other) + '»)' : ' не заведён') +
+          '.<br>Сначала создайте поставщика с этим названием в ERP (Поставщики, линия «' + esc(S.meta.store_name.split(' · ')[1] || '') + '»), потом нажмите «🔄 Обновить список».' +
+          '<button class="main" id="incRef">🔄 Обновить список</button><button id="incCliX" style="margin-top:6px">Выбрать другого</button></div>';
+        else g += '<div class="mvfind"><input id="incWho" placeholder="🔍 Поставщик или клиент" value="' + esc(S.wfind) + '"></div><div class="incwho" id="incWhoL">' + whoList() + '</div>' +
+          '<button id="incRef2" style="margin:0 0 10px">🔄 Обновить список (создали поставщика в ERP)</button>';
+        if (S.sup) {
+          var G = S.meta.groups, gi = Math.min(S.gr, G.length - 1), cnt = function (gg) { return gg.items.filter(function (it) { return S.sel[it.pid] && +S.sel[it.pid].q > 0; }).length; };
+          g += '<div class="msec">3 · ТОВАР</div><div class="incgr">' + G.map(function (gg, i) {
+            var c = cnt(gg);
+            return '<div class="mvs' + (i === gi ? ' on' : '') + '" data-gr="' + i + '">' + esc(gg.name) + (c ? ' · ' + c : '') + '</div>';
+          }).join('') + '</div>';
+          g += '<div class="mvfind"><input id="incFind" placeholder="🔍 Найти товар" value="' + esc(S.find) + '"></div>';
+          g += (G[gi] ? G[gi].items : []).map(function (it, k) {
+            var s = S.sel[it.pid] || {}, on = +s.q > 0, hide = S.find && it.name.toLowerCase().indexOf(S.find.toLowerCase()) < 0;
+            return '<div class="mvp' + (on ? ' sel' : '') + '" data-pid="' + esc(it.pid) + '"' + (hide ? ' style="display:none"' : '') + '>' +
+              '<div class="mvph"><b><span class="mvn">' + (k + 1) + '</span>' + esc(it.name) + '</b><span>' + (it.price != null ? 'посл. цена ' + fq(it.price) : 'цены не было') + '</span></div>' +
+              '<div class="inci"><div><label>Кол-во, ' + esc(it.unit) + '</label><input inputmode="decimal" data-q="' + esc(it.pid) + '" value="' + (s.q || '') + '" placeholder="0"></div>' +
+              '<div><label>Цена с НДС, сум</label><input inputmode="decimal" data-p="' + esc(it.pid) + '" value="' + (s.p != null ? s.p : '') + '" placeholder="' + (it.price != null ? fq(it.price) : '0') + '"></div></div></div>';
+          }).join('');
+          g += '<div class="msec">4 · № И ДАТА ПРИХОДНОГО ОРДЕРА</div><input class="incdoc" id="incDoc" maxlength="60" placeholder="например: 196002 от 25.11.2026" value="' + esc(S.doc) + '">';
+          g += '<div style="height:84px"></div>';
+        }
+      }
+      g += '<div class="mvbar"><div id="incTot">' + totText() + '</div><button id="incGo"' + (ready() ? '' : ' disabled') + '>✅ Создать приход</button></div>';
+      return g;
+    }
+    function draw() { var y = window.scrollY; view.innerHTML = build(); bind(); window.scrollTo(0, y); }
+    function upd() { $('incTot').innerHTML = totText(); $('incGo').disabled = !ready(); }
+    function load_(fresh) {
+      var st = S.store;
+      call('/api/inc_meta', { store: st, fresh: fresh ? 1 : 0 }, 60000).then(function (r) {
+        if (cur !== me || S.store !== st) return;
+        if (!r.ok) { say(r.text || 'ERP не прочитался'); return; }
+        S.meta = r;
+        if (S.client) {   // после «🔄» — поставщик появился? (то же название, эта линия)
+          var c = r.clients.filter(function (x) { return x.cid === S.client.cid; })[0];
+          if (c && c.sup) { S.sup = r.suppliers.filter(function (s) { return s.id === c.sup; })[0] || null; S.client = null; if (S.sup) say('✅ Поставщик найден в ERP: ' + S.sup.name); }
+          else say('Поставщика «' + S.client.name + '» в ERP пока нет.');
+        }
+        draw();
+      }).catch(function (e) { if (cur === me) fail(e); });
+    }
+    function bind() {
+      bindTabs();
+      Array.prototype.forEach.call(view.querySelectorAll('[data-st]'), function (el) {
+        el.onclick = function () {
+          var s = +el.getAttribute('data-st'); if (s === S.store) return;
+          try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+          S.store = s; S.meta = null; S.sup = null; S.client = null; S.sel = {}; S.gr = 0; S.find = ''; S.wfind = '';
+          draw(); load_();
+        };
+      });
+      var bindWho = function () {
+        Array.prototype.forEach.call(view.querySelectorAll('[data-sup]'), function (el) {
+          el.onclick = function () { var id = +el.getAttribute('data-sup'); S.sup = S.meta.suppliers.filter(function (s) { return s.id === id; })[0]; S.client = null; try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} draw(); };
+        });
+        Array.prototype.forEach.call(view.querySelectorAll('[data-cli]'), function (el) {
+          el.onclick = function () {
+            var id = +el.getAttribute('data-cli'), c = S.meta.clients.filter(function (x) { return x.cid === id; })[0];
+            if (c.sup) { S.sup = S.meta.suppliers.filter(function (s) { return s.id === c.sup; })[0]; S.client = null; }
+            else { S.client = c; S.sup = null; }
+            draw();
+          };
+        });
+      };
+      bindWho();
+      if ($('incWho')) $('incWho').oninput = function () { S.wfind = this.value.trim(); $('incWhoL').innerHTML = whoList(); bindWho(); };
+      [['incRef', 1], ['incRef2', 1]].forEach(function (b) { if ($(b[0])) $(b[0]).onclick = function () { this.disabled = true; this.textContent = '⏳ Читаю ERP…'; load_(true); }; });
+      if ($('incSupX')) $('incSupX').onclick = function () { S.sup = null; draw(); };
+      if ($('incCliX')) $('incCliX').onclick = function () { S.client = null; draw(); };
+      Array.prototype.forEach.call(view.querySelectorAll('[data-gr]'), function (el) {
+        el.onclick = function () { S.gr = +el.getAttribute('data-gr'); S.find = ''; try { tg.HapticFeedback.selectionChanged(); } catch (e) {} draw(); };
+      });
+      if ($('incFind')) $('incFind').oninput = function () {
+        S.find = this.value.trim(); var f = S.find.toLowerCase();
+        Array.prototype.forEach.call(view.querySelectorAll('[data-pid]'), function (c) { c.style.display = !f || c.textContent.toLowerCase().indexOf(f) >= 0 ? '' : 'none'; });
+      };
+      var A = all();
+      var setv = function (pid, k, v) {
+        v = String(v).replace(',', '.').replace(/\s/g, '');
+        var s = S.sel[pid] = S.sel[pid] || { q: '', p: null };
+        s[k] = v === '' ? (k === 'p' ? null : '') : Math.max(0, +v || 0);
+        if (k === 'q' && +s.q > 0 && s.p == null && A[pid] && A[pid].price != null) {   // количество вписали — цена по последнему приходу
+          s.p = A[pid].price; var pe = view.querySelector('[data-p="' + pid + '"]'); if (pe) pe.value = s.p;
+        }
+        var card = view.querySelector('[data-pid="' + pid + '"]'); if (card) card.classList.toggle('sel', +s.q > 0);
+        upd();
+      };
+      Array.prototype.forEach.call(view.querySelectorAll('[data-q]'), function (el) { el.oninput = function () { setv(el.getAttribute('data-q'), 'q', el.value); }; });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-p]'), function (el) { el.oninput = function () { setv(el.getAttribute('data-p'), 'p', el.value); }; });
+      if ($('incDoc')) $('incDoc').oninput = function () { S.doc = this.value; upd(); };
+      $('incGo').onclick = function () {
+        if (!ready()) return;
+        var p = picked(), b = $('incGo'), stn = S.meta.store_name;
+        var q = 'Создать приход в ERP?\n' + stn + '\nОт: ' + S.sup.name + '\n№ ордера: ' + S.doc.trim() + '\n\n' +
+          p.map(function (x, k) { return (k + 1) + '. ' + x.it.name + ' — ' + fq(x.q) + ' ' + x.it.unit + ' × ' + fq(x.p); }).join('\n') +
+          '\n\nИтого ' + fq(Math.round(sum())) + ' сум. Документ будет «Новый»: остатки и долг поставщику не меняются до проведения в ERP.';
+        var ask = function (cb) { try { tg.showConfirm(q, cb); } catch (e) { cb(confirm(q)); } };
+        ask(function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Создаю в ERP…';
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          call('/api/inc_create', { store: S.store, supplier: S.sup.id, doc: S.doc.trim(),
+                                    items: p.map(function (x) { return { pid: x.it.pid, amount: x.q, price: x.p }; }) }, 125000).then(function (r) {
+            haptic(r.ok ? 'success' : 'warning');
+            if (!r.ok) { say(r.text || 'Не создано'); b.disabled = false; b.textContent = '✅ Создать приход'; return; }
+            delete mem[ck('/api/flow' + JSON.stringify({ kind: 'inc' }))];
+            try { localStorage.removeItem('pfl:' + ck('/api/flow' + JSON.stringify({ kind: 'inc' }))); } catch (e) {}
+            var st = S.store; incN = null;
+            view.innerHTML = subTop('wh', '📥 Приход создан') + '<div class="incpick"><span>' + esc(r.text) + '</span></div>' +
+              '<div class="note">Дальше в ERP: приём ВК и проведение. Тестовый — можно сразу отменить.</div>' +
+              '<button class="main" id="incBack">⬅ К приходам</button><button id="incCancel" style="margin-top:8px">✖ Отменить приход №' + esc(r.id) + ' в ERP</button>';
+            bindTabs();
+            $('incBack').onclick = function () { goBack(); };
+            $('incCancel').onclick = function () {
+              var c = this, q2 = 'Отменить приход №' + r.id + ' в ERP? Он «Новый» — остатки не менялись.';
+              var go_ = function (y) {
+                if (!y) return;
+                c.disabled = true; c.textContent = '⏳ Отменяю…';
+                call('/api/inc_cancel', { id: r.id, store: st }, 125000).then(function (x) {
+                  haptic(x.ok ? 'success' : 'warning'); say(x.text); c.textContent = x.ok ? '✖ Отменён' : '✖ Отменить приход №' + r.id + ' в ERP'; c.disabled = !!x.ok;
+                }).catch(function (e) { c.disabled = false; fail(e); });
+              };
+              try { tg.showConfirm(q2, go_); } catch (e) { go_(confirm(q2)); }
+            };
+          }).catch(function (e) { b.disabled = false; b.textContent = '✅ Создать приход'; fail(e); });
+        });
+      };
+    }
+    if (PLS && S.store && PLS.indexOf(S.store) < 0) { S.store = 0; S.meta = null; S.sup = null; S.client = null; S.sel = {}; }
+    if (PLS && PLS.length && !S.store) S.store = PLS[0];
+    draw();
+    if (S.store && !S.meta) load_();
+  }
   function showMove(id) {
     var me = cur;
     view.innerHTML = '<div class="spin">Загрузка…</div>';
@@ -3103,6 +3312,8 @@
           if (kind === 'ship') return shipTile(q, c, rq, docPl[kind] === q[0]);
           return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
         }).join('') + '</div>';
+        // 25.11.2026 (руководитель): «➕ Создать приход» — склад (выбранный «куда пришло»), от кого, товары; пока только руководителю
+        if (kind === 'inc' && r.inc_new) h += '<button class="main incadd" id="incAdd">➕ Создать приход' + (pl ? ' · ' + esc(pl[1]) : '') + '</button>';
         var WC = {};
         all.forEach(function (x) { if (inPl(x) && (!f || f[3](x))) WC[x.who] = (WC[x.who] || 0) + 1; });
         var WL = Object.keys(WC).sort(function (a, b) { return WC[b] - WC[a]; });
@@ -3147,6 +3358,10 @@
           (kind === 'ship' ? sigRow(x) : '') + '</div>';
       }).join('');
       box.innerHTML = h;
+      if ($('incAdd')) $('incAdd').onclick = function () {
+        try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        var p0 = docPl.inc || ''; go(function () { showIncNew(p0); });
+      };
       Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
         el.onclick = function () {
           var q = el.getAttribute('data-df');
