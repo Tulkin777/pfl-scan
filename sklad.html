@@ -849,6 +849,7 @@
   .ott th { font-size: 11.5px; background: rgba(0,0,0,.04); text-align: center; white-space: normal; } .ott th small, .ott td small { display: block; font-size: 10.5px; opacity: .65; font-weight: 400; }
   /* 25.11.2026: ручные правки табеля — дни под строкой, ✏️ / ⚠️ */
   .ott small.fxm { color: #c46a00; font-weight: 700; opacity: 1; } .ott small.ottarr { display: block; font-size: 10px; opacity: .5; }
+  .otdwrap { position: sticky; left: 0; width: min(640px, calc(100vw - 40px)); }
   .otdt { overflow-x: auto; margin: 4px 0; } .otdt table { border-collapse: collapse; font-size: 12.5px; width: 100%; background: var(--tg-theme-bg-color, #fff); }
   .otdt th { background: #1f4e78; color: #fff; padding: 4px 6px; font-weight: 700; white-space: nowrap; } .otdt td { padding: 4px 6px; border-bottom: 1px solid rgba(0,0,0,.07); text-align: left; white-space: nowrap; vertical-align: middle; }
   .otdt tr.fx td { background: rgba(196,106,0,.10); } .otdt tr.bad td { background: rgba(198,40,40,.06); } .otdt small { display: block; font-size: 10.5px; }
@@ -1257,9 +1258,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '520abda4', newBuild = '';
+  var BUILD = 'a32374b7', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795579188' || 0;
+  var BUILD_AT = +'1795579266' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4970,7 +4971,7 @@
               '<td class="restc">' + (p.card != null ? restH(zpg(p) - p.card) : '<span style="opacity:.5">—</span>') + '</td>' +
               // 25.11.2026 (руководитель): удержание в счёт долга за месяц (💳 Долги), ниже — сколько долга останется
               '<td class="debtc">' + (p.debt_due ? '<b>−' + fmtq(p.debt_due) + '</b><small>останется ' + fmtq(p.debt_left || 0) + '</small>' : (p.debt_left ? '<span style="opacity:.6">0</span><small>долг ' + fmtq(p.debt_left) + '</small>' : '—')) + '</td></tr>' +
-              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 23 : 22) + IS.length + 2) + '">' + otDaysHtml(p, D) + '</td></tr>' : '');
+              (op ? '<tr class="otd"><td colspan="' + ((C.hour ? 23 : 22) + IS.length + 2) + '"><div class="otdwrap">' + otDaysHtml(p, D) + '</div></td></tr>' : '');
           }).join('') +
           // 24.11.2026 (руководитель): внизу — итог бонуса за партии и сколько партий вышло (ERP)
           '<tr class="ottot"><td></td><td class="nm"><b>Итого</b></td><td colspan="' + (C.hour ? 8 : 7) + '"></td><td><b>' + F(D.ot_min_total || 0) + '</b></td><td><b>' + fmtq(D.salary_total || 0) + '</b></td><td><b>' + fmtq(D.batch_total || 0) + '</b></td>' +
