@@ -1407,9 +1407,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e5fdb0c1', newBuild = '';
+  var BUILD = 'eb489df0', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795615149' || 0;
+  var BUILD_AT = +'1795615267' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2994,19 +2994,28 @@
           '<button id="incRef2" style="margin:0 0 10px">🔄 Обновить список (создали поставщика в ERP)</button>';
         if (S.sup) {
           var G = S.meta.groups, gi = Math.min(S.gr, G.length - 1), cnt = function (gg) { return gg.items.filter(function (it) { return S.sel[it.pid] && +S.sel[it.pid].q > 0; }).length; };
-          g += '<div class="msec">3 · ТОВАР</div><div class="incgr">' + G.map(function (gg, i) {
-            var c = cnt(gg);
-            return '<div class="mvs' + (i === gi ? ' on' : '') + '" data-gr="' + i + '">' + esc(gg.name) + (c ? ' · ' + c : '') + '</div>';
-          }).join('') + '</div>';
-          g += '<div class="mvfind"><input id="incFind" placeholder="🔍 Найти товар" value="' + esc(S.find) + '"></div>';
-          g += (G[gi] ? G[gi].items : []).map(function (it, k) {
+          // 25.11.2026 (руководитель): пустые поля — без серых «подсказок» цены (казалось, что цена есть, а количества нет);
+          // последняя цена — справа, в поле встаёт сама, когда вписали количество
+          var card = function (it, k) {
             var s = S.sel[it.pid] || {}, on = +s.q > 0, hide = S.find && it.name.toLowerCase().indexOf(S.find.toLowerCase()) < 0;
             return '<div class="mvp' + (on ? ' sel' : '') + '" data-pid="' + esc(it.pid) + '"' + (hide ? ' style="display:none"' : '') + '>' +
               '<div class="mvph"><b><span class="mvn">' + (k + 1) + '</span>' + esc(it.name) + '</b><span>' + (it.price != null ? 'посл. цена ' + fq(it.price) : 'цены не было') + '</span></div>' +
               (S.from && S.from.hint[it.pid] ? '<div class="note" style="margin:2px 0 4px">' + esc(S.from.hint[it.pid]) + '</div>' : '') +
-              '<div class="inci"><div><label>Кол-во, ' + esc(it.unit) + '</label><input inputmode="decimal" data-q="' + esc(it.pid) + '" value="' + (s.q || '') + '" placeholder="0"></div>' +
-              '<div><label>Цена с НДС, сум</label><input inputmode="decimal" data-p="' + esc(it.pid) + '" value="' + (s.p != null ? s.p : '') + '" placeholder="' + (it.price != null ? fq(it.price) : '0') + '"></div></div></div>';
-          }).join('');
+              '<div class="inci"><div><label>Кол-во, ' + esc(it.unit) + '</label><input inputmode="decimal" data-q="' + esc(it.pid) + '" value="' + (s.q || '') + '" placeholder="—"></div>' +
+              '<div><label>Цена с НДС, сум</label><input inputmode="decimal" data-p="' + esc(it.pid) + '" value="' + (on && s.p != null ? s.p : '') + '" placeholder="—"></div></div></div>';
+          };
+          if (S.from && !S.all) {   // приход из архива отгрузки — только товары этой отгрузки, все вместе (без вкладок и каталога)
+            var A0 = all(), mine = Object.keys(S.from.hint).filter(function (k) { return A0[k]; }).map(function (k) { return A0[k]; });
+            g += '<div class="msec">3 · ТОВАР ИЗ ОТГРУЗКИ · ' + mine.length + '</div>' + mine.map(card).join('') +
+              '<button id="incAll" style="margin:4px 0 10px">➕ Добавить другой товар из списка</button>';
+          } else {
+            g += '<div class="msec">3 · ТОВАР</div><div class="incgr">' + G.map(function (gg, i) {
+              var c = cnt(gg);
+              return '<div class="mvs' + (i === gi ? ' on' : '') + '" data-gr="' + i + '">' + esc(gg.name) + (c ? ' · ' + c : '') + '</div>';
+            }).join('') + '</div>';
+            g += '<div class="mvfind"><input id="incFind" placeholder="🔍 Найти товар" value="' + esc(S.find) + '"></div>';
+            g += (G[gi] ? G[gi].items : []).map(card).join('');
+          }
           g += '<div class="msec">4 · № И ДАТА ПРИХОДНОГО ОРДЕРА</div><input class="incdoc" id="incDoc" maxlength="150" placeholder="например: 196002 от 25.11.2026" value="' + esc(S.doc) + '">';
           g += '<div style="height:84px"></div>';
         }
@@ -3058,6 +3067,7 @@
       [['incRef', 1], ['incRef2', 1]].forEach(function (b) { if ($(b[0])) $(b[0]).onclick = function () { this.disabled = true; this.textContent = '⏳ Читаю ERP…'; load_(true); }; });
       if ($('incSupX')) $('incSupX').onclick = function () { S.sup = null; draw(); };
       if ($('incCliX')) $('incCliX').onclick = function () { S.client = null; draw(); };
+      if ($('incAll')) $('incAll').onclick = function () { S.all = true; draw(); };
       Array.prototype.forEach.call(view.querySelectorAll('[data-gr]'), function (el) {
         el.onclick = function () { S.gr = +el.getAttribute('data-gr'); S.find = ''; try { tg.HapticFeedback.selectionChanged(); } catch (e) {} draw(); };
       });
@@ -3071,7 +3081,11 @@
         var s = S.sel[pid] = S.sel[pid] || { q: '', p: null };
         s[k] = v === '' ? (k === 'p' ? null : '') : Math.max(0, +v || 0);
         if (k === 'q' && +s.q > 0 && s.p == null && A[pid] && A[pid].price != null) {   // количество вписали — цена по последнему приходу
-          s.p = A[pid].price; var pe = view.querySelector('[data-p="' + pid + '"]'); if (pe) pe.value = s.p;
+          s.p = A[pid].price;
+        }
+        if (k === 'q') {   // 25.11.2026: цена видна только при количестве; количество стёрли — поле цены пустое
+          var pe = view.querySelector('[data-p="' + pid + '"]');
+          if (pe) pe.value = +s.q > 0 && s.p != null ? s.p : '';
         }
         var card = view.querySelector('[data-pid="' + pid + '"]'); if (card) card.classList.toggle('sel', +s.q > 0);
         upd();
@@ -5077,7 +5091,7 @@
         function pick(k) { st.m = k; st.T = null; paint(); load('/api/zp_ot', { month: k }, function (T) { if (st.m === k) { st.T = T; paint(); } }); }
         // большая «⬅ Назад»: с месяцев — к выбору года, с годов — выход как обычно
         backHook = function () { if (cur !== me || !$('zptab') || st.step !== 'm') return false; st.step = 'y'; paint(); return true; };
-        pick(curM);
+        pick(st.m);   // 25.11.2026 (руководитель): было pick(curM) — всегда открывался текущий месяц, а не неподтверждённый прошлый
       })();
       Array.prototype.forEach.call(B.querySelectorAll('[data-zv]'), function (el) {
         el.onclick = function (ev) {
