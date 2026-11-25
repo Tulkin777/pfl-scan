@@ -1181,6 +1181,9 @@
   #zs .zsp { display: inline-block; font-size: 14px; font-weight: 800; line-height: 1.2; padding: 5px 11px; border-radius: 999px; border: 1.5px solid; letter-spacing: .1px; }
   #zs .zsp.zs0 { color: #8a93a6; background: #f1f3f7; border-color: #c9ced9; font-weight: 600; font-size: 13px; }
   #zs .zsp.zsx { color: #fff; background: #d32f2f; border-color: #d32f2f; }
+  #zs .zsp.zsof { color: #fff; background: #455a8a; border-color: #455a8a; margin-right: 4px; }   /* 25.11.2026: 🏢 офис */
+  #zs .zsofb { background: #e8ecf6; color: #2c3c66; font-weight: 700; }
+  #zs .zstop.f4 { grid-template-columns: repeat(4, 1fr); } #zs .zstop > div.o { background: linear-gradient(150deg, #5d73a8, #3c4f80); box-shadow: 0 6px 16px rgba(60,79,128,.25); }
   /* 24.11.2026 (руководитель): карточки сотрудников — № по должности, имя + должность рядом, уволенные красным */
   #zs .zstop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 2px 0 10px; }
   #zs .zstop > div { background: linear-gradient(150deg, #2f6fe0, #1d4fb3); color: #fff; border-radius: 16px; padding: 10px 12px; box-shadow: 0 6px 16px rgba(31,98,201,.25); }
@@ -1381,9 +1384,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '3e1d7a3b', newBuild = '';
+  var BUILD = '57523aa7', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795606168' || 0;
+  var BUILD_AT = +'1795606464' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4874,20 +4877,23 @@
       if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       var y0 = window.scrollY;
       zsTitles = (D.titles || []).map(function (t) { return String(t).toLowerCase().trim(); });
-      var work = D.people.filter(function (p) { return !p.gone_now; }), gone = D.people.filter(function (p) { return p.gone_now; });
-      if (zsF !== '*' && !(zsF === '~' ? gone.length : D.groups.some(function (g) { return (g[0] || '-') === zsF; }))) zsF = '*';   // должности больше нет — «Все»
+      // 25.11.2026 (руководитель): 🏢 офисные — отдельной группой, в зарплате завода их нет
+      var work = D.people.filter(function (p) { return !p.gone_now && !p.office; }), gone = D.people.filter(function (p) { return p.gone_now; }),
+          offc = D.people.filter(function (p) { return !p.gone_now && p.office; });
+      if (zsF !== '*' && !(zsF === '~' ? gone.length : zsF === 'o' ? offc.length : D.groups.some(function (g) { return (g[0] || '-') === zsF; }))) zsF = '*';   // должности больше нет — «Все»
       // 24.11.2026 (руководитель): сверху — сколько работают / уволены; кнопки должностей по порядку (1 начальник, 2 качество, 3 склад…)
-      var h = '<div class="zstop"><div><b>' + work.length + '</b><span>работают</span></div><div class="g"><b>' + gone.length + '</b><span>уволены</span></div>' +
+      var h = '<div class="zstop' + (offc.length ? ' f4' : '') + '"><div><b>' + work.length + '</b><span>производство</span></div>' + (offc.length ? '<div class="o"><b>' + offc.length + '</b><span>🏢 офис</span></div>' : '') +
+        '<div class="g"><b>' + gone.length + '</b><span>уволены</span></div>' +
         '<div><b>' + D.groups.filter(function (g) { return g[0]; }).length + '</b><span>должностей</span></div></div>';
       if (D.sal_ok) {   // 24.11.2026: сумма зарплат на руку работающих за полный месяц
         var withS = work.filter(function (p) { return p.cur_sal; });
         h += '<div class="zsfund"><b>' + fmtq(withS.reduce(function (a, p) { return a + p.cur_sal; }, 0)) + ' сум</b><span>💵 зарплата на руку в месяц · вписана у ' + withS.length + ' из ' + work.length + '</span></div>';
       }
       h += '<div class="zsgr">' +
-        [['*', 'Все', work.length + gone.length, '']].concat(D.groups.map(function (g) { return [g[0] || '-', g[0] || '🆕 Без должности', g[1], g[0]]; }))
-          .concat(gone.length ? [['~', '🚪 Уволены', gone.length, '']] : []).map(function (g) {
-            var st = g[3] ? ' style="--zc:' + zsCol(g[3], 1) + '"' : g[0] === '~' ? ' style="--zc:#c62828"' : '';
-            return '<div class="zsg' + (zsF === g[0] ? ' on' : '') + (g[3] || g[0] === '~' ? ' c' : '') + '" data-zf="' + esc(g[0]) + '"' + st + '>' + esc(g[1]) + '<i>' + g[2] + '</i></div>'; }).join('') + '</div>';
+        [['*', 'Все', work.length + offc.length + gone.length, '']].concat(D.groups.map(function (g) { return [g[0] || '-', g[0] || '🆕 Без должности', g[1], g[0]]; }))
+          .concat(offc.length ? [['o', '🏢 Офис', offc.length, '']] : []).concat(gone.length ? [['~', '🚪 Уволены', gone.length, '']] : []).map(function (g) {
+            var st = g[3] ? ' style="--zc:' + zsCol(g[3], 1) + '"' : g[0] === '~' ? ' style="--zc:#c62828"' : g[0] === 'o' ? ' style="--zc:#455a8a"' : '';
+            return '<div class="zsg' + (zsF === g[0] ? ' on' : '') + (g[3] || g[0] === '~' || g[0] === 'o' ? ' c' : '') + '" data-zf="' + esc(g[0]) + '"' + st + '>' + esc(g[1]) + '<i>' + g[2] + '</i></div>'; }).join('') + '</div>';
       if (D.admin) h += '<div class="zsord-b"><button class="sm" id="zsordb">↕️ Порядок должностей' + (zsOrd ? ' ▲' : ' ▼') + '</button></div>';
       if (D.admin && zsOrd) h += '<div class="zsord">' + zsOrd.map(function (t, i) {
         return '<div class="zso" style="--zc:' + zsCol(t, 1) + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(t) + '</span>' +
@@ -4904,10 +4910,10 @@
       if (zsAdd === '1c') {
         h += '<div class="zpf" style="display:block"><b>🔎 Сотрудник из 1С</b><input class="txt" id="zs1" placeholder="Начните писать фамилию" style="width:100%;margin:6px 0"><div id="zs1l"></div></div>';
       }
-      var list = zsF === '~' ? gone : zsF === '*' ? work.concat(gone) : work.filter(function (p) { return zsF === '-' ? !p.cur : p.cur === zsF; });
+      var list = zsF === '~' ? gone : zsF === 'o' ? offc : zsF === '*' ? work.concat(offc, gone) : work.filter(function (p) { return zsF === '-' ? !p.cur : p.cur === zsF; });
       if (zsQ) list = list.filter(function (p) { return [p.name, p.c1, p.fid].join(' ').toLowerCase().indexOf(zsQ.toLowerCase()) >= 0; });
-      h += '<div class="msec">' + (zsF === '*' ? 'ВСЕ СОТРУДНИКИ ЗАВОДА' : zsF === '~' ? 'УВОЛЕНЫ' : zsF === '-' ? 'БЕЗ ДОЛЖНОСТИ' : esc(zsF.toUpperCase())) + ' · ' + list.length + '</div>';
-      var goneHdr = false;
+      h += '<div class="msec">' + (zsF === '*' ? 'ВСЕ СОТРУДНИКИ ЗАВОДА' : zsF === '~' ? 'УВОЛЕНЫ' : zsF === 'o' ? '🏢 ОФИС — НЕ В ЗАРПЛАТЕ ЗАВОДА' : zsF === '-' ? 'БЕЗ ДОЛЖНОСТИ' : esc(zsF.toUpperCase())) + ' · ' + list.length + '</div>';
+      var goneHdr = false, offHdr = false;
       h += list.map(function (p) {
         var op = zsOpen[p.id];
         // 24.11.2026 (руководитель): карточка — № по порядку должностей, имя и должность рядом цветной плашкой; уволенные — красным
@@ -4915,9 +4921,9 @@
         var lastDay = '';   // 25.11.2026: последний рабочий день уволенного (день до даты увольнения)
         if (p.gone) { var lx = new Date(p.gone.from + 'T12:00:00'); lx.setDate(lx.getDate() - 1);
           lastDay = dd(lx.getFullYear() + '-' + ('0' + (lx.getMonth() + 1)).slice(-2) + '-' + ('0' + lx.getDate()).slice(-2)); }
-        var col = p.gone_now ? '#c62828' : p.cur ? zsCol(p.cur, 1) : '#9aa3b5';
+        var col = p.gone_now ? '#c62828' : p.office ? '#455a8a' : p.cur ? zsCol(p.cur, 1) : '#9aa3b5';
         var pill = p.gone_now ? '<span class="zsp zsx">🚪 Уволен · ' + dd(p.gone.from) + '</span>'
-          : p.cur ? '<span class="zsp" style="' + zsCol(p.cur) + '">' + esc(p.cur) + '</span>' : '<span class="zsp zs0">🆕 без должности</span>';
+          : (p.office ? '<span class="zsp zsof">🏢 Офис</span>' : '') + (p.cur ? '<span class="zsp" style="' + zsCol(p.cur) + '">' + esc(p.cur) + '</span>' : p.office ? '' : '<span class="zsp zs0">🆕 без должности</span>');
         var sub = p.gone_now ? (last ? 'был: <b>' + esc(last.title) + '</b> · ' + dd(last.from) + ' — ' + (last.to ? dd(last.to) : lastDay) : '')
           : p.cur ? 'в должности с <b>' + dd(p.cur_from) + '</b>' : (p.hint ? 'в ведомости: ' + esc(p.hint) : 'нажмите, чтобы вписать должность');
         if (p.next) sub += ' · ⏭ с ' + dd(p.next.from) + ' — ' + esc(p.next.title);
@@ -4925,9 +4931,11 @@
         if (p.gone && !p.gone_now) sub += ' · 🚪 увольнение с ' + dd(p.gone.from);
         // 25.11.2026 (руководитель): стаж — сумма всех периодов работы; вернулся — какой раз
         if (p.tenure) sub += '<span class="zsm" style="color:#1565c0">🕐 ' + (p.gone_now ? 'проработал ' : 'стаж ') + esc(p.tenure) + (p.times > 1 ? ' · ' + p.times + '-й раз' : '') + '</span>';
+        if (p.office && !p.gone_now) sub = 'не в зарплате завода' + (p.cur ? ' · ' + sub : '');
         var r = (p.gone_now && zsF === '*' && !goneHdr ? (goneHdr = true, '<div class="msec" style="color:#c62828">🚪 УВОЛЕНЫ · ' + gone.length + '</div>') : '') +
+          (p.office && !p.gone_now && zsF === '*' && !offHdr ? (offHdr = true, '<div class="msec" style="color:#455a8a">🏢 ОФИС — НЕ В ЗАРПЛАТЕ ЗАВОДА · ' + offc.length + '</div>') : '') +
           '<div class="zsc' + (p.gone_now ? ' x' : '') + (op ? ' op' : '') + '" style="--zc:' + col + '"><div class="zsr" data-zo="' + p.id + '">' +
-          '<span class="zsn">' + (p.no || '—') + '</span><div class="zsb"><div class="zsh"><span class="zsnm">' + esc(p.name) + '</span>' + pill + '</div>' +
+          '<span class="zsn">' + (p.office && !p.gone_now ? '🏢' : (p.no || '—')) + '</span><div class="zsb"><div class="zsh"><span class="zsnm">' + esc(p.name) + '</span>' + pill + '</div>' +
           (sub ? '<div class="zss">' + sub + '</div>' : '') + (p.c1 && p.c1 !== p.name ? '<div class="zss c">1С: ' + esc(p.c1) + '</div>' : '') + '</div>' +
           '<span class="zsv">›</span></div>';
         if (op && p.gone) {   // 25.11.2026 (руководитель): у уволенного — изменить дату или отменить увольнение
@@ -4996,6 +5004,9 @@
           r += '<div class="ivbar" style="flex-wrap:wrap;gap:6px">' + (p.gone ? ''
             : '<button class="sm red" data-zgone="' + p.id + '">🚪 Уволить с даты выше</button>') +
             '<button class="sm" data-zren="' + p.id + '">✏️ Имя</button>' +
+            // 25.11.2026 (руководитель): офисный работник — уходит из таблицы зарплаты завода (у офиса будет своя)
+            (D.admin && !p.gone_now ? (p.office ? '<button class="sm" data-zoff="' + p.id + '" data-on="0">🏭 Вернуть в производство</button>'
+              : '<button class="sm zsofb" data-zoff="' + p.id + '" data-on="1">🏢 Офисный работник</button>') : '') +
             (D.admin && (p.src === 'manual' || p.src === '1c') ? '<button class="sm" data-zdelp="' + p.id + '">🗑 Убрать из списка</button>' : '') + '</div>' +
             '<input class="txt" data-zrn="' + p.id + '" value="' + esc(p.name) + '" style="width:100%;margin-top:4px;display:none"></div>';
         }
@@ -5083,6 +5094,11 @@
         b.onclick = function () { var id = b.getAttribute('data-zgone'), d = B.querySelector('[data-zd="' + id + '"]').value;
           if (!d) return say('Укажите дату выше.');
           send({ act: 'gone', id: id, from: d }, nm(id) + ' — не работает с ' + dd(d) + '?', D); };
+      });
+      all('[data-zoff]', function (b) {   // 25.11.2026: 🏢 офис / 🏭 производство
+        b.onclick = function () { var id = b.getAttribute('data-zoff'), on = b.getAttribute('data-on') === '1';
+          send({ act: 'office', id: id, on: on }, on ? nm(id) + ' — офисный работник?\nОн уйдёт из таблицы зарплаты завода (и бонусов, долгов, рабочего дня завода) за все месяцы. У офиса зарплату сделаем отдельно.'
+            : nm(id) + ' — снова производство? Вернётся в таблицу зарплаты завода.', D); };
       });
       all('[data-zback]', function (b) { b.onclick = function () { send({ act: 'back', id: b.getAttribute('data-zback') }, 'Отменить увольнение — ' + nm(b.getAttribute('data-zback')) + ' работает дальше, должность продолжается?', D); }; });
       all('[data-zgfix]', function (b) {   // 25.11.2026: исправить дату увольнения
