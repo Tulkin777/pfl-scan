@@ -873,6 +873,36 @@
   .crt-g.zym6 .cg.zms.ok.on small, .crt-g.zym6 .cg.zms.ok.on { color: #fff; }
   .osg.zyy5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; } .osg.zyy5 .ob { padding: 8px 2px 7px; } .osg.zyy5 .ob i { font-size: 20px; } .osg.zyy5 .ob b { font-size: 12.5px; }
   .ottbox { position: relative; margin: 6px 0; }
+  /* 25.11.2026: «👁 Просмотр» и «🗺 Общий лист» над табелем */
+  .zvbar { display: flex; gap: 10px; margin: 10px 0 6px; }
+  .zvb { flex: 1 1 0; min-width: 0; width: auto; margin: 0; border: 0; border-radius: 14px; padding: 10px 12px; font: inherit; text-align: left; cursor: pointer; color: #fff;
+         display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; transition: transform .1s, box-shadow .15s; }
+  .zvb span { grid-row: 1 / 3; font-size: 22px; } .zvb b { font-size: 14.5px; } .zvb small { font-size: 11px; opacity: .85; line-height: 1.25; }
+  .zvb.pay { background: linear-gradient(180deg, #34c27a, #1c9662); box-shadow: 0 4px 0 #137049, 0 6px 12px rgba(28,150,98,.22); }
+  .zvb.sheet { background: linear-gradient(180deg, #8f6cf0, #6a45d6); box-shadow: 0 4px 0 #4b2ea6, 0 6px 12px rgba(106,69,214,.22); }
+  .zvb:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  html.zvlock, html.zvlock body { overflow: hidden; }
+  .zview { position: fixed; inset: 0; z-index: 9000; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #222); display: flex; flex-direction: column; }
+  .zvhd { display: flex; align-items: center; gap: 10px; padding: 10px 12px; flex-wrap: wrap; background: var(--tg-theme-secondary-bg-color, #eef1f5); box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+  .zvhd > b { font-size: 15px; flex: 1 1 auto; min-width: 0; }
+  .zvx, .zvz button { width: auto; margin: 0; border: 0; min-width: 38px; height: 36px; border-radius: 10px; font: inherit; font-size: 17px; font-weight: 800; cursor: pointer;
+                      background: var(--tg-theme-bg-color, #fff); color: inherit; box-shadow: 0 2px 0 rgba(0,0,0,.15); padding: 0 10px; }
+  .zvx:active, .zvz button:active { transform: translateY(2px); box-shadow: none; }
+  .zvz { display: flex; align-items: center; gap: 6px; } .zvpct { min-width: 52px; text-align: center; font-weight: 700; font-size: 13px; }
+  .zvbody { flex: 1 1 auto; overflow: auto; padding: 8px 12px 24px; -webkit-overflow-scrolling: touch; }
+  .zvt { width: 100%; max-width: 640px; margin: 0 auto; border-collapse: collapse; font-size: 15px; }
+  .zvt th { position: sticky; top: -8px; background: var(--tg-theme-bg-color, #fff); font-size: 12px; opacity: .75; text-align: left; padding: 8px 6px; border-bottom: 2px solid rgba(0,0,0,.12); }
+  .zvt th:last-child, .zvt td.zvp { text-align: right; }
+  .zvt td { padding: 9px 6px; border-bottom: 1px solid rgba(0,0,0,.07); }
+  .zvt tbody tr:nth-child(even) td { background: rgba(127,127,127,.06); }
+  .zvt td.zvn { width: 28px; opacity: .55; font-size: 13px; } .zvt td.zvw small { display: block; font-size: 11px; color: #c62828; }
+  .zvt td.zvp { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; } .zvt td.zvp.pos { color: #138a43; } .zvt td.zvp.neg { color: #c62828; } .zvt td.zvp.na { opacity: .45; }
+  .zvt tfoot td { font-weight: 800; border-top: 2px solid rgba(0,0,0,.2); border-bottom: 0; padding-top: 12px; font-size: 16px; }
+  .zvnote { max-width: 640px; margin: 12px auto 0; font-size: 12px; opacity: .65; }
+  .zvsheet { padding: 4px; touch-action: pan-x pan-y; cursor: grab; } .zvsheet.drag { cursor: grabbing; user-select: none; }
+  .zvzoom { position: relative; overflow: hidden; } .zvzoom > table { transform-origin: 0 0; position: absolute; left: 0; top: 0; }
+  .zvzoom .ott, .zvzoom .ott th, .zvzoom .ott td { position: static !important; box-shadow: none; }
+  .zvzoom .ott tr > :nth-child(1):not([colspan]) { min-width: 34px; }
   .ottw { container-type: inline-size; overflow: auto; max-height: 72vh; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); overscroll-behavior-x: contain; cursor: grab; outline: none; }
   .ottw.drag { cursor: grabbing; user-select: none; } .ottw.drag * { pointer-events: none; }
   .ottw::-webkit-scrollbar { height: 10px; width: 8px; } .ottw::-webkit-scrollbar-thumb { background: rgba(31,98,201,.35); border-radius: 8px; }
@@ -1321,7 +1351,8 @@
     sub.style.display = on ? '' : 'none';
   }
   function go(fn) { if (cur) stack.push(cur); cur = fn; topShow(fn !== showMenu); fn(); syncBack(); }
-  function goBack() { if (!stack.length) return; cur = stack.pop(); topShow(cur !== showMenu); cur(); syncBack(); }
+  // 25.11.2026: «назад» сначала закрывает просмотр табеля
+  function goBack() { if ($('zview')) return zvClose(); if (!stack.length) return; cur = stack.pop(); topShow(cur !== showMenu); cur(); syncBack(); }
   function home() { stack = []; cur = showMenu; topShow(false); showMenu(); syncBack(); }
   function syncBack() {
     if (!tg || !tg.BackButton) return;
@@ -1350,9 +1381,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7b431795', newBuild = '';
+  var BUILD = 'a5629374', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795605815' || 0;
+  var BUILD_AT = +'1795606058' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5380,6 +5411,10 @@
     h += '<div class="zisum"><b>' + (C.hour ? fmtq(D.total) + ' сум' : 'ставка не задана') + '</b><span>к оплате сверхурочно: ' + F(D.min.net) + ' мин' + (C.hour ? ' × ' + fmtq(C.hour) + ' сум/час' : '') + '</span></div>';
     var th = function (t, sub) { return '<th>' + t + (sub ? '<small>' + sub + '</small>' : '') + '</th>'; };
     setTimeout(ottNavInit, 0);   // 24.11.2026: панель прокрутки — после вставки в страницу
+    // 25.11.2026 (руководитель): сверху — «👁 Просмотр» (сотрудник · к выдаче) и «🗺 Общий лист» (вся таблица, увеличить/уменьшить); только просмотр
+    window._otD = D; window._otMn = mname; setTimeout(zvInit, 0);
+    h += '<div class="zvbar"><button type="button" class="zvb pay" data-zv="pay"><span>👁</span><b>Просмотр</b><small>сотрудник · к выдаче</small></button>' +
+      '<button type="button" class="zvb sheet" data-zv="sheet"><span>🗺</span><b>Общий лист</b><small>вся таблица · увеличить / уменьшить</small></button></div>';
     h += '<div class="ottnav"><button type="button" data-ottl title="Влево">◀</button><div class="ottbar"><div class="ottthumb"></div></div><span class="ottpos"></span>' +
       '<button type="button" data-ottr title="Вправо">▶</button></div><div class="ottbox"><div class="ottw" tabindex="0"><table class="ott"><thead><tr>' + th('№') + th('Сотрудник', 'должность') + th('Дней', 'должен / пришёл / не пришёл') + th('Норма', 'мин') +
           th('В смену', 'мин') + th('Разница', 'мин') + th('Опоздание', 'мин') + th('Сверх&shy;урочно', '☀️ + 🌙 + 📅') + th('Итог сверх&shy;урочно', 'мин') + (C.hour ? th('Сумма', 'сум') : '') + th('Надбавка сверх&shy;урочно · ' + (D.ot_pct || 0) + ' %', 'мин') + th('Зарплата', 'на руку, сум/мес') + th('Бонус за партию', 'сум') + th('Бонус без брака', 'сум') + th('Спец. бонусы · по посещению', 'сум') + th('Зарплата с бонусами', 'итого, сум') + th('В смену от нормы', '%') + th('Зарплата с бонусами по факту', 'сум = итог × % от нормы') + th('Стоимость надбавки сверх&shy;урочно', 'сум = мин × (зарплата ÷ норма)') + IS.map(function (d) { return th('Инвент. сб ' + d.slice(8, 10) + '.' + d.slice(5, 7), 'сум'); }).join('') + th('Инвент. другие дни', 'сум') + th('Бонус за инвентаризацию', 'итого, сум') + th('Спец. бонусы завода · без посещения', 'из 🌟 Специальных, целиком, сум') + th('Общая сумма', 'по факту + надбавка + инвент. + спец. без посещения, сум') + th('Поступление на карту', 'из 1С за месяц, после налогов, сум') + th('Остаток (разница)', 'общая сумма − на карту, сум') + th('Удержание в счёт долга', 'из 💳 Долгов за месяц, сум') + th('К выдаче', 'остаток − долг, сум') + '</tr></thead><tbody>' +
@@ -5457,6 +5492,67 @@
     h += '<div class="note">Разница = «в смену» − норма (меньше нормы — минус, норма и больше — 0). Итог сверхурочно = сверхурочно − недоработка, не меньше 0: сначала сверхурочные закрывают недоработку, остаток оплачивается. ' +
           '☀️ раньше ' + esc(C.start) + ' · 🌙 позже ' + esc(C.end) + ' · 📅 нерабочие дни и праздники. Нажмите строку — дни.</div>';
     return h;
+  }
+  // 25.11.2026 (руководитель): просмотр табеля — только чтение, поверх страницы
+  function zvInit() { Array.prototype.forEach.call(document.querySelectorAll('[data-zv]'), function (b) { b.onclick = function (e) { e.stopPropagation(); haptic('light'); zvOpen(b.getAttribute('data-zv')); }; }); }
+  function zvClose() { var o = document.getElementById('zview'); if (o) o.remove(); document.documentElement.classList.remove('zvlock');
+    syncBack(); }
+  function zvOpen(kind) {
+    var D = window._otD; if (!D) return; zvClose();
+    var mn = String(window._otMn || '').toLowerCase(), o = document.createElement('div');
+    o.id = 'zview'; o.className = 'zview';
+    var head = function (t, tools) { return '<div class="zvhd"><button type="button" class="zvx" data-zvx>✕</button><b>' + t + '</b>' + (tools || '') + '</div>'; };
+    if (kind === 'pay') {
+      var tot = 0, n = 0;
+      var rows = (D.people || []).map(function (p, i) {
+        var v = zpPay(p, D); if (v != null) { tot += v; n++; }
+        return '<tr><td class="zvn">' + (p.no || i + 1) + '</td><td class="zvw">' + esc(p.who) + (p.gone_m ? '<small>🚪 уволен</small>' : '') + '</td><td class="zvp ' + (v == null ? 'na' : v < 0 ? 'neg' : v > 0 ? 'pos' : '') + '">' +
+          (v == null ? '—' : (v < 0 ? '−' : '') + fmtq(Math.abs(v))) + '</td></tr>'; }).join('');
+      o.innerHTML = head('👁 К выдаче · ' + esc(mn)) + '<div class="zvbody"><table class="zvt"><thead><tr><th>№</th><th>Сотрудник</th><th>К выдаче, сум</th></tr></thead><tbody>' + rows +
+        '</tbody><tfoot><tr><td></td><td>Итого · ' + n + ' чел.</td><td class="zvp">' + (D.card_have ? (tot < 0 ? '−' : '') + fmtq(Math.abs(tot)) : '—') + '</td></tr></tfoot></table>' +
+        '<div class="zvnote">Только просмотр. К выдаче = общая сумма − на карту − удержание долга; минус — переплачено' + (D.card_have ? '' : '; данных 1С за месяц нет — «—»') + '.</div></div>';
+    } else {
+      var src = document.querySelector('.ottw .ott'); if (!src) return;
+      var t = src.cloneNode(true); o._w = src.offsetWidth;
+      Array.prototype.forEach.call(t.querySelectorAll('tr.otd'), function (r) { r.remove(); });
+      Array.prototype.forEach.call(t.querySelectorAll('.ottarr'), function (r) { r.remove(); });
+      Array.prototype.forEach.call(t.querySelectorAll('[data-ow]'), function (r) { r.removeAttribute('data-ow'); });
+      o.innerHTML = head('🗺 Общий лист · ' + esc(mn), '<span class="zvz"><button type="button" data-zz="-">−</button><span class="zvpct"></span><button type="button" data-zz="+">+</button>' +
+        '<button type="button" data-zz="w" title="по ширине">⬌</button><button type="button" data-zz="a" title="целиком">⛶</button></span>') +
+        '<div class="zvbody zvsheet"><div class="zvzoom"></div></div>';
+      o.querySelector('.zvzoom').appendChild(t);
+    }
+    document.body.appendChild(o); document.documentElement.classList.add('zvlock');
+    o.querySelector('[data-zvx]').onclick = zvClose;
+    try { tg.BackButton.show(); } catch (e) {}
+    if (kind !== 'pay') zvSheet(o);
+  }
+  function zvSheet(o) {
+    var box = o.querySelector('.zvsheet'), z = o.querySelector('.zvzoom'), t = z.firstChild, pc = o.querySelector('.zvpct'), k = 1;
+    var W = Math.max(o._w || t.offsetWidth, 720); t.style.width = W + 'px'; var H = t.offsetHeight;   // размер при 100 % — как таблица на странице
+    var set = function (v, cx, cy) {
+      v = Math.max(0.15, Math.min(3, v)); if (cx == null) { cx = box.clientWidth / 2; cy = box.clientHeight / 2; }
+      var fx = (box.scrollLeft + cx) / k, fy = (box.scrollTop + cy) / k;   // точка под пальцем остаётся на месте
+      k = v; z.style.width = Math.ceil(W * k) + 'px'; z.style.height = Math.ceil(H * k) + 'px'; t.style.transform = 'scale(' + k + ')';
+      box.scrollLeft = fx * k - cx; box.scrollTop = fy * k - cy; pc.textContent = Math.round(k * 100) + ' %';
+    };
+    var fitW = function () { return (box.clientWidth - 8) / W; }, fitA = function () { return Math.min(fitW(), (box.clientHeight - 8) / H); };
+    set(fitW(), 0, 0); box.scrollLeft = 0; box.scrollTop = 0;
+    Array.prototype.forEach.call(o.querySelectorAll('[data-zz]'), function (b) { b.onclick = function () { haptic('light'); var a = b.getAttribute('data-zz');
+      if (a === '+') set(k * 1.25); else if (a === '-') set(k / 1.25); else { set(a === 'w' ? fitW() : fitA(), 0, 0); box.scrollLeft = 0; box.scrollTop = 0; } }; });
+    // два пальца — увеличить/уменьшить; Ctrl + колесо — то же на компьютере; один палец / мышь — двигать лист
+    var p0 = null;
+    var dist = function (e) { var a = e.touches[0], b = e.touches[1]; return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); };
+    var mid = function (e) { var r = box.getBoundingClientRect(); return [(e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left, (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top]; };
+    box.addEventListener('touchstart', function (e) { if (e.touches.length === 2) { p0 = { d: dist(e), k: k }; e.preventDefault(); } }, { passive: false });
+    box.addEventListener('touchmove', function (e) { if (p0 && e.touches.length === 2) { e.preventDefault(); var m = mid(e); set(p0.k * dist(e) / p0.d, m[0], m[1]); } }, { passive: false });
+    box.addEventListener('touchend', function (e) { if (e.touches.length < 2) p0 = null; });
+    box.addEventListener('wheel', function (e) { if (!e.ctrlKey) return; e.preventDefault(); var r = box.getBoundingClientRect(); set(k * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+    var dg = null;
+    box.addEventListener('mousedown', function (e) { if (e.button) return; dg = { x: e.clientX, y: e.clientY, l: box.scrollLeft, t: box.scrollTop }; box.classList.add('drag'); });
+    window.addEventListener('mousemove', function (e) { if (!dg) return; box.scrollLeft = dg.l - (e.clientX - dg.x); box.scrollTop = dg.t - (e.clientY - dg.y); });
+    window.addEventListener('mouseup', function () { dg = null; box.classList.remove('drag'); });
+    box.addEventListener('dblclick', function (e) { var r = box.getBoundingClientRect(); set(k < 0.9 ? 1 : fitW(), e.clientX - r.left, e.clientY - r.top); if (k !== 1) { box.scrollLeft = 0; box.scrollTop = 0; } });
   }
   var otMonth = '', otOpen = {};
   function showZpOt() {
