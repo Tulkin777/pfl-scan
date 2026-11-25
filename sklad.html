@@ -1258,9 +1258,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b309fe64', newBuild = '';
+  var BUILD = 'd4bc4457', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795579455' || 0;
+  var BUILD_AT = +'1795581475' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4337,20 +4337,23 @@
     }
     load('/api/zp_debt', {}, draw);
   }
+  var zpAcc = {};   // 25.11.2026: доступ к таблицам зарплаты (из /api/zp)
+  function zpBonAny() { return ['zp_batch', 'zp_ot', 'zp_qual', 'zp_spec', 'zp_spec2'].some(function (k) { return zpAcc[k] >= 1; }); }
   function showZp(box) {
     var me = cur;
     load('/api/zp', {}, function (D) {
       if (cur !== me || !box.isConnected) return;
       if (!D.ok) { box.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       zpInvOn = !!D.inv_bonus;   // 24.11.2026: 📋 бонус за инвентаризацию — кнопка внутри «Бонусов»
+      zpAcc = D.zacc || {};   // 25.11.2026: доступ к таблицам зарплаты (👥 Доступ): 1 смотреть, 2 исправлять
       // 24.11.2026 (руководитель): в «Зарплате» две кнопки рядом — «Расчёт зарплаты завода» (внутри посещение и табель) и «Бонусы»
-      var ks = ['pay', 'bon', 'debt'].filter(function (k) { return k === 'debt' ? isAdmin : k === 'bon' ? !!D.bonus : (D.parts.pay || D.parts.dav || D.parts.tab); });   // 25.11.2026: + 💳 Долги (пока только руководителю)
+      var ks = ['pay', 'bon', 'debt'].filter(function (k) { return k === 'debt' ? zpAcc.zp_debt >= 1 : k === 'bon' ? !!D.bonus || zpBonAny() : (D.parts.pay || D.parts.dav || D.parts.tab || zpAcc.zp_month >= 1); });   // 25.11.2026: по «👥 Доступу»
       if (!ks.length) { box.innerHTML = '<div class="empty">Разделы зарплаты вам пока не даны</div>'; return; }
       var odd = ks.length % 2 === 1;
       box.innerHTML = '<div class="mgrid">' + ks.map(function (k, i) {
-        var t = ZPT[k], f = k === 'bon' || k === 'debt' ? null : ((D.parts.pay || D.parts.dav || D.parts.tab).files || [])[0];
+        var t = ZPT[k], f = k === 'bon' || k === 'debt' ? null : ((D.parts.pay || D.parts.dav || D.parts.tab || {}).files || [])[0];
         var c = k === 'bon' && D.bonus.inv_only ? '📋 за инвентаризацию'
-          : k === 'bon' ? (D.inv_bonus ? '📋 инвентаризация' : 'виды бонусов')   // 24.11.2026: суммы — внутри каждого вида бонуса
+          : k === 'bon' ? (D.inv_bonus || !D.bonus ? (D.inv_bonus ? '📋 инвентаризация' : 'бонусы завода') : 'виды бонусов')   // 24.11.2026: суммы — внутри каждого вида бонуса
           : k === 'debt' ? t[3]
           : (f ? 'последний: ' + esc(f.month || f.at) : 'файлов пока нет') + '<br>' + (k === 'pay' ? 'внутри: ' + ['pay', 'dav', 'tab'].filter(function (q) { return D.parts[q]; }).map(function (q) { return { pay: 'расчёт', dav: 'посещение', tab: 'табель' }[q]; }).join(' · ') : t[3]);
         return '<div class="tile cat ' + t[0] + (odd && i === ks.length - 1 ? ' wide' : '') + '" data-zp="' + k + '"><div class="e">' + t[1] + '</div>' +
@@ -4359,7 +4362,7 @@
       Array.prototype.forEach.call(box.querySelectorAll('[data-zp]'), function (el) {
         el.onclick = function () {
           var k = el.getAttribute('data-zp'); try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-          go(function () { if (k === 'debt') showZpDebt(); else if (k === 'bon' && D.bonus.inv_only) showZpInv(); else if (k === 'bon') showZpBonus(); else showZpPart(k); });
+          go(function () { if (k === 'debt') showZpDebt(); else if (k === 'bon' && D.bonus && D.bonus.inv_only && !zpBonAny()) showZpInv(); else if (k === 'bon') showZpBonus(); else showZpPart(k); });
         };
       });
     });
@@ -4382,7 +4385,7 @@
         if (sub.length) h += '<div class="osg">' + sub.map(function (q) { var t2 = ZPT[q];
           return '<div class="ob ' + (SC[q] || 'c0') + '" data-zsub="' + q + '"><i>' + t2[1] + '</i><b>' + t2[2] + '</b></div>'; }).join('') + '</div>';
         // 24.11.2026 (руководитель): открыл расчёт — сразу таблица месяца (выбранный месяц), дальше её дополняем
-        if (isAdmin) h += '<div class="msec">📊 РАСЧЁТ ЗАРПЛАТЫ · ТАБЕЛЬ МЕСЯЦА</div><div id="zptab"><div class="spin">Считаю по отчёту посещения…</div></div>';
+        if (zpAcc.zp_month >= 1) h += '<div class="msec">📊 РАСЧЁТ ЗАРПЛАТЫ · ТАБЕЛЬ МЕСЯЦА</div><div id="zptab"><div class="spin">Считаю по отчёту посещения…</div></div>';
       }
       if (k === 'dav' && D.parts.tab) h += '<div class="osg"><div class="ob c3" data-zsub="tab"><i>' + ZPT.tab[1] + '</i><b>' + ZPT.tab[2] + '</b></div></div>';   // 24.11.2026: табель — внутри посещения
       var parts = k === 'pay' ? ['pay', 'ved'] : [k];
@@ -5240,7 +5243,9 @@
     view.innerHTML = subTop('zp', 'Бонусы · Завод') + '<div id="bzav"></div>';
     bindTabs();
     var tl = (zpInvOn ? '<div class="ob c4" id="zinvgo"><i>📋</i><b>Инвентаризация</b></div>' : '') +
-      (isAdmin ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div><div class="ob c2" id="zotgo"><i>⏰</i><b>Сверхурочные</b></div><div class="ob c7" id="zqgo"><i>✅</i><b>Без брака</b></div><div class="ob c5" id="zspgo"><i>⭐</i><b>Специальные · по посещению</b></div><div class="ob c8" id="zsp2go"><i>🌟</i><b>Специальные · без посещения</b></div>' : '');
+      (zpAcc.zp_batch >= 1 ? '<div class="ob c1" id="zbgo"><i>🏭</i><b>За партию</b></div>' : '') + (zpAcc.zp_ot >= 1 ? '<div class="ob c2" id="zotgo"><i>⏰</i><b>Сверхурочные</b></div>' : '') +
+      (zpAcc.zp_qual >= 1 ? '<div class="ob c7" id="zqgo"><i>✅</i><b>Без брака</b></div>' : '') + (zpAcc.zp_spec >= 1 ? '<div class="ob c5" id="zspgo"><i>⭐</i><b>Специальные · по посещению</b></div>' : '') +
+      (zpAcc.zp_spec2 >= 1 ? '<div class="ob c8" id="zsp2go"><i>🌟</i><b>Специальные · без посещения</b></div>' : '');   // 25.11.2026: по «👥 Доступу»
     $('bzav').innerHTML = tl ? '<div class="osg">' + tl + '</div>' : '<div class="empty">Бонусов завода вам пока не дано</div>';
     var hp = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} };
     if ($('zinvgo')) $('zinvgo').onclick = function () { hp(); go(showZpInv); };
@@ -5260,12 +5265,11 @@
     function draw(D) {
       if (cur !== me) return;
       var B = $('bon'); if (!B) return;
-      if (!D.ok) { B.innerHTML = '<div class="empty">' + esc(D.text || 'Нет данных') + '</div>'; return; }
       // 24.11.2026 (руководитель): в «Бонусах» — только виды бонусов квадратами; месяц, суммы и «Добавить» — внутри каждого вида.
       // Новый вид бонуса — новый квадрат здесь. Ручные строки (zp_bonus.json) не удалены — просто не показываются.
       if (true) {
         // 24.11.2026 (руководитель): сначала место — 🏭 Завод (инвентаризация, за партию, сверхурочные внутри); 🏢 Офис — когда появятся бонусы офиса
-        B.innerHTML = (zpInvOn || isAdmin) ? '<div class="osg"><div class="ob c1" id="bzavgo"><i>🏭</i><b>Завод</b></div></div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
+        B.innerHTML = (zpInvOn || zpBonAny()) ? '<div class="osg"><div class="ob c1" id="bzavgo"><i>🏭</i><b>Завод</b></div></div>' : '<div class="empty">Видов бонусов вам пока не дано</div>';
         if ($('bzavgo')) $('bzavgo').onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} go(showZpBonusZav); };
         return;
       }
@@ -6370,10 +6374,13 @@
     function row(it) {
       var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key === 'rsx_sum' || it.key === 'c1sync' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
       // 23.11.2026 (руководитель): вкладка главного экрана — только ✅ показать / ⛔ скрыть (без «смотрит»)
-      var LV = it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
+      // 25.11.2026 (руководитель): таблицы зарплаты — три уровня: ⛔ нет · 👁 смотреть · ✋ исправлять
+      var Z3 = ['zp_month', 'zp_batch', 'zp_ot', 'zp_qual', 'zp_spec', 'zp_spec2', 'zp_debt'].indexOf(it.key) >= 0;
+      var LV = Z3 ? [[0, '⛔ Нет'], [1, '👁 Смотреть'], [2, '✋ Исправлять']]
+        : it.key.indexOf('cert_') === 0 || it.key.indexOf('zp_') === 0 || it.key.indexOf('med') === 0 ? [[2, '✅ Дать'], [0, '⛔ Не давать']]   // 23.11.2026: вид документа
         : isTab ? [[2, '✅ Показать'], [0, '⛔ Скрыть']] : [[0, LVNAME[0]], [1, LVNAME[1]], [2, LVNAME[2]]];
       h += '<div class="whr' + (isTab ? ' tabr' : '') + '"><div class="wn">' + it.emoji + ' ' + esc(it.name) + (x.own ? '<span class="ex">✏️ своё</span>' : '') + '</div><div class="lv">' +
-        LV.map(function (p) { var v = p[0], on = isTab ? ((x.lv >= 1) === (v === 2)) : x.lv === v; return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (on ? ' class="on' + v + '"' : '') + '>' + p[1] + '</span>'; }).join('') + '</div>';
+        LV.map(function (p) { var v = p[0], on = isTab && !Z3 ? ((x.lv >= 1) === (v === 2)) : x.lv === v; return '<span data-k="' + it.key + '" data-lv="' + v + '"' + (on ? ' class="on' + v + '"' : '') + '>' + p[1] + '</span>'; }).join('') + '</div>';
       if (isTab) { h += '</div>'; return; }
       if (x.lv === 2) {
         h += '<div class="acts">' + actsOf(it.key).map(function (a) {
@@ -6416,7 +6423,10 @@
       '⛔ Просроченные: без доступа истёкший документ показан как «нет» — без номера, срока и файла, фильтра «Только просроченные» нет. Вы видите всё.</div>';
     h += '<div class="agrp">ЗАРПЛАТА</div>';   // 23.11.2026 (руководитель): вкладка «💰 Зарплата» — по умолчанию всем скрыта
     [['zp_dav', '📋', 'Посещение (смотреть и загружать)'], ['zp_tab', '⏱', 'Табель в минутах'],
-     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду'], ['zp_staff', '👔', 'Должности сотрудников завода (смотреть и вписывать)'], ['zp_staff_sal', '💵', 'Должности — зарплата сотрудников (видеть и вписывать)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+     ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду'], ['zp_staff', '👔', 'Должности сотрудников завода (смотреть и вписывать)'], ['zp_staff_sal', '💵', 'Должности — зарплата сотрудников (видеть и вписывать)'],
+     ['zp_month', '📊', 'Табель месяца — таблица расчёта зарплаты (👁 смотреть / ✋ исправлять)'], ['zp_batch', '🏭', 'Бонус за партию (👁 / ✋ ставки)'],
+     ['zp_ot', '⏰', 'Сверхурочные (👁 / ✋ правила)'], ['zp_qual', '✅', 'Бонус без брака (👁 / ✋ суммы и снижения)'],
+     ['zp_spec', '⭐', 'Специальные · по посещению (👁 / ✋)'], ['zp_spec2', '🌟', 'Специальные · без посещения (👁 / ✋)'], ['zp_debt', '💳', 'Долги сотрудников (👁 / ✋)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">💰 Вкладка «Зарплата» (вверху) ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
