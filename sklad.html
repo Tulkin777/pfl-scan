@@ -980,6 +980,7 @@
   .zsb.done.ack { background: #e8f0ff; border-color: #2f6bd0; color: #1f4e9a; }
   .zsb.done.conf { background: #e4f7ed; border-color: #1c9662; color: #11663f; }
   .zsb.warn:not(.act) { background: #fff5df; border-color: #f0a020; color: #6b4200; }
+  .zsb.lock { background: rgba(127,127,127,.1); border: 2px solid rgba(127,127,127,.25); color: inherit; opacity: .8; }
   .zsb.wait { background: transparent; border: 2px dashed rgba(127,127,127,.35); opacity: .75; }
   .zsb.pop .ic { animation: zsPop .5s ease; } @keyframes zsPop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .zsmore { margin: 8px 4px 0; font-size: 12px; opacity: .8; }
@@ -1384,9 +1385,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '57523aa7', newBuild = '';
+  var BUILD = '3021e1a2', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795606464' || 0;
+  var BUILD_AT = +'1795606656' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5401,7 +5402,10 @@
     else A = b('ack wait', '', '⏳', 'Ознакомление', 'начальник завода ещё не отметил');
     // справа — подтверждение
     var C, mnl = esc(mn.toLowerCase());
-    if (ED) C = isAdmin ? b('conf warn act', 'zpconfgo', '✏️', 'Подтвердить изменения', 'будет версия ' + ((CF.ver || 1) + 1) + ' · открыто ' + zpAt(ED.at))
+    // 25.11.2026 (руководитель): подтвердить можно только после «👁 Ознакомлен» начальника завода (с теми же суммами)
+    var ackOk = !!(last && last.same), lockS = !last ? 'сначала начальник завода<br>нажимает «👁 Ознакомлен»' : 'суммы изменились —<br>ждём нового ознакомления';
+    if ((ED || !CF) && isAdmin && !ackOk) C = b('conf lock', '', '🔒', ED ? 'Подтвердить изменения' : 'Подтвердить', lockS);
+    else if (ED) C = isAdmin ? b('conf warn act', 'zpconfgo', '✏️', 'Подтвердить изменения', 'будет версия ' + ((CF.ver || 1) + 1) + ' · открыто ' + zpAt(ED.at))
                         : b('conf warn', '', '✏️', 'Идёт изменение', 'руководитель исправляет · ' + zpAt(ED.at));
     else if (CF) C = b('conf done', '', '✅', 'Подтверждено' + ((CF.ver || 1) > 1 ? ' · v' + CF.ver : ''), 'Руководитель<br>' + zpAt(CF.at), fr === 'conf');
     else if (isAdmin) C = b('conf act', 'zpconfgo', '✅', 'Подтвердить', 'зарплату за ' + mnl + ' — месяц закроется');
@@ -5409,7 +5413,7 @@
     var h = '<div class="zpsign"><div class="zsh">Зарплата за ' + mnl + '</div><div class="zsrow">' + A + C + '</div>';
     if (isAdmin && ED) h += '<div class="zslinks"><button class="zsl" id="zpeditx">✕ Отменить изменение (остаётся версия ' + (CF.ver || 1) + ')</button></div>';
     else if (isAdmin && CF) h += '<div class="zslinks"><button class="zsl" id="zpedit">✏️ Изменить</button><button class="zsl" id="zpunconf">↩ Снять подтверждение</button></div>';
-    h += '<div class="zsnote">👁 — только отметка, ничего не меняет · ✅ — закрывает месяц, долги со следующего</div>';
+    h += '<div class="zsnote">сначала 👁 начальник завода, потом ✅ руководитель · ✅ закрывает месяц, долги со следующего</div>';
     return h + '</div>';
   }
   function otTable(D, C, mname, otOpen) {
