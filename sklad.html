@@ -915,6 +915,10 @@
   .ott td.restc b { font-size: 13.5px; } .ott td.restc .rpos { color: #138a43; } .ott td.restc .rneg { color: #c62828; }
   .ott td.debtc { color: #c62828; } .ott td.debtc b { font-size: 13.5px; }
   .zpconf { margin: 10px 0; padding: 12px 14px; border-radius: 14px; background: var(--tg-theme-secondary-bg-color, #eef1f5); } .zpconf b { display: block; font-size: 15px; }
+  .zpack { margin: 10px 0; padding: 12px 14px; border-radius: 14px; background: #eef4ff; border: 1px solid rgba(31,98,201,.25); } .zpack > b { display: block; font-size: 15px; color: #1f4e9a; }
+  .zpack > small { display: block; opacity: .7; margin: 3px 0 8px; } .zpack .go { margin-top: 8px; width: 100%; background: linear-gradient(180deg, #3d7ee0, #1f5fc0); }
+  .zpak { padding: 6px 8px; border-radius: 10px; margin-top: 5px; background: #fff; } .zpak small { display: block; opacity: .7; font-size: 11px; }
+  .zpak.ok { border-left: 4px solid #1c8f64; } .zpak.ch { border-left: 4px solid #f0a020; background: #fff8e8; } .zpak.no { opacity: .65; }
   .zpconf.ed { background: #fff4dc; border: 2px solid #f0a020; color: #6b4200; }
   .zpconf small { display: block; opacity: .7; margin: 3px 0 8px; } .zpconf.ok { background: linear-gradient(135deg, #2fb36b, #1c8f64); color: #fff; } .zpconf.ok small { opacity: .9; margin-bottom: 0; }
   .ott td.no { font-size: 16px; font-weight: 800; text-align: center; } .ott td.nf { text-align: center; color: #999; font-style: italic; }
@@ -1306,9 +1310,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '01688cc3', newBuild = '';
+  var BUILD = '7b31f1eb', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795596937' || 0;
+  var BUILD_AT = +'1795597235' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4648,13 +4652,15 @@
               if (!CF) x += isAdmin ? '<div class="zpconf"><b>Подтверждение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>после проверки таблицы; после подтверждения месяц закрывается, долги начинаются со следующего месяца</small>' +
                 '<button class="go" id="zpconfgo">✅ Подтвердить зарплату за ' + esc(mn.toLowerCase()) + '</button></div>'
                 : '<div class="note">⏳ Зарплата за ' + esc(mn.toLowerCase()) + ' ещё не подтверждена руководителем.</div>';
+              x += zpAckHtml(T, mn);   // 25.11.2026 (руководитель): 👁 «Ознакомлен» — начальник завода, ничего не меняет
               x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
             }
           }
           Z.innerHTML = x;
           Array.prototype.forEach.call(Z.querySelectorAll('[data-zy]'), function (el) { el.onclick = function () { haptic('light'); st.y = el.getAttribute('data-zy'); st.step = 'm'; if (st.m.slice(0, 4) !== st.y) { st.m = ''; st.T = null; } paint(); }; });
           Array.prototype.forEach.call(Z.querySelectorAll('[data-zmo]'), function (el) { el.onclick = function () { haptic('light'); pick(el.getAttribute('data-zmo')); }; });
-          var cfSend = function (body, q_) {   // 25.11.2026: подтверждение / снятие — только руководитель
+          var cfSend = function (body, q_, top) {   // 25.11.2026: подтверждение / снятие — только руководитель; top — строка в начало (не обрежется)
+            if (top) q_ = q_.replace('\n', '\n' + top + '\n');
             var go_ = function (yes) { if (!yes) return; body.month = st.m;
               call('/api/zp_confirm', body, 60000).then(function (q) { if (q.ok === false) return say(q.text); haptic(q.ok_act ? 'success' : 'warning'); say(q.text); st.T = q; paint(); }).catch(ivErr); };
             try { tg.showConfirm(q_.slice(0, 250), go_); } catch (e) { go_(confirm(q_)); }
@@ -4666,7 +4672,11 @@
             var sum = function (k) { return snap.reduce(function (a, x) { return a + (+x[k] || 0); }, 0); };
             var C0 = T.confirm;
             if (C0 && C0.editing) return cfSend({ act: 'confirm', snap: snap }, 'Подтвердить изменения за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '? Будет версия ' + ((C0.ver || 1) + 1) + '.\nОбщая сумма: ' + fmtq((C0.total || {}).grand || 0) + ' → ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')));
-            cfSend({ act: 'confirm', snap: snap }, 'Подтвердить зарплату за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '?\nОбщая сумма: ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')) + '\nСпец. без посещения: ' + fmtq(sum('spec2')) + '\nК выдаче: ' + fmtq(sum('pay')) + '\nПосле подтверждения месяц закрывается.');
+            cfSend({ act: 'confirm', snap: snap }, 'Подтвердить зарплату за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '?\nОбщая сумма: ' + fmtq(sum('grand')) + ' сум\nНа карту: ' + fmtq(sum('card')) + '\nУдержание долгов: ' + fmtq(sum('debt')) + '\nСпец. без посещения: ' + fmtq(sum('spec2')) + '\nК выдаче: ' + fmtq(sum('pay')) + '\nПосле подтверждения месяц закрывается.', zpAckLine(T));
+          };
+          if ($('zpackgo')) $('zpackgo').onclick = function () {   // 25.11.2026: 👁 ознакомлен — только отметка
+            var g = (st.T.people || []).reduce(function (a, p) { return a + zpg(p); }, 0);
+            cfSend({ act: 'ack', grand: g }, 'Отметить: «Ознакомлен с зарплатой за ' + MONN[+st.m.slice(5, 7)].toLowerCase() + ' ' + st.m.slice(0, 4) + '»?\nОбщая сумма на экране: ' + fmtq(g) + ' сум.\nНичего не меняется — руководитель увидит, что вы ознакомлены.');
           };
           if ($('zpedit')) $('zpedit').onclick = function () { cfSend({ act: 'edit' }, 'Изменить подтверждённую зарплату? Месяц откроется для исправлений; после «Подтвердить изменения» сохранится новая версия, прежняя останется в истории.'); };
           if ($('zpeditx')) $('zpeditx').onclick = function () { cfSend({ act: 'cancel' }, 'Отменить изменение? Месяц снова закроется на прежней версии (сделанные исправления табеля останутся — их видно в таблице).'); };
@@ -5233,6 +5243,23 @@
   // к выдаче: остаток (общая − на карту) − удержание долга (спец. без посещения уже в общей сумме); в 1С за месяц человека нет — на карту 0;
   // данных 1С за месяц ещё нет — null (не посчитать)
   function zpPay(p, D) { var card = p.card != null ? +p.card : (D.card_have ? 0 : null); return card == null ? null : zpg(p) - card - (+p.debt_due || 0); }
+  // 25.11.2026 (руководитель): 👁 «Ознакомлен» с зарплатой месяца — начальник завода (👥 Доступ → 👁 Ознакомление).
+  // Только отметка: ничего не меняет и не закрывает; сохраняется общая сумма на экране — если потом изменилась, видно.
+  function zpAckList(D) {
+    var g = (D.people || []).reduce(function (a, p) { return a + zpg(p); }, 0);
+    return (D.acks || []).map(function (k) { return { by: k.by, at: k.at, grand: +k.grand || 0, same: (+k.grand || 0) === g, now: g }; });
+  }
+  function zpAckLine(D) { var L = zpAckList(D); return '👁 Ознакомлен: ' + (L.length ? L.map(function (k) { return k.by.split(' ').slice(0, 2).join(' ') + (k.same ? ' ✅' : ' ⚠️ суммы изменились'); }).join(', ') : 'ещё никто'); }
+  function zpAckHtml(D, mn) {
+    var L = zpAckList(D), me = !isAdmin && zpAcc.zp_ack >= 1;
+    var h = '<div class="zpack"><b>👁 Ознакомление · ' + esc(mn.toLowerCase()) + '</b><small>начальник завода отмечает, что видел таблицу — ничего не меняется, это не подтверждение</small>';
+    h += L.length ? L.map(function (k) {
+      return '<div class="zpak ' + (k.same ? 'ok' : 'ch') + '">' + (k.same ? '✅ ' : '⚠️ ') + '<b>' + esc(k.by) + '</b> — ознакомлен ' + esc(k.at.slice(8, 10) + '.' + k.at.slice(5, 7) + ' ' + k.at.slice(11)) +
+        '<small>общая сумма тогда ' + fmtq(k.grand) + (k.same ? ' — та же, что сейчас' : ' · сейчас ' + fmtq(k.now) + ' — после ознакомления суммы изменились') + '</small></div>'; }).join('')
+      : '<div class="zpak no">⏳ ещё никто не ознакомлен</div>';
+    if (me) h += '<button class="go" id="zpackgo">👁 Ознакомлен с зарплатой за ' + esc(mn.toLowerCase()) + '</button>';
+    return h + '</div>';
+  }
   function otTable(D, C, mname, otOpen) {
     var h = '';
     // остаток: плюс — зелёный «+», минус — красный «−», ноль — 0
@@ -6746,7 +6773,8 @@
      ['zp_pay', '💵', 'Расчёт зарплаты и ведомость'], ['zp_bonus', '🎁', 'Бонусы (смотреть и вписывать)'], ['zp_inv', '📋', 'Бонус за инвентаризацию — свои строки'], ['zp_inv_team', '👥', 'Бонус за инвентаризацию — отмечать команду'], ['zp_staff', '👔', 'Должности сотрудников завода (смотреть и вписывать)'], ['zp_staff_sal', '💵', 'Должности — зарплата сотрудников (видеть и вписывать)'],
      ['zp_month', '📊', 'Табель месяца — таблица расчёта зарплаты (👁 смотреть / ✋ исправлять)'], ['zp_batch', '🏭', 'Бонус за партию (👁 / ✋ ставки)'],
      ['zp_ot', '⏰', 'Сверхурочные (👁 / ✋ правила)'], ['zp_qual', '✅', 'Бонус без брака (👁 / ✋ суммы и снижения)'],
-     ['zp_spec', '⭐', 'Специальные · по посещению (👁 / ✋)'], ['zp_spec2', '🌟', 'Специальные · без посещения (👁 / ✋)'], ['zp_debt', '💳', 'Долги сотрудников (👁 / ✋)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
+     ['zp_spec', '⭐', 'Специальные · по посещению (👁 / ✋)'], ['zp_spec2', '🌟', 'Специальные · без посещения (👁 / ✋)'], ['zp_debt', '💳', 'Долги сотрудников (👁 / ✋)'],
+     ['zp_ack', '👁', 'Ознакомление с зарплатой месяца — кнопка «Ознакомлен» (начальник завода; нужен и 📊 Табель месяца 👁)']].forEach(function (t) { row({ key: t[0], emoji: t[1], name: t[2] }); });
     h += '<div class="note">💰 Вкладка «Зарплата» (вверху) ⛔ — её нет совсем. Показана — человек видит только разделы с ✅ Дать. Файлы — в личку бота склада на 1 час. Вы видите всё.</div>';
     h += '<div class="agrp">КОМПЬЮТЕР</div>';   // 22.11.2026: /pc в боте склада — ссылка на браузер до 18:00
     row({ key: 'pc', emoji: '💻', name: 'Открывать на компьютере (/pc)' });
