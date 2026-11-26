@@ -1407,9 +1407,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'bba7a2f9', newBuild = '';
+  var BUILD = 'bb6edfda', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795671212' || 0;
+  var BUILD_AT = +'1795691823' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4803,7 +4803,7 @@
   // 25.11.2026 (руководитель): 💰 Зарплата → 💳 Долги — по каждому сотруднику (из «👔 Должности») несколько долгов:
   // сумма, % в месяц (удерживается из зарплаты каждый месяц), с какого месяца. Удержание месяца уходит в табель
   // месяца (колонка «Удержание в счёт долга»), остаток долга уменьшается сам.
-  var zdOpen = {};
+  var zdOpen = {}, zdEdit = {};
   function showZpDebt() {
     var me = cur;
     view.innerHTML = subTop('zp', 'Зарплата · Долги') + '<div id="zd"><div class="spin">Загрузка…</div></div>';
@@ -4827,11 +4827,23 @@
         if (op) {
           r += p.debts.map(function (x) {
             var done = x.left === 0;
+            if (zdEdit[x.id]) {   // 26.11.2026 (руководитель): ✏️ изменить действующую запись — та же форма, заполненная
+              var ms = (D.open_months || [D.month]).slice();
+              if (ms.indexOf(x.from) < 0) { ms.push(x.from); ms.sort(); }
+              return '<div class="zis zrf" data-eid="' + esc(x.id) + '"><small class="zl">✏️ Изменить долг</small>' +
+                '<div class="zlinks"><input class="txt" inputmode="numeric" placeholder="сумма, сум" data-f="sum" value="' + esc(String(x.sum)) + '" style="width:130px">' +
+                '<input class="txt" inputmode="decimal" placeholder="% в месяц" data-f="pct" value="' + esc(String(+x.pct)) + '" style="width:100px">' +
+                '<select class="txt" data-f="from" style="width:160px">' + ms.map(function (k) { return '<option value="' + k + '"' + (k === x.from ? ' selected' : '') + '>с ' + esc(mN(k)) + (k < D.cur ? ' (прошлый)' : '') + '</option>'; }).join('') + '</select></div>' +
+                '<input class="txt" placeholder="примечание — за что долг" data-f="note" value="' + esc(x.note || '') + '" style="width:100%;margin-top:6px">' +
+                '<div class="zlinks"><button class="go" data-zdsave="' + esc(x.id) + '">💾 Сохранить изменения</button><button class="btn2" data-zdcancel="' + esc(x.id) + '">✖ Отмена</button></div></div>';
+            }
             return '<div class="zis"><div class="zish">' + (done ? '✅' : '💳') + ' <b>' + fmtq(x.sum) + ' сум</b> · ' + (+x.pct) + ' % в месяц = ' + fmtq(x.step) + ' · с ' + esc(mN(x.from)) + (x.note ? ' · ' + esc(x.note) : '') + '</div>' +
               '<div class="zim">удержано ' + fmtq(x.paid) + ' · осталось <b>' + fmtq(x.left) + '</b> · всего месяцев: ' + x.months + (x.closed ? ' · закрыт вручную с ' + esc(mN(x.closed)) : '') + '</div>' +
               '<div class="zlinks">' + (x.closed ? '<button class="btn2" data-zdx="reopen" data-id="' + esc(x.id) + '">↩ Снова удерживать</button>'
                 : (done ? '' : '<button class="btn2" data-zdx="close" data-id="' + esc(x.id) + '">✅ Погашен наличными</button>')) +
-              '<button class="btn2" data-zdx="del" data-id="' + esc(x.id) + '">🗑 Удалить</button></div></div>';
+              '<button class="btn2" data-zded="' + esc(x.id) + '">✏️ Изменить</button>' +
+              '<button class="btn2" data-zdx="del" data-id="' + esc(x.id) + '">🗑 Удалить</button></div>' +
+              (x.edited_at ? '<div class="zim">изменён ' + esc(x.edited_at) + ' · ' + esc(x.edited_by || '') + '</div>' : '') + '</div>';
           }).join('');
           r += '<div class="zrf" data-pid="' + esc(p.id) + '"><small class="zl">➕ Новый долг</small>' +
             '<div class="zlinks"><input class="txt" inputmode="numeric" placeholder="сумма, сум" data-f="sum" style="width:130px">' +
@@ -4850,7 +4862,7 @@
         var go_ = function (yes) {
           if (!yes) return;
           body.month = D.month;
-          call('/api/zp_debt_set', body, 30000).then(function (q) { if (q.ok_act === false || !q.ok) return say(q.text); haptic('success'); say(q.text); draw(q); }).catch(ivErr);
+          call('/api/zp_debt_set', body, 30000).then(function (q) { if (q.ok_act === false || !q.ok) return say(q.text); if (body.act === 'edit') delete zdEdit[body.id]; haptic('success'); say(q.text); draw(q); }).catch(ivErr);
         };
         try { tg.showConfirm(q_, go_); } catch (e) { go_(confirm(q_)); }
       };
@@ -4862,6 +4874,17 @@
           if (!(+body.sum > 0)) return say('Впишите сумму долга.');
           if (!(+body.pct > 0 && +body.pct <= 100)) return say('Впишите % в месяц (1–100).');
           send(body, 'Добавить долг ' + fmtq(+body.sum) + ' сум, ' + body.pct + ' % в месяц (' + fmtq(Math.round(body.sum * body.pct / 100)) + ' в месяц), ' + mN(body.from).toLowerCase() + '?');
+        };
+      });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zded]'), function (b) { b.onclick = function () { zdEdit[b.getAttribute('data-zded')] = true; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zdcancel]'), function (b) { b.onclick = function () { delete zdEdit[b.getAttribute('data-zdcancel')]; draw(D); }; });
+      Array.prototype.forEach.call(B.querySelectorAll('[data-zdsave]'), function (b) {
+        b.onclick = function () {
+          var f = b.closest('.zrf'), g = function (n) { return f.querySelector('[data-f="' + n + '"]').value.trim(); };
+          var body = { act: 'edit', id: b.getAttribute('data-zdsave'), sum: g('sum').replace(/\s/g, ''), pct: g('pct').replace(',', '.'), from: g('from'), note: g('note') };
+          if (!(+body.sum > 0)) return say('Впишите сумму долга.');
+          if (!(+body.pct > 0 && +body.pct <= 100)) return say('Впишите % в месяц (1–100).');
+          send(body, 'Сохранить: долг ' + fmtq(+body.sum) + ' сум, ' + body.pct + ' % в месяц (' + fmtq(Math.round(body.sum * body.pct / 100)) + ' в месяц), ' + mN(body.from).toLowerCase() + '?');
         };
       });
       Array.prototype.forEach.call(B.querySelectorAll('[data-zdx]'), function (b) {
