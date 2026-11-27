@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'd38a6271', newBuild = '';
+  var BUILD = '5ccec5dc', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795786818' || 0;
+  var BUILD_AT = +'1795787265' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -4019,6 +4019,110 @@
   }
   // 26.11.2026 (руководитель «Да, делай»): ↩️ Возврат клиента → номер партии (в ERP и Smartup его нет) → место на схеме.
   // Ставит бот склада (одно место — одна партия); ERP только читается: возврат должен быть проведён.
+  // 27.11.2026 (руководитель): инвентаризация МЕСТА — что фактически лежит на месте (товар · партия · шт). Пишет бот склада;
+  // документы (отгрузка, перемещение, приход) берут места со схемы и сами покажут адрес вместо «❗ нет на местах».
+  var PFIX_WH = { per_tas: 1, ter_tas: 1, per_gx: 1 };
+  function pfixBtn(wh, y) {   // кнопка под строкой «❗ нет на местах склада»
+    if (!PFIX_WH[wh]) return '';
+    return '<br><button class="pfixb" data-pfix="' + esc(JSON.stringify({ wh: wh, item: y.full || y.item || '', batch: y.batch || '', qty: +y.qty || 0 })) +
+      '" style="width:auto;margin-top:4px;padding:5px 12px;font-size:13px;background:linear-gradient(150deg,#ffb347,#e07b00);color:#fff;border:0;border-radius:10px">' +
+      '📍 Указать, где лежит' + (y.batch ? ' п.' + esc(y.batch) : '') + '</button>';
+  }
+  document.addEventListener('click', function (e) {   // в карточке и в списке (карточка списка сама открывается — не дать)
+    var b = e.target.closest && e.target.closest('[data-pfix]');
+    if (!b) return;
+    e.stopPropagation(); e.preventDefault();
+    var a = {};
+    try { a = JSON.parse(b.getAttribute('data-pfix')); } catch (x) { return; }
+    try { tg.HapticFeedback.impactOccurred('medium'); } catch (x) {}
+    go(function () { showPlaceFix(a.wh, a.addr || '', a); });
+  }, true);
+  function pfixClear(wh) {   // после записи — документы и схема заново
+    var hit = function (k) {
+      k = k.replace(/^as:[^:]*:/, '');
+      return k.indexOf('/api/ship_places') === 0 || k.indexOf('sch' + wh) === 0 || k.indexOf('hsch' + wh) === 0 ||
+        k.indexOf('/api/wh') === 0 || k.indexOf('/api/places') === 0 || k.indexOf('/api/flow') === 0 || k.indexOf('/api/task') === 0;
+    };
+    Object.keys(mem).forEach(function (k) { if (hit(k)) delete mem[k]; });
+    try {
+      var ks = [];
+      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('pfl:') === 0 && hit(k.slice(4))) ks.push(k); }
+      ks.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) {}
+  }
+  function showPlaceFix(wh, addr, pre) {
+    var me = cur, S = { addr: addr || '', rows: null, r: null };
+    view.innerHTML = subTop('inv', 'Инвентаризация места · ' + (addr || 'выберите место')) + '<div id="pfbox"><div class="spin">Загрузка…</div></div>';
+    bindTabs();
+    var load_ = function () {
+      call('/api/place_get', { wh: wh, addr: S.addr }, 30000).then(function (r) {
+        var box = $('pfbox');
+        if (cur !== me || !box) return;
+        if (!r.ok) { box.innerHTML = '<div class="msg bad">' + esc(r.text || 'Не получилось') + '</div>'; return; }
+        S.r = r;
+        if (!S.addr) return pick(r);
+        S.rows = r.lots.map(function (y) { return { item: y.item, batch: y.batch, qty: y.qty }; });
+        if (pre && pre.item && !S.rows.some(function (y) { return y.item === pre.item && y.batch === pre.batch; }))
+          S.rows.push({ item: pre.item, batch: pre.batch || '', qty: pre.qty || 1 });
+        draw();
+      }).catch(function (e) { if (cur === me) fail(e); });
+    };
+    var pick = function (r) {   // какое место пересчитали
+      var box = $('pfbox');
+      box.innerHTML = '<div class="box"><h3>📍 ' + esc(r.title) + ' · какое место пересчитали?</h3>' +
+        (pre && pre.item ? '<div class="note">Ищем: <b>' + esc(pre.item) + (pre.batch ? ' п.' + esc(pre.batch) : '') + '</b>' + (pre.qty ? ' · ' + n(pre.qty) + ' шт' : '') + '</div>' : '') +
+        '<div class="pk-g">' + r.places.map(function (p) {
+          return '<button class="pkb ' + (p.what === 'свободно' ? 'free' : 'fit') + '" data-pa="' + esc(p.addr) + '"><b>' + esc(p.addr) + '</b>' + esc(p.what) + '</button>';
+        }).join('') + '</div></div>';
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pa]'), function (b) {
+        b.onclick = function () { S.addr = b.getAttribute('data-pa'); box.innerHTML = '<div class="spin">Загрузка…</div>'; load_(); };
+      });
+    };
+    var draw = function () {
+      var box = $('pfbox'), r = S.r;
+      var dl = '<datalist id="pfitems">' + r.items.map(function (i) { return '<option value="' + esc(i) + '">'; }).join('') + '</datalist>';
+      var h = '<div class="box"><h3>📍 ' + esc(r.code + '-' + S.addr) + ' · что лежит фактически</h3>' +
+        '<div class="note">Впишите всё, что лежит на этом месте сейчас: товар, партия, штуки. Чего нет — ✖. Сохраните — бот запишет место как есть.</div>';
+      S.rows.forEach(function (y, k) {
+        h += '<div style="border-top:1px solid rgba(0,0,0,.08);padding:6px 0"><div style="display:flex;gap:6px;align-items:center">' +
+          '<span style="font-weight:700">' + (k + 1) + '.</span><input data-pi="' + k + '" list="pfitems" value="' + esc(y.item) + '" placeholder="товар" style="flex:1;min-width:0;font-size:15px;padding:7px;border-radius:8px;border:2px solid #c0392b">' +
+          '<button data-prm="' + k + '" style="width:auto;padding:6px 10px">✖</button></div>' +
+          '<div style="display:flex;gap:6px;margin-top:5px;padding-left:18px"><input data-pb="' + k + '" inputmode="numeric" value="' + esc(y.batch) + '" placeholder="партия, напр. 547" style="flex:2;min-width:0;font-size:16px;padding:7px;border-radius:8px;border:2px solid #c0392b">' +
+          '<input data-pq="' + k + '" inputmode="decimal" value="' + esc(String(y.qty)) + '" style="flex:1;min-width:0;font-size:16px;padding:7px;border-radius:8px;border:2px solid #c0392b"><span style="align-self:center">шт</span></div></div>';
+      });
+      if (!S.rows.length) h += '<div class="empty">Место пустое</div>';
+      h += dl + '<div style="display:flex;gap:6px;margin-top:8px"><button id="pfadd" style="flex:1">＋ ещё строка</button>' +
+        '<button id="pfsave" class="main" style="flex:1;margin:0;background:linear-gradient(150deg,#4fc36a,#23873b)">💾 Сохранить место</button></div>' +
+        '<button id="pfother" style="margin-top:6px">↔️ Другое место</button></div>';
+      box.innerHTML = h;
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pi]'), function (el) { el.oninput = function () { S.rows[+el.getAttribute('data-pi')].item = el.value; }; });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pb]'), function (el) { el.oninput = function () { var v = el.value.replace(/[^\dA-Za-z?\/.\-]/g, '').slice(0, 16); if (v !== el.value) el.value = v; S.rows[+el.getAttribute('data-pb')].batch = v; }; });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pq]'), function (el) { el.oninput = function () { S.rows[+el.getAttribute('data-pq')].qty = String(el.value).replace(',', '.'); }; });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-prm]'), function (el) { el.onclick = function () { S.rows.splice(+el.getAttribute('data-prm'), 1); draw(); }; });
+      $('pfadd').onclick = function () { S.rows.push({ item: pre && pre.item || '', batch: '', qty: 1 }); draw(); };
+      $('pfother').onclick = function () { S.addr = ''; pick(r); };
+      $('pfsave').onclick = function () {
+        var b = this, L = S.rows.map(function (y) { return { item: String(y.item || '').trim(), batch: String(y.batch || '').trim(), qty: +y.qty }; });
+        if (L.some(function (y) { return !y.item; })) return say('У каждой строки нужен товар.');
+        if (L.some(function (y) { return !(y.qty > 0); })) return say('Штуки — больше нуля.');
+        if (L.some(function (y) { return r.items.indexOf(y.item) < 0; })) return say('Товар выберите из списка (как в ERP).');
+        var q = 'Записать место ' + r.code + '-' + S.addr + '?\n' + (L.length ? L.map(function (y) { return '• ' + y.item + ' · п.' + (y.batch || '?') + ' · ' + n(y.qty) + ' шт'; }).join('\n') : 'место пустое') +
+          '\n\nБот запишет, что на месте лежит ровно это. ERP не меняется.';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Бот склада записывает…';
+          call('/api/place_set', { wh: wh, addr: S.addr, lots: L }, 120000).then(function (z) {
+            haptic(z.ok ? 'success' : 'warning'); say(z.text || (z.ok ? 'Записано' : 'Не записано'));
+            if (!z.ok) { b.disabled = false; b.textContent = '💾 Сохранить место'; return; }
+            pfixClear(wh);
+            if (cur === me) goBack();
+          }).catch(function (e) { b.disabled = false; b.textContent = '💾 Сохранить место'; fail(e); });
+        };
+        try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+      };
+    };
+    load_();
+  }
   function showRetPut(x, j, k) {
     // 27.11.2026: k — партия строки (сохранённые партии): штуки и партия — из неё, вводить не надо
     var me = cur, y0 = x.lines[j] || {}, pk = k == null ? null : (y0.parts || [])[k], sel = { addr: '', batch: pk ? String(pk.batch || '') : '' };
@@ -7293,15 +7397,16 @@
       return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
         ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ ' + (y.batch ? 'п.' + esc(y.batch) + ' ' : '') + 'нет на местах склада') + '</span>' +
         // 27.11.2026 (руководитель, №223695): партии по 1С нет на схеме — где другие партии этого товара и что делать
-        (!y.place && y.other && y.other.length ? '<br><small style="color:var(--hint)">на местах: ' + y.other.map(esc).join('; ') + '</small>' : '') + '</div>';
-    }).join('') + (p.lines.some(function (y) { return !y.place; }) ? '<div class="note" style="margin:6px 0 0;background:#fff4e0">❗ Партии по 1С нет на местах склада: найдите её на складе и отметьте место в окне склада' +
-      ' или обновите места после инвентаризации. Взяли другую партию — укажите её в окне склада.</div>' : '') +
+        (!y.place && y.other && y.other.length ? '<br><small style="color:var(--hint)">на местах: ' + y.other.map(esc).join('; ') + '</small>' : '') +
+        (!y.place ? pfixBtn(p.wh, y) : '') + '</div>';
+    }).join('') + (p.lines.some(function (y) { return !y.place; }) ? '<div class="note" style="margin:6px 0 0;background:#fff4e0">❗ Партии по 1С нет на местах склада. Нашли её — «📍 Указать, где лежит»:' +
+      ' выберите место и впишите, что на нём лежит (инвентаризация места). Документ обновится сам — адрес и «Взял».</div>' : '') +
       (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
   }
   // 23.11.2026 (руководитель): строки отгрузки в списке — товар · шт · место · партия; «✅ Взял» — у отгруженных и просроченных
   function shipLines(x, st) {
     var p = plcOf(x.id), tot = x.lines.reduce(function (a, y) { return a + (+y.qty || 0); }, 0);
-    var ls = plcOk(p) ? p.lines.map(function (y) { return { name: y.item, qty: y.qty, place: y.code || y.place, batch: y.batch }; })
+    var ls = plcOk(p) ? p.lines.map(function (y) { return { name: y.item, qty: y.qty, place: y.code || y.place, batch: y.batch, full: y.full }; })
       : x.lines.map(function (y) { return { name: y.name, qty: y.qty }; });
     var h = '<div class="mvlist"><div class="mvlh">' + ls.length + ' поз · ' + n(tot) + ' шт' +
       (plcOk(p) ? (p.mode === 'hint' ? ' · 📍 место по схеме (у бота задачи нет)' : ' · 📍 откуда брать') : '') + '</div>' +
@@ -7311,7 +7416,8 @@
           (y.batch ? ' · <b class="mvbt">п.' + esc(y.batch) + '</b>' : '') +
           (y.place ? '<br><span class="slpl">📍 ' + esc(y.place) + '</span>'
             // 24.11.2026 (руководитель «почему нет «Взял»»): строку не нашли на местах склада — показать, а не молчать
-            : plcOk(p) && (p.mode === 'noted' || p.mode === 'pick') ? '<br><span class="slpl nopl">❗ ' + (y.batch ? 'п.' + esc(y.batch) + ' ' : '') + 'нет на местах склада</span>' : '') + '</span></div>';
+            : plcOk(p) && (p.mode === 'noted' || p.mode === 'pick') ? '<br><span class="slpl nopl">❗ ' + (y.batch ? 'п.' + esc(y.batch) + ' ' : '') + 'нет на местах склада</span>' +
+              pfixBtn(p.wh, { full: y.full, item: y.name, batch: y.batch, qty: y.qty }) : '') + '</span></div>';
       }).join('') + '</div>';
     // 24.11.2026 (руководитель): Терминал Ташкент — «✅ Взял» без списания → «отгружено»; «🚚 Отгружено» — бот списывает с мест → архив.
     // Продажу в ERP бот не проводит (команды нет) — проводят в ERP как раньше.
@@ -7333,7 +7439,7 @@
       // документ пересчитается сам (адрес вместо ❗) и «Взял» заработает
       h += '<button class="main vzcard" disabled style="background:#b9bfc6;color:#fff;opacity:1">⛔ Взял — нельзя: нет на местах склада</button>' +
         '<div class="vznote">❗ Нет на местах склада: <b>' + esc(vzMiss(p).join(', ')) + '</b>.<br>' +
-        'Найдите партию на складе и отметьте место в окне «Склад «откуда»» или обновите места инвентаризацией / перемещением — документ обновится сам, появится адрес и «Взял».</div>';
+        'Нашли партию на складе — нажмите «📍 Указать, где лежит» и впишите место (инвентаризация места). Документ обновится сам: появится адрес и «Взял».</div>';
     } else if (st === 'ok' && plcOk(p) && p.mode !== 'hint' && !p.can)
       h += '<div class="vznote g">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
     else if (st === 'ok' && p && p.mode === 'hint')
@@ -8105,11 +8211,17 @@
   function showPlaces(k, ps) {
     loadMany('/api/places', ps, {}, function (rs) {
       var h = '<div class="part">📍 Места · ' + esc(PARTNAME[ps[0]] && partsOf(k).length > 1 ? PARTNAME[ps[0]] : (ITEM[k] || {}).name || '') + '</div>', rows = [];
+      // 27.11.2026 (руководитель): склады Ташкента — инвентаризация места (что лежит фактически); пишет бот склада
+      ps.forEach(function (w) {
+        if (PFIX_WH[w]) h += '<button class="pfixb" data-pfix="' + esc(JSON.stringify({ wh: w })) + '" style="margin:4px 0 8px;background:linear-gradient(150deg,#ffb347,#e07b00);color:#fff;border:0">' +
+          '✏️ Инвентаризация места · ' + esc(PARTNAME[w] || w) + '</button>';
+      });
       rs.forEach(function (r, j) {
         if (!r.rows.length) h += '<div class="empty">Места пустые или схема склада ещё не заполнена</div>';
         r.rows.forEach(function (p) {
           var i = rows.length; rows.push([ps[j], p]);
-          h += '<div class="place"><div class="a">' + esc(p.addr) + '</div><div class="d"><b>' + esc(p.short) + '</b><br>' +
+          h += '<div class="place"><div class="a">' + esc(p.addr) + (PFIX_WH[ps[j]] ? ' <span data-pfix="' + esc(JSON.stringify({ wh: ps[j], addr: p.addr })) + '" title="Что лежит на месте" style="cursor:pointer">✏️</span>' : '') +
+            '</div><div class="d"><b>' + esc(p.short) + '</b><br>' +
             (p.batch ? 'п.' + esc(p.batch) + ' · ' : '') + n(p.qty) + ' ' + esc(p.unit) + '</div>' +
             (p.label ? '<div class="p" data-i="' + i + '" title="Наклейки">🖨</div>' : '') + '</div>';
         });
