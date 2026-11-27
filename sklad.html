@@ -1420,9 +1420,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '23e7de00', newBuild = '';
+  var BUILD = 'b86560e5', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795743015' || 0;
+  var BUILD_AT = +'1795743421' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5023,7 +5023,8 @@
           : can ? '<button class="dvap" data-dap="' + esc(f.id) + '">Применить</button>'
           : '<span class="dvoff">' + (on ? 'не используется' : '—') + '</span>';
         return '<div class="zpf' + (f.on ? ' dvsel' : on ? ' dvx' : '') + '" data-zv="dav" data-id="' + esc(f.id) + '"><span class="nn">' + f.no + '</span><div class="t"><b>' + davKind(f) + '</b><small>' +
-          esc(f.at) + ' · ' + f.kb + ' КБ' + (f.ok ? ' · ' + f.people + ' чел. · ' + f.days + ' дн.' : '') + (f.dup_no ? ' · 📎 такой же файл, как №' + f.dup_no : '') +
+          esc(f.at) + ' · ' + f.kb + ' КБ' + (f.empty ? ' · проходов с турникетов ещё нет — можно выбрать, заполнится сам' : f.ok ? ' · ' + f.people + ' чел. · ' + f.days + ' дн.' : '') +
+          (f.online ? '<br>🛰 считается с 1-го по вчера; сегодня не входит; день без ухода — вручную' : '') + (f.dup_no ? ' · 📎 такой же файл, как №' + f.dup_no : '') +
           (f.on ? '<br>применил ' + esc(f.on_by || '') + ' ' + esc(f.on_at || '') + ' · в зарплате этот' : '') + ' · 👁 смотреть ниже</small></div>' + r +
           '<button class="cdl" data-zg="dav" data-id="' + esc(f.id) + '" title="Скачать — в личку бота">⬇️</button></div><div class="dvpan" data-dpan="' + esc(f.id) + '"></div>';
       }).join('');
@@ -5163,7 +5164,8 @@
               if (ED) x += '<div class="zpconf ed">✏️ <b>Идёт изменение зарплаты за ' + esc(mn.toLowerCase()) + '</b><small>подтверждена была версия ' + (CF.ver || 1) + ' · открыл ' + esc(ED.by) + ' ' + esc(ED.at) + ' — исправьте табель; внизу «✅ Подтвердить изменения» — будет версия ' + ((CF.ver || 1) + 1) + '</small></div>';
               else if (CF) x += '<div class="zpconf ok">✅ <b>Зарплата за ' + esc(mn.toLowerCase()) + ' подтверждена' + ((CF.ver || 1) > 1 ? ' · версия ' + CF.ver : '') + '</b><small>' + esc(CF.by) + ' · ' + esc(CF.at) + ' — месяц закрыт: исправлять табель и начинать долги с этого месяца нельзя</small></div>';
               var DV = T.dav;   // 25.11.2026 (руководитель): по какому отчёту посещения посчитан месяц
-              if (DV && DV.picked && DV.online) x += '<div class="dvsrc ok">🛰 Посещение: Face ID онлайн · обновлено ' + esc(DV.upd || '') + ' · ' + DV.people + ' чел. · ' + DV.days + ' дн. · ' + (DV.auto ? 'применён сам, обновляется каждый час — в конце месяца «✅ Применить» фиксирует' : '✅ зафиксировал ' + esc(DV.by) + ' ' + esc(DV.at)) + ((DV.unmatched || []).length ? '<br>⚠️ нет в «Должностях»: ' + esc(DV.unmatched.join(', ')) + ' — укажите, кто это (📋 Посещение)' : '') + '</div>';
+              if (DV && DV.picked && DV.online) x += '<div class="dvsrc ok">🛰 Посещение: Face ID онлайн · ' + (DV.upto ? 'учтено по ' + DV.upto.slice(8, 10) + '.' + DV.upto.slice(5, 7) + ' включительно' : '') + ' · обновлено ' + esc(DV.upd || '') + ' · ' + (DV.auto ? 'применён сам' : 'выбрал ' + esc(DV.by)) + ' · пересчитывается сам после закрытия дня' +
+                (DV.empty ? '<br>проходов с турникетов за закрытые дни ещё нет' : '') + (DV.noout ? '<br>⚠️ дней без отметки ухода: ' + DV.noout + ' — не засчитаны, поправьте вручную (строка → ✏️)' : '') + ((DV.unmatched || []).length ? '<br>⚠️ нет в «Должностях»: ' + esc(DV.unmatched.join(', ')) + ' — укажите, кто это (📋 Посещение)' : '') + '</div>';
               else if (DV && DV.picked) x += '<div class="dvsrc ok">📋 Посещение: ✅ применён файл №' + (DV.no || '?') + ' · ' + DV.people + ' чел. · ' + DV.days + ' дн. · ' + esc(DV.by) + ' ' + esc(DV.at) + (DV.n > 1 ? ' · других файлов месяца: ' + (DV.n - 1) + ' (не используются)' : '') + '</div>';
               else if (DV && DV.have) x += '<div class="dvsrc warn">📋 Посещение: ' + (DV.n > 1 ? '⚠️ файлов за месяц ' + DV.n + ', ни один не выбран — посчитано по последнему загруженному. ' : 'файл не подтверждён. ') + 'Выбрать: 📋 Посещение → «Применить».</div>';
               x += otTable(T, T.conf || {}, mn, op);
@@ -5687,7 +5689,7 @@
   var otFixEd = {};
   function otDaysHtml(p, D) {
     var F = function (n) { return fmtq(n || 0); }, A = zpAcc.zp_month >= 2, h = '';   // 25.11.2026: исправлять — «✋» табеля месяца (не только руководитель)
-    var ST = { noout: '<span class="neg">нет выхода</span>', absent: '<span class="neg">не пришёл</span>', weekend: '📅 выходной', off: '—' };
+    var ST = { noout: '<span class="neg">нет выхода · вручную</span>', ahead: '<span style="opacity:.45">впереди</span>', absent: '<span class="neg">не пришёл</span>', weekend: '📅 выходной', off: '—' };
     h += '<div class="otdt"><table><thead><tr><th>№</th><th>Дата</th><th>Вход</th><th>Выход</th><th>В смену</th><th>Сверх.</th><th>Опозд.</th><th></th></tr></thead><tbody>' +
       (p.table || []).map(function (t) {
         var k = p.key + '|' + t.day, dl = t.day.slice(8, 10) + '.' + t.day.slice(5, 7) + ' ' + t.wd;
@@ -5789,32 +5791,39 @@
     var TD = iso(d0), DV = T.dav || {}, MI = T.month_info || {};
     var ppl = (T.people || []).filter(function (p) { return !p.gone_m || p.gone_m >= TD; });
     var wd = {}; ppl.forEach(function (p) { (p.table || []).forEach(function (t) { if (t.work) wd[t.day] = 1; }); });
-    var wdl = Object.keys(wd).sort(), past = wdl.filter(function (x) { return x <= TD; });
-    var yd = past.filter(function (x) { return x < TD; }).pop() || '';   // прошлый рабочий день
+    // 27.11.2026 (руководитель): в расчёт — закрытые дни (по вчера); сегодня — только «кто пришёл» (T.today_in)
+    var UP = DV.upto || TD;
+    var wdl = Object.keys(wd).sort(), past = wdl.filter(function (x) { return x <= UP; });
+    var yd = wdl.filter(function (x) { return x < TD; }).pop() || '';   // прошлый рабочий день
     var row = function (p, day) { return (p.table || []).filter(function (t) { return t.day === day; })[0] || null; };
+    var S0 = String((T.conf || {}).start || '08:50'), mm = function (s) { var a = String(s || '').split(':'); return (+a[0] || 0) * 60 + (+a[1] || 0); };
+    var tin = function (p) { var x = (T.today_in || {})[p.fid]; if (x) return { in: x, late: Math.max(0, mm(x) - mm(S0)) };
+      var t = row(p, TD); return t && t.in ? { in: t.in, late: t.late || 0, out: t.out } : null; };
     var came = 0, late = 0, noout = 0, acc = 0;
-    ppl.forEach(function (p) { var t = row(p, TD), y = yd && row(p, yd);
-      if (t && t.in) { came++; if (t.late) late++; } if (y && y.st === 'noout') noout++; acc += zpg(p); });
+    ppl.forEach(function (p) { var t = tin(p), y = yd && row(p, yd);
+      if (t) { came++; if (t.late) late++; } if (y && y.st === 'noout') noout++; acc += zpg(p); });
     var src = DV.online ? '<span class="zonpill on">🛰 Онлайн с Face ID</span><span class="zonpill">обновлено ' + esc(String(DV.upd || '').slice(0, 10) === TD.slice(8, 10) + '.' + TD.slice(5, 7) + '.' + TD.slice(0, 4) ? 'сегодня ' + String(DV.upd).slice(11) : DV.upd || '—') + '</span>'
       : '<span class="zonpill">📋 источник — ' + (DV.picked ? 'файл №' + (DV.no || '?') : 'нет отчёта посещения') + '</span>';
     var h = '<div class="zonhd"><b>Посещение · ' + esc(MONN[+T.month.slice(5, 7)] + ' ' + T.month.slice(0, 4)) + '</b>' + src + '</div>';
     h += '<div class="crt-g st3"><div class="cb eq"><b>' + came + ' / ' + ppl.length + '</b><span>сегодня пришли</span></div>' +
       '<div class="cb"><b' + (late ? ' class="neg"' : '') + '>' + late + '</b><span>опоздали сегодня</span></div>' +
       '<div class="cb"><b' + (noout ? ' class="neg"' : '') + '>' + noout + '</b><span>вчера без выхода</span></div></div>';
-    h += '<div class="crt-g st3 zon2"><div class="cb"><b>' + past.length + ' из ' + (MI.days || wdl.length) + '</b><span>рабочих дней прошло</span></div>' +
-      '<div class="cb eq"><b>' + fmtq(acc) + '</b><span>начислено на сегодня, сум</span></div></div>';
+    var upL = UP.slice(8, 10) + '.' + UP.slice(5, 7);
+    h += '<div class="crt-g st3 zon2"><div class="cb"><b>' + past.length + ' из ' + (MI.days || wdl.length) + '</b><span>рабочих дней закрыто · по ' + upL + '</span></div>' +
+      '<div class="cb eq"><b>' + fmtq(acc) + '</b><span>начислено по ' + upL + ' включительно, сум</span></div></div>';
+    if (DV.empty) h += '<div class="note" style="margin-top:6px">🛰 Проходов с турникетов за закрытые дни ещё нет — таблица заполнится сама после первого закрытого дня.</div>';
     h += '<div class="zonl"><div class="zonr zonth"><span>Сотрудник · сегодня</span><span>в смену, мин</span><span>сверх, мин</span><span>начислено, сум</span></div>' +
       ppl.map(function (p, i) {
-        var t = row(p, TD), y = yd && row(p, yd), st;
-        if (p.nofid) st = '<i class="neg">нет в Face ID</i>';
-        else if (t && t.in) st = 'пришёл ' + esc(t.in) + (t.late ? ' · <i class="neg">опоздание ' + t.late + ' мин</i>' : '') + (t.out ? ' · ушёл ' + esc(t.out) : '');
+        var t = tin(p), y = yd && row(p, yd), st;
+        if (t) st = 'пришёл ' + esc(t.in) + (t.late ? ' · <i class="neg">опоздание ' + t.late + ' мин</i>' : '');
+        else if (p.nofid) st = '<i class="neg">нет в Face ID</i>';
         else st = wd[TD] ? '<i class="neg">ещё не пришёл</i>' : 'сегодня выходной';
-        if (y && y.st === 'noout') st += '<br><i class="neg">вчера без выхода</i>';
+        if (y && y.st === 'noout') st += '<br><i class="neg">вчера без выхода · не засчитан, вручную</i>';
         return '<div class="zonr" data-zon="' + i + '"><span><b>' + esc(p.who) + '</b><small>' + st + '</small></span><span>' + fmtq(+p.shift || 0) + '</span><span>' + fmtq(+p.net || 0) + '</span><span><b>' + fmtq(zpg(p)) + '</b></span></div>' +
           '<div class="zond" id="zond' + i + '" hidden></div>';
       }).join('') + '</div>';
     h += '<div class="ivbar"><button class="btn2" id="zonxl">📥 Excel месяца — в личку</button></div>';
-    h += '<div class="note">Источник месяца: ' + (DV.online ? 'Face ID онлайн, обновляется каждый час' : 'отчёт посещения') + '. Нажмите сотрудника — по дням. Начислено на сегодня = общая сумма из таблицы зарплаты (по факту + надбавка + инвентаризация + спец. без посещения) на сегодня. В конце месяца — «✅ Применить», и таблица зарплаты фиксируется.' +
+    h += '<div class="note">Источник месяца: ' + (DV.online ? 'Face ID онлайн — с 1-го по вчера, пересчёт сам после закрытия дня; сегодня в расчёт не входит; день без отметки ухода не засчитан — вручную' : 'отчёт посещения') + '. Нажмите сотрудника — по дням. Начислено = общая сумма из таблицы зарплаты (по факту + надбавка + инвентаризация + спец. без посещения).' +
       ((DV.unmatched || []).length ? '<br>⚠️ Нет в «Должностях»: ' + esc(DV.unmatched.join(', ')) + ' — укажите, кто это (строка файла ниже → «Применить»).' : '') + '</div>';
     window._zonT = ppl;
     return h;
