@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'dfd46a6d', newBuild = '';
+  var BUILD = '8595001e', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795780601' || 0;
+  var BUILD_AT = +'1795781129' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -7235,17 +7235,22 @@
       h += '<button class="main vzcard ttake" data-tt="shp" data-ttid="' + esc(x.id) + '">✅ Взял — товар у меня (пока без списания)</button>';
       return h;
     }
-    if (st === 'ok' && plcOk(p) && p.can && p.mode !== 'hint' && !(p.mode === 'noted' && !p.ready))
+    if (st === 'ok' && plcOk(p) && p.can && p.mode !== 'hint' && !vzMiss(p).length)
       h += '<button class="main vzcard" data-vz="' + esc(x.id) + '">✅ Взял — списать с этих мест</button>';
-    else if (st === 'ok' && plcOk(p) && p.mode === 'noted' && !p.ready) {
-      var miss = p.lines.filter(function (y) { return !y.place; }).map(function (y) { return y.item; });
-      h += '<div class="vznote">❗ «Взял» появится, когда все строки найдутся на местах. Нет на местах склада: <b>' + esc(miss.join(', ')) + '</b>.<br>' +
-        'Проверьте склад: товар есть — откройте документ и отметьте место в окне «Склад «откуда»»; нет — значит его отгрузили не отсюда, сообщите руководителю.</div>';
+    else if (st === 'ok' && plcOk(p) && p.mode !== 'hint' && vzMiss(p).length) {
+      // 27.11.2026 (руководитель): партии нет на местах — «Взял» серая, нажать нельзя (списывать неоткуда); появится место —
+      // документ пересчитается сам (адрес вместо ❗) и «Взял» заработает
+      h += '<button class="main vzcard" disabled style="background:#b9bfc6;color:#fff;opacity:1">⛔ Взял — нельзя: нет на местах склада</button>' +
+        '<div class="vznote">❗ Нет на местах склада: <b>' + esc(vzMiss(p).join(', ')) + '</b>.<br>' +
+        'Найдите партию на складе и отметьте место в окне «Склад «откуда»» или обновите места инвентаризацией / перемещением — документ обновится сам, появится адрес и «Взял».</div>';
     } else if (st === 'ok' && plcOk(p) && p.mode !== 'hint' && !p.can)
       h += '<div class="vznote g">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
     else if (st === 'ok' && p && p.mode === 'hint')
       h += '<div class="note" style="margin:4px 0 0">У бота по этому документу задачи нет — если товар ещё на месте, проверьте и спишите в окне склада.</div>';
     return h;
+  }
+  function vzMiss(p) {   // строки без места: «Вирагем п.547»
+    return ((p && p.lines) || []).filter(function (y) { return !y.place; }).map(function (y) { return y.item + (y.batch ? ' п.' + y.batch : ''); });
   }
   function vzLabel(p, st) { return p.mode === 'noted' || st === 'ok' ? '✅ Взял — списать с этих мест' : '✅ Взял — собрано'; }
   function vzHtml(p, st) {
@@ -7253,7 +7258,10 @@
     if (!plcOk(p) || st !== 'ok') return '';
     if (p.mode === 'hint') return '<div class="note">📍 Места — по схеме склада. У бота по этому документу задачи нет — если товар ещё на месте, проверьте и спишите в окне склада.</div>';
     if (!p.can) return '<div class="note">👁 Кнопка «Задачи» по этому складу вам не дана — только смотреть.</div>';
-    if (p.mode === 'noted' && !p.ready) return '<div class="note">❗ Не всё нашлось на местах — откройте «Склад «откуда»» и отметьте места.</div>';
+    if (vzMiss(p).length || (p.mode === 'noted' && !p.ready))   // 27.11.2026: нет на местах — «Взял» нажать нельзя
+      return '<button class="main" disabled style="margin-top:8px;background:#b9bfc6;color:#fff;opacity:1">⛔ Взял — нельзя: ' +
+        esc(vzMiss(p).join(', ') || 'не всё нашлось') + ' нет на местах склада</button>' +
+        '<div class="note">Появится на месте (отметка места, инвентаризация, перемещение) — документ обновится сам: будет адрес, «Взял» заработает.</div>';
     return '<button class="main" id="vzyal" style="margin-top:8px;background:linear-gradient(150deg,#4fd68a,#17964a)">' + vzLabel(p, st) + '</button>';
   }
   function shipPlaces(x, box, st) {
