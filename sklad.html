@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5ccec5dc', newBuild = '';
+  var BUILD = '1c3efaba', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795787265' || 0;
+  var BUILD_AT = +'1795787446' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1960,7 +1960,7 @@
       function cnt(f) { return rows.filter(f).length; }
       // бренды готовой продукции — из главного меню (что сейчас лежит на этих складах)
       var MW = {}, mc = cget('/api/menu' + JSON.stringify({}));
-      ((mc && mc.groups) || []).forEach(function (g) { g.whs.forEach(function (w) { MW[w.key] = w; }); });
+      ((mc && mc.groups) || []).forEach(function (g) { ((g && g.whs) || []).forEach(function (w) { if (w) MW[w.key] = w; }); });   // §44: сохранённое старого вида не ломает
       function invBr(city, prod) {
         var ks = (r.wh || {})[city + '|' + prod + '|Готовая продукция'] || [];
         return brandsHtml(mergeBr(ks.map(function (k) { return (MW[k] || {}).brands; })), mergeBr(ks.map(function (k) { return (MW[k] || {}).brands_usual; })));
@@ -6887,7 +6887,7 @@
     load('/api/menu', {}, function (r, old) {
       sub.textContent = 'Выберите склад · ' + r.at + (old ? ' · обновляю…' : '');
       var W = {};
-      r.groups.forEach(function (g) { g.whs.forEach(function (w) { W[w.key] = w; }); });
+      ((r && r.groups) || []).forEach(function (g) { ((g && g.whs) || []).forEach(function (w) { if (w) W[w.key] = w; }); });   // §44 (27.11: «showMenu forEach» у сотрудника)
       // 22.11.2026 (руководитель): вариант 2 — цветные 3D-карточки по 2 в ряд, фильтр Все · Завод · Ташкент · Сырьё
       if (cur !== showMenu) return;
       var TT = tilesOf(W), tiles = TT.tiles, total0 = TT.total;
@@ -7027,7 +7027,7 @@
       if (!old && !menuTimer) menuTimer = setInterval(function () { if (!document.hidden && cur === showMenu) { var y = window.scrollY; showMenu(); window.scrollTo(0, y); } }, 30000);
       if (!old) {
         var pf = [];
-        r.groups.forEach(function (g) { g.whs.forEach(function (w) { if (w.tasks) pf.push(['/api/wh', { wh: w.key }]); }); });
+        ((r && r.groups) || []).forEach(function (g) { ((g && g.whs) || []).forEach(function (w) { if (w && w.tasks) pf.push(['/api/wh', { wh: w.key }]); }); });   // §44
         prefetch(pf);
       }
     });
@@ -7120,7 +7120,7 @@
     var h = subTop(it.f || 'zav', (it.sec.head ? it.sec.head.charAt(0) + it.sec.head.slice(1).toLowerCase() + ' · ' : '') + it.name);
     if (ps.length > 1) {   // руководитель 22.11: на «Склад 1 / Склад 2» — сколько задач
       var MW0 = {}, mc0 = cget('/api/menu' + JSON.stringify({}));
-      ((mc0 && mc0.groups) || []).forEach(function (g) { g.whs.forEach(function (w) { MW0[w.key] = w; }); });
+      ((mc0 && mc0.groups) || []).forEach(function (g) { ((g && g.whs) || []).forEach(function (w) { if (w) MW0[w.key] = w; }); });   // §44
       h += '<div class="seg">' + ps.map(function (p) {
         var tn = (MW0[p] || {}).tasks;
         return '<button data-p="' + p + '"' + (p === part ? ' class="on"' : '') + '>' + esc(PARTNAME[p] || p) +
@@ -7263,7 +7263,7 @@
     }
     function stop() { if (whTimer) { clearInterval(whTimer); whTimer = null; } }
     var c0 = cget('/api/wh' + JSON.stringify({ wh: part }));
-    if (c0) cols(c0);
+    if (c0) fromCache('/api/wh' + JSON.stringify({ wh: part }), c0, cols);   // §44: сломалось на сохранённом — выбросить, ниже свежее
     stop();
     refresh(false);
     me.k = k;
