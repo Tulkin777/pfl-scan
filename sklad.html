@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7de91710', newBuild = '';
+  var BUILD = '4e3199ec', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795783023' || 0;
+  var BUILD_AT = +'1795785617' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1969,6 +1969,13 @@
           '</div>' + label + '<div class="c">' + docs(n0) + '</div>' + (extra || '') + '</div>';
       }
       var h = '', isT = s.city === 'Ташкент';
+      // 27.11.2026 (руководитель «нет доступа — кнопку не показывать»): плитка — только если под ней есть открытый склад
+      // (сервер в r.wh отдаёт только открытые склады; ключ «город|линия|вид»)
+      function hasWh(c, k, p) {
+        if (!r.wh) return true;
+        return Object.keys(r.wh).some(function (key) { var a = key.split('|'); return a[0] === c && (!p || a[1] === p) && (!k || a[2] === k); });
+      }
+      var NOWH = '<div class="empty">Склады для инвентаризации вам не открыты</div>';
       var ostOk = !!(mc && mc.ost), ostN = mc && mc.ost_n != null ? mc.ost_n : null;   // лист остатков 1С ↔ ERP (право как у «📦 Остаток»)
       // 23.11.2026 (руководитель): «📦 Готовая продукция» — отдельная плитка первого экрана: Перечисление / Терминал →
       // остаток по алфавиту, Завод · Ташкент · Итого (не внутри Завода и Ташкента)
@@ -2008,21 +2015,23 @@
             '<div class="bd">' + (ostN == null ? '…' : ostN) + '</div></div>' +
             '<div class="c">' + (ostN ? ostN + ' не сходится — откройте и разберите' : ostN === 0 ? '✅ Всё сходится — остальная инвентаризация верна' : 'проверяю…') + '</div>' +
             '<div class="oh2">От этого зависит вся инвентаризация: сходится — остатки по складам ниже верные ›</div></div>' : '') +
-          '<div class="mgrid"' + (box && !ostOk ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].map(function (c) {
-          return tile({ city: c[0] }, c[2], c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
-        }).join('') + '</div>' +
+          '<div class="mgrid"' + (box && !ostOk ? ' style="margin-top:14px"' : '') + '>' + [['Завод', '🏭', 'g'], ['Ташкент', '🏙', 'b']].filter(function (c) { return hasWh(c[0]); }).map(function (c, i, a) {
+          return tile({ city: c[0] }, c[2] + (a.length === 1 ? ' wide' : ''), c[1], '<div class="n">' + c[0] + '</div>', cnt(function (x) { return x.city === c[0]; }));
+        }).join('') + '</div>' + (hasWh('Завод') || hasWh('Ташкент') ? '' : NOWH) +
           // 23.11.2026 (вариант 10): подсчёты до ERP с итогом проверки Темура — здесь же, над документами ERP
           '<div class="invdraft"></div>' +
           // 23.11.2026 (руководитель): созданные инвентаризации и проверка — сразу здесь, на первом экране
           '<div class="msec">📄 СОЗДАННЫЕ ИНВЕНТАРИЗАЦИИ · ' + rows.length + '</div><div class="invall"></div>';
       } else if (!s.kind) {   // всегда слева готовая продукция, справа сырьё (в Ташкенте — только готовая продукция)
-        h = '<div class="mgrid">' + [['Готовая продукция', isT ? '🏙' : '🏭', isT ? 'b' : 'g'], ['Сырьё', '🧪', 'y']].filter(function (k) { return !isT || k[0] !== 'Сырьё'; }).map(function (k) {
-          return tile({ city: s.city, kind: k[0] }, k[2], k[1], '<div class="n">' + k[0] + '</div>',
+        var KK = [['Готовая продукция', isT ? '🏙' : '🏭', isT ? 'b' : 'g'], ['Сырьё', '🧪', 'y']].filter(function (k) { return (!isT || k[0] !== 'Сырьё') && hasWh(s.city, k[0]); });
+        h = (KK.length ? '' : NOWH) + '<div class="mgrid">' + KK.map(function (k) {
+          return tile({ city: s.city, kind: k[0] }, k[2] + (KK.length === 1 ? ' wide' : ''), k[1], '<div class="n">' + k[0] + '</div>',
             cnt(function (x) { return x.city === s.city && x.kind === k[0]; }), k[0] === 'Готовая продукция' ? brOf(s.city, ['Перечисление', 'Терминал']) : '');
         }).join('') + '</div>';
       } else if (!s.prod) {   // слева ПЕРЕЧИСЛЕНИЕ, справа ТЕРМИНАЛ
-        h = '<div class="mgrid">' + ['Перечисление', 'Терминал'].map(function (p) {
-          return tile({ city: s.city, kind: s.kind, prod: p }, s.kind === 'Сырьё' ? 'y' : isT ? 'b' : 'g', s.kind === 'Сырьё' ? '🧪' : isT ? '🏙' : '🏭',
+        var PP = ['Перечисление', 'Терминал'].filter(function (p) { return hasWh(s.city, s.kind, p); });
+        h = (PP.length ? '' : NOWH) + '<div class="mgrid">' + PP.map(function (p) {
+          return tile({ city: s.city, kind: s.kind, prod: p }, (s.kind === 'Сырьё' ? 'y' : isT ? 'b' : 'g') + (PP.length === 1 ? ' wide' : ''), s.kind === 'Сырьё' ? '🧪' : isT ? '🏙' : '🏭',
             '<div class="ptag' + (p === 'Терминал' ? ' ter' : '') + '">' + p.toUpperCase() + '</div>',
             cnt(function (x) { return x.city === s.city && x.kind === s.kind && x.production === p; }), s.kind === 'Готовая продукция' ? brOf(s.city, [p]) : '');
         }).join('') + '</div>';
@@ -2073,11 +2082,17 @@
   }
   // 23.11.2026 (руководитель): инвентаризация из мини-аппа — «➕ Создать» (склад → строки ERP + остаток 1С) → черновик →
   // факт правится здесь → «📤 Создать в ERP» (документ «Новый», остатки не меняются) → проверка Темура. «Провести» — пока тест.
-  function invdBox(s, kind, boxId) {   // boxId — свой блок (на экране «Готовая продукция» их два: завод и Ташкент)
+  function invdBox(s, kind, boxId, hasWhere) {   // boxId — свой блок (на экране «Готовая продукция» их два: завод и Ташкент)
     var me = cur, body = { city: s.city, kind: kind, prod: s.prod };
     load2('/api/invd_list', body, function (r) {
       var bx = $(boxId || 'invdbox'), cityT = boxId ? ' · ' + String(s.city || '').toUpperCase() : '';
       if (cur !== me || !bx || !r.ok) return;
+      // 27.11.2026 (руководитель «нет доступа — кнопку не показывать»): без права пересчёта жёлтых плиток нет
+      if (!r.can || !(r.stores || []).length) {
+        var e0 = hasWhere ? '' : '<div class="empty">Этот склад вам не открыт</div>';
+        if (bx.innerHTML !== e0) bx.innerHTML = e0;
+        return;
+      }
       // 23.11.2026 (руководитель): без «создать черновик / удалить» — нажал склад или вид, сразу список с актуальными
       // остатками; правки сохраняются сами; в ERP — только «📤 Создать в ERP»
       var h = '';
@@ -2545,10 +2560,11 @@
     bindTabs();
     var B = $('invb');
     if (tab === 'docs') {
-      B.innerHTML = '<div id="invdbox"></div><button id="invwhere" style="margin-top:4px">📍 Где что лежит — места и партии</button>' +
+      // 27.11.2026 (руководитель): нет открытых складов — кнопки «Где что лежит» нет; нет права пересчёта — плиток нет
+      B.innerHTML = '<div id="invdbox"></div>' + (whs.length ? '<button id="invwhere" style="margin-top:4px">📍 Где что лежит — места и партии</button>' : '') +
         '<div class="note">Созданные инвентаризации, «🔎 Проверить» и «✅ Провести» — на первом экране «Инвентаризация».</div>';
-      $('invwhere').onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = 'where'; go(function () { showInv(ns); }); };
-      invdBox(s, kind);
+      if ($('invwhere')) $('invwhere').onclick = function () { var ns = JSON.parse(JSON.stringify(s)); ns.tab = 'where'; go(function () { showInv(ns); }); };
+      invdBox(s, kind, null, whs.length);
       return;
     }
     // 📍 что где лежит — места склада (как в схеме), по складу; весь отчёт склада Excel — в личку
@@ -3776,7 +3792,7 @@
       var gxL = kind === 'inc' && x.gx_wait !== undefined, gxDone = gxL && !x.gx_wait;
       // 27.11.2026 (руководитель): ↩️ возврат — у строки поле партии; «＋ ещё партия» делит штуки (первая уменьшается сама);
       // сохранили — строка показывается партиями: свой номер, товар, партия, штуки, 📍 место (как в перемещении)
-      var rno = 0, canRp = !!r.ret_put;
+      var rno = 0, canRp = !!r.ret_put, canEd = !!(r.ret_put || r.ret_batch);   // 27.11: ввод партий — отдельный доступ
       function retLine(y, j, pt, fq) {
         var nm = (fq ? fq[2] + ' ' : '') + esc(y.name), ps = y.parts || [];
         var row = function (b, q, pl, extra) {
@@ -3793,9 +3809,9 @@
             var b = !p.put && canRp && x.status === 2 ? '<br><button class="main rput" data-rput="' + j + ':' + k + '" style="margin-top:6px;padding:8px;background:linear-gradient(150deg,#ff8a7a,#c0392b)">📥 Поставить п.' + esc(p.batch || '?') + ' · ' + n(p.qty) + ' шт</button>'
               : !p.put && x.status !== 2 ? ' <span class="btag">⏳ поставить после проведения в ERP</span>' : '';
             return row(p.batch, p.qty, pill(code, !!p.put), b);
-          }).join('') + (canRp && !any ? '<div style="text-align:right;margin:-4px 0 6px"><button class="rsed" data-red="' + j + '" style="width:auto;padding:4px 12px;font-size:13px">✏️ Изменить партии · ' + esc(y.name.split(' ')[0]) + '</button></div>' : '');
+          }).join('') + (canEd && !any ? '<div style="text-align:right;margin:-4px 0 6px"><button class="rsed" data-red="' + j + '" style="width:auto;padding:4px 12px;font-size:13px">✏️ Изменить партии · ' + esc(y.name.split(' ')[0]) + '</button></div>' : '');
         }
-        if (!canRp) return row('', y.qty, pill('', false), x.status !== 2 ? ' <span class="btag">⏳ партию введёт кладовщик</span>' : '');
+        if (!canEd) return row('', y.qty, pill('', false), ' <span class="btag">⏳ партию введёт кладовщик</span>');
         rno += 1;
         return '<div class="ln"><span class="no">' + rno + '</span><span class="it">' + nm + ' · <b>' + n(y.qty) + '</b> шт</span>' +
           '<div class="red" data-ed="' + j + '"></div></div>';
@@ -7829,7 +7845,7 @@
       if (k === 'inc_new') return ['create', 'accept'];   // 26.11.2026: ➕ Создать приход · ✅ Входной контроль
       if (k === 'mv') return ['create', 'send', 'drive', 'accept'];   // 25.11.2026: ➕ Создать — отдельно   // 🚚 Перемещения: 📦 Отправить · 🚛 Везти · 📥 Принять
       if (k === 'pc' || k === 'os' || k === 'pmv' || k === 'rsx_sum' || k === 'c1sync' || k.indexOf('gpost') === 0 || k.indexOf('cert') === 0 || k.indexOf('zp') === 0 || k.indexOf('med') === 0 || k.indexOf('tab_') === 0) return [];
-      return k === 'inv' || k === 'prod' || k === 'ret_put' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
+      return k === 'inv' || k === 'prod' || k === 'ret_put' || k === 'ret_batch' ? ['task'] : ALLACTS.filter(function (a) { return a !== 'label' || lab.indexOf(k) >= 0; });
     }
     function row(it) {
       var x = get(it.key) || { lv: 0, acts: [] }, isTab = it.key.indexOf('tab_') === 0 || it.key === 'os' || it.key === 'pmv' || it.key === 'rsx_sum' || it.key === 'c1sync' || it.key.indexOf('cert') === 0 || it.key.indexOf('gpost') === 0 || it.key.indexOf('zp') === 0 || it.key.indexOf('med') === 0;
@@ -7845,7 +7861,7 @@
       if (x.lv === 2) {
         h += '<div class="acts">' + actsOf(it.key).map(function (a) {
           var on = (x.acts || []).indexOf(a) >= 0;
-          return '<span data-k="' + it.key + '" data-a="' + a + '" class="' + (on ? 'y' + (x.own ? ' x' : '') : 'n') + '">' + (it.key === 'inv' ? '🔎 Проверить' : it.key === 'prod' ? '🖨 Наклейка и место' : it.key === 'ret_put' ? '📥 Партия и место' : it.key === 'inc_new' ? (a === 'create' ? '➕ Создать приход' : '✅ Входной контроль') : ACTNAME[a]) + '</span>';
+          return '<span data-k="' + it.key + '" data-a="' + a + '" class="' + (on ? 'y' + (x.own ? ' x' : '') : 'n') + '">' + (it.key === 'inv' ? '🔎 Проверить' : it.key === 'prod' ? '🖨 Наклейка и место' : it.key === 'ret_put' ? '📥 Партия и место' : it.key === 'ret_batch' ? '✏️ Партии и штуки' : it.key === 'inc_new' ? (a === 'create' ? '➕ Создать приход' : '✅ Входной контроль') : ACTNAME[a]) + '</span>';
         }).join('') + '</div>';
       }
       h += '</div>';
@@ -7878,6 +7894,7 @@
     // 26.11.2026 (руководитель): ↩️ возврат клиента → номер партии и место на схеме (по умолчанию ⛔ всем)
     h += '<div class="agrp">ВОЗВРАТ</div>';
     row({ key: 'ret_put', emoji: '↩️', name: 'Возврат — поставить на место с партией' });
+    row({ key: 'ret_batch', emoji: '✏️', name: 'Возврат — ввод партий: партия, штуки, ＋ ещё партия, 💾 Сохранить' });   // 27.11.2026
     h += '<div class="note">📥 Партия и место — в карточке возврата (вкладка «↩️ Возврат») кнопка «📥 Поставить»: номер партии, место на схеме; ставит бот склада. Только проведённые в ERP возвраты и только на свои склады Ташкента (нужна кнопка «Задачи» по складу).</div>';
     h += '<div class="agrp">РАЗРЕШИТЕЛЬНЫЕ ДОКУМЕНТЫ</div>';   // 23.11.2026 (руководитель): последняя вкладка «📜»
     // вкладка «📜 Разрешения» — вверху, в «Вкладках главного экрана»; здесь — что внутри
