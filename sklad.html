@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '52e101e7', newBuild = '';
+  var BUILD = 'd38a6271', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795786565' || 0;
+  var BUILD_AT = +'1795786818' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1617,12 +1617,19 @@
   function ck(k) { return (asName ? 'as:' + asName + ':' : '') + k; }
   function cget(k) { k = ck(k); try { return JSON.parse(localStorage.getItem('pfl:' + k)); } catch (e) { return mem[k] || null; } }
   function cset(k, v) { k = ck(k); mem[k] = v; try { localStorage.setItem('pfl:' + k, JSON.stringify(v)); } catch (e) {} }
+  // 27.11.2026 (руководитель, «Инвентаризация › Ташкент › Перечисление пусто»): сохранённый на телефоне ответ старого вида
+  // ломал экран, и свежий ответ сервера уже не запрашивался — пусто навсегда. Сохранённое ломает экран — выбросить и
+  // показать свежее с сервера.
+  function cdrop(k) { k = ck(k); delete mem[k]; try { localStorage.removeItem('pfl:' + k); } catch (e) {} }
+  function fromCache(key, c, fn) {
+    try { fn(c); return true; } catch (e) { cdrop(key); try { console.warn('cache dropped', key, e); } catch (x) {} return false; }
+  }
   function canDo(a) { return curPerm.lv === 2 && (curPerm.acts || []).indexOf(a) >= 0; }
   var prodPerm = { lv: 0, acts: [] };
   function canProd() { return prodPerm.lv === 2 && (prodPerm.acts || []).indexOf('task') >= 0; }
   function load(path, body, render) {
     var my = ++scr, key = path + JSON.stringify(body || {}), c = cget(key);
-    if (c) render(c, true);
+    if (c && !fromCache(key, c, function (v) { render(v, true); })) c = null;
     return call(path, JSON.parse(JSON.stringify(body || {}))).then(function (r) {
       cset(key, r);
       if (my === scr) render(r, false);
@@ -2107,6 +2114,9 @@
           ivCnt(x) + (dr && dr.n_changed ? '<em class="ivc">✏️ изменено ' + dr.n_changed + '</em>' : '') + '</div>';
       };
       var gpT = '';
+      // 27.11.2026: склад без «types»/«rooms» (ответ старого вида) — не ломать экран
+      r.stores = (r.stores || []).filter(function (st) { return st && typeof st === 'object'; });
+      r.stores.forEach(function (st) { st.types = st.types || []; st.rooms = st.rooms || []; st.name = String(st.name || ''); });
       (r.stores || []).filter(function (st) { return !st.types.length; }).forEach(function (st) {
         if ((st.rooms || []).length) {   // ГП завода: ГП1 · ГП2 (· нет на схеме)
           h += '<div class="msec">📋 ПЕРЕСЧИТАТЬ' + cityT + ' · ПО СКЛАДУ</div><div class="ivtyp">' + st.rooms.map(function (x) {
@@ -8088,7 +8098,7 @@
   // без перерисовки экрана: сохранённое → свежее, только в колбэк
   function load2(path, body, cb) {
     var key = path + JSON.stringify(body), c = cget(key);
-    if (c) cb(c);
+    if (c) fromCache(key, c, cb);   // 27.11.2026: сломалось на сохранённом — выбросить, свежее всё равно запросить
     call(path, JSON.parse(JSON.stringify(body))).then(function (r) { cset(key, r); cb(r); }).catch(function () {});
   }
 
