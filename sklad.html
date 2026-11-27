@@ -1299,6 +1299,7 @@
   #zs .zsadd .a.on { outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(31,98,201,.35); }
   #zs .zsadd b { display: block; font-size: 14px; } #zs .zsadd span { font-size: 11.5px; opacity: .9; }
   .tile.r { --d: #a8262a; --s: rgba(200,50,50,.35); background: linear-gradient(150deg, #ff7a6b, #d63a3a); }   /* 25.11.2026: 💳 Долги */
+  .tile.t { --d: #26625c; --s: rgba(38,140,130,.35); background: linear-gradient(150deg, #6fd3c8, #2e9c90); }   /* 27.11.2026: тара — бирюзовый 4DB6AC */
   .tile.w { --d: #6b7385; --s: rgba(100,110,130,.3); background: linear-gradient(150deg, #aab3c4, #7d879b); }
   .tile.new { animation: pop 1.2s ease-out; }
   @keyframes pop { 0% { filter: brightness(1.5); } 100% { filter: none; } }
@@ -1456,9 +1457,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'cb4dde11', newBuild = '';
+  var BUILD = 'dbb355dc', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795787837' || 0;
+  var BUILD_AT = +'1795792245' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -1680,10 +1681,10 @@
       { key: 'ter_tas', name: 'Готовая продукция Ташкент', note: 'BP Pharma и Gynomedix', emoji: '🏙', cl: 'b', f: 'tas' } ] },
     { head: 'ПЕРЕЧИСЛЕНИЕ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
       { key: 'xa', name: 'Сырьё — склад 1', emoji: '🧪', cl: 'y', f: 'zav', g: 'raw' }, { key: 'xa2', name: 'Сырьё — склад 2', emoji: '🧪', cl: 'y', f: 'zav', g: 'raw' },
-      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav', g: 'raw' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav', g: 'raw' } ] },
+      { key: 'up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav', g: 'raw' }, { key: 'ta', name: 'Флаконы', emoji: '🧴', cl: 't', f: 'zav', g: 'raw' } ] },
     { head: 'ТЕРМИНАЛ', sub: 'Сырьё и упаковка', color: '#d4a017', items: [
       { key: 'ter_xa', name: 'Сырьё', emoji: '🧪', cl: 'y', f: 'zav', g: 'raw' }, { key: 'ter_up', name: 'Упаковка', emoji: '📦', cl: 'k', f: 'zav', g: 'raw' },
-      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 'w', f: 'zav', g: 'raw' } ] }
+      { key: 'ter_ta', name: 'Флаконы', emoji: '🧴', cl: 't', f: 'zav', g: 'raw' } ] }
   ];
   // руководитель 22.11: «Все» убрать — склады по вкладкам Завод · Ташкент · Сырьё (выбранная запоминается)
   var FILTERS = [['zav', '🏭 Склад завода'], ['tas', '🏙 Склад Ташкента']];   // 23.11.2026 (руководитель): «склад» дописать   // руководитель 22.11: сырьё — внутри «Завод», после готовой продукции
