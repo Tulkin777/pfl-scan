@@ -888,6 +888,10 @@
   .fxbg i { font-style: normal; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
   .fxbg i.r { background: #fde2e2; color: #b71c1c; } .fxbg i.y { background: #fff1c2; color: #7a5200; } .fxbg i.g { background: #dff5e7; color: #137a3c; }
   .otdt tr.fxno td { background: #fde2e2; } .otdt tr.fxni td { background: #fff1c2; }
+  .otdt tr.awy td { font-size: 12px; background: #f4f7fb; white-space: normal; } .otdt tr.awy.un td { background: #fff8e1; } .otdt tr.awy.odd td { background: #fff1c2; font-weight: 700; }
+  .otdt tr.awy i { font-style: normal; font-weight: 800; font-size: 11px; padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+  .otdt tr.awy i.y { background: #fff1c2; color: #7a5200; } .otdt tr.awy i.g { background: #dff5e7; color: #137a3c; } .otdt tr.awy i.r { background: #fde2e2; color: #b71c1c; }
+  .otdt tr.awy small { margin-left: 6px; color: var(--hint); } .awb { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; } .awb input { width: 170px; }
   s.fxold { opacity: .55; color: #b71c1c; }
   .otdt input.fxwhy { width: 190px; max-width: 100%; }
   .fxlog { margin: 6px 0 4px; padding: 8px 10px; border-radius: 10px; background: #f7f9fc; font-size: 12px; overflow-x: auto; }
@@ -1430,9 +1434,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '2cdbb22e', newBuild = '';
+  var BUILD = '615567a7', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795744082' || 0;
+  var BUILD_AT = +'1795744591' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5701,6 +5705,23 @@
     var F = function (n) { return fmtq(n || 0); }, A = zpAcc.zp_month >= 2, h = '';   // 25.11.2026: исправлять — «✋» табеля месяца (не только руководитель)
     var BD = !!D.byday;   // 27.11.2026 (руководитель): с ноября 2026 — правка дня только с причиной, только руководитель
     if (BD) A = isAdmin;
+    // 27.11.2026 (руководитель «Да, делай»): отлучки среди дня (обед 12:30–13:30 не считается) и непарные проходы
+    var awRows = function (t, k) {
+      var r = '';
+      if (t.odd) r += '<tr class="awy odd"><td></td><td colspan="7">⚠️ непарный проход — уточнить' + (A ? ' (✏️ — вписать время вручную)' : '') + '</td></tr>';
+      (t.away || []).forEach(function (x) {
+        var ak = k + '|' + x.id, lb = x.from + '–' + x.to + ' · ' + x.min + ' мин';
+        var st = x.v === 'work' ? '<i class="g">✅ по работе' + (x.why ? ': ' + esc(x.why) : '') + '</i>' : x.v === 'personal' ? '<i class="r">➖ по личному · −' + x.ded + ' мин' + (x.why ? ': ' + esc(x.why) : '') + '</i>'
+          : '<i class="y">не отмечено</i>';
+        r += '<tr class="awy' + (x.v ? '' : ' un') + '"><td></td><td colspan="7">🚶 Отлучка ' + esc(lb) + (x.long ? ' <i class="y">больше 3 ч — уточнить (возможно лишний проход)</i>' : '') + ' ' + st +
+          (x.by ? '<small>' + esc(x.by) + ' ' + esc(x.at) + '</small>' : '') +
+          (A ? '<span class="awb"><input class="txt" data-aww="' + esc(ak) + '" maxlength="200" placeholder="куда / причина" value="' + esc(x.why || '') + '">' +
+            '<button class="sm" data-awv="work" data-awk="' + esc(ak) + '" data-awl="' + esc(lb) + '">✅ по работе</button>' +
+            '<button class="sm" data-awv="personal" data-awk="' + esc(ak) + '" data-awl="' + esc(lb) + '">➖ по личному</button>' +
+            (x.v ? '<button class="sm" data-awv="reset" data-awk="' + esc(ak) + '" data-awl="' + esc(lb) + '">↩</button>' : '') + '</span>' : '') + '</td></tr>';
+      });
+      return r;
+    };
     var tm = function (cur, old) { return old != null && old !== cur ? '<s class="fxold">' + esc(old || '—') + '</s> ' + esc(cur || '—') : esc(cur || '—'); };
     var ST = { noout: '<span class="neg">нет выхода · вручную</span>', noin: '<span class="neg">нет входа · вручную</span>', ahead: '<span style="opacity:.45">впереди</span>', absent: '<span class="neg">не пришёл</span>', weekend: '📅 выходной', off: '—' };
     h += '<div class="otdt"><table><thead><tr><th>№</th><th>Дата</th><th>Вход</th><th>Выход</th><th>В смену</th><th>Сверх.</th><th>Опозд.</th><th></th></tr></thead><tbody>' +
@@ -5717,7 +5738,7 @@
           '<td>' + (mins ? F(mins) : '') + '</td><td>' + (t.late ? '<span class="neg">' + F(t.late) + '</span>' : '') + '</td>' +
           '<td>' + (t.fix ? '<small class="fxm" title="' + esc((t.by || '') + ' ' + (t.at || '')) + '">✏️ в отчёте ' + esc(t.orig[0] || '—') + '–' + esc(t.orig[1] || '—') + (t.why ? ' · ' + esc(t.why) : '') + '</small>' +
             (t.file_changed ? '<small class="neg">⚠️ в отчёте теперь ' + esc(t.file[0] || '—') + '–' + esc(t.file[1] || '—') + '</small>' : '') : '') +
-          (A ? '<button class="sm" data-fxe="' + esc(k) + '">✏️</button>' : '') + '</td></tr>';
+          (A ? '<button class="sm" data-fxe="' + esc(k) + '">✏️</button>' : '') + '</td></tr>' + (BD && isAdmin ? awRows(t, k) : '');
       }).join('') + '</tbody></table></div>';
     if (BD) {   // 27.11.2026 (руководитель): с ноября — журнал правок по дням, итог за месяц вручную убран
       if (p.noout || p.noin) h += '<div class="note" style="margin:4px 0">⚠️ без отметки ухода: ' + (p.noout || 0) + ' · без отметки входа: ' + (p.noin || 0) + ' — минуты этих дней не посчитаны' + (A ? '; ✏️ — вписать время и причину' : '') + '.</div>';
@@ -5794,6 +5815,17 @@
         if (D.byday && why.length < 3) { haptic('warning'); if (wy) wy.focus(); return say('Напишите причину — без неё не сохраняется.'); }
         send({ act: 'dayreset', key: x.key, day: x.day, who: p.who || '', why: why }, (p.who || '') + ' · ' + dl(x.day) + ': вернуть как в отчёте посещения?'); };
     });
+    all('[data-awk]', function (b) {   // 27.11.2026: отлучка — по работе / по личному / снять
+      b.onclick = function (ev) {
+        ev.stopPropagation();
+        var k = b.getAttribute('data-awk'), v = b.getAttribute('data-awv'), lb = b.getAttribute('data-awl') || '';
+        var pp = k.split('|'), p = P[pp[0]] || {}, wy = Z.querySelector('[data-aww="' + k + '"]'), why = wy ? wy.value.trim() : '';
+        if (v === 'work' && why.length < 3) { haptic('warning'); if (wy) wy.focus(); return say('Напишите коротко, куда (по работе).'); }
+        var NM = { work: '✅ по работе — минуты засчитать', personal: '➖ по личному — вычесть из «в смену»', reset: '↩ снова «не отмечено»' };
+        send({ act: 'away', key: pp[0], day: pp[1], id: pp[2], v: v, why: why, lbl: lb, who: p.who || '' }, (p.who || '') + ' · ' + dl(pp[1]) + ' отлучка ' + lb + ': ' + NM[v] + (why ? ' · ' + why : '') + '?');
+      };
+    });
+    all('[data-aww]', function (i) { i.onclick = function (ev) { ev.stopPropagation(); }; });
     all('[data-fss]', function (b) {
       b.onclick = function () {
         var k = b.getAttribute('data-fss'), p = P[k] || {}, v = Z.querySelector('[data-fsv="' + k + '"]').value.replace(/\D/g, '');
@@ -5945,7 +5977,9 @@
               '<td>' + F(p.shift) + (p.shift_fix ? '<small class="fxm">✏️ вручную</small>' : '') + (p.shift_mismatch ? '<small class="neg">⚠️ по дням ' + F(p.shift_days) + '</small>' : '') +
               // 27.11.2026 (руководитель): замечания Face ID по дням — с ноября 2026, пока только руководителю
               (D.byday && isAdmin ? '<span class="fxbg">' + (p.noout ? '<i class="r">нет выхода: ' + p.noout + '</i>' : '') + (p.noin ? '<i class="r">нет входа: ' + p.noin + '</i>' : '') +
-                (p.unfixed ? '<i class="y">не исправлено</i>' : p.nfix ? '<i class="g">исправлено: ' + p.nfix + '</i>' : '<i class="g">всё в порядке</i>') + '</span>' : '') + '</td>' +
+                (p.away_un ? '<i class="y">отлучки: ' + p.away_un + ' не отмечено</i>' : '') + (p.odd ? '<i class="y">непарный проход: ' + p.odd + '</i>' : '') +
+                (p.away_pers ? '<i class="r">по личному: −' + p.away_pers + ' мин</i>' : '') +
+                (p.unfixed ? '<i class="y">не исправлено</i>' : p.nfix ? '<i class="g">исправлено: ' + p.nfix + '</i>' : (p.away_un || p.odd ? '' : '<i class="g">всё в порядке</i>')) + '</span>' : '') + '</td>' +
               '<td class="' + (p.diff < 0 ? 'neg' : '') + '">' + (p.diff < 0 ? '−' + F(-p.diff) : '0') + '</td><td class="' + (p.late ? 'neg' : '') + '">' + F(p.late) + '</td>' +
               '<td>' + F(p.min) + '<small>' + F(p.m) + ' + ' + F(p.e) + ' + ' + F(p.w) + '</small></td><td class="pos"><b>' + F(p.net) + '</b></td>') + (C.hour ? '<td><b>' + fmtq(p.sum) + '</b></td>' : '') +
               // 24.11.2026 (руководитель): надбавка сверхурочно = итог сверхурочно × (зарплата ÷ норма) × (1 + %)
