@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'f22f0a9d', newBuild = '';
+  var BUILD = 'ae7a6357', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795744977' || 0;
+  var BUILD_AT = +'1795757961' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3012,7 +3012,7 @@
         return '<div class="mvs' + (S.store === s[0] ? ' on' : '') + '" data-st="' + s[0] + '">' + esc(s[1]) + '<small>' + esc(s[2]) + '</small></div>';
       }).join('') + '</div>';
       if (S.from) g += '<div class="incpick" style="display:block"><span>📄 Из отгрузки №' + esc(S.from.ship) + ' · ' + esc(S.from.who) +
-        '</span><small style="display:block;margin-top:4px">Товар и количество — как в отгрузке; цена — себестоимость последнего выпуска Терминала завода (можно поправить).' +
+        '</span><small style="display:block;margin-top:4px">' + esc(S.from.note || 'Товар и количество — как в отгрузке; цена — себестоимость последнего выпуска Терминала завода (можно поправить).') +
         (S.from.miss.length ? '<br>⚠️ Не в списке товаров склада: ' + esc(S.from.miss.join(', ')) : '') + '</small></div>';
       if (S.store && !S.meta) g += '<div class="spin">Загрузка поставщиков и товаров из ERP…</div>';
       if (S.meta) {
@@ -3630,6 +3630,16 @@
           // 25.11.2026 (руководитель): отгружено + счёт-фактура 1С → приход того же товара в ГП Ташкент · Терминал (пока только руководителю)
           if (incCan('create') && st === 'ok' && q && q.ok && +x.st === 4) g += '<button class="main" id="incShip" style="margin-top:8px;background:linear-gradient(150deg,#4fc3a1,#1f8a6a)">' +
             '📥 Создать приход · ГП Ташкент Терминал</button>';
+          // 27.11.2026 (руководитель): отгрузка клиенту GYNOMEDIX → приход на склад Gynomedix Перечисление (цена 1:1,
+          // поставщик PERFECTFOODLAB); Smart UP уже сделал свой приход — второй не даём (двойной товар)
+          if (incCan('create') && st === 'ok' && +x.st === 4 && x.gx) {
+            var gx = x.gx;
+            if (gx.su && gx.my) g += '<div class="note" style="background:#ffe1e1;color:#a11">⚠️ Двойной приход на склад Gynomedix: Smart UP №' + esc(gx.su) +
+              ' и мини-апп №' + esc(gx.my) + '. Отмените лишний в ERP.</div>';
+            else if (gx.su) g += '<div class="note">📥 Приход на склад Gynomedix уже сделал Smart UP — №' + esc(gx.su) + '.</div>';
+            else if (gx.my) g += '<div class="note">📥 Приход на склад Gynomedix создан в мини-аппе — №' + esc(gx.my) + ' (дальше «✅ Входной контроль» в «Приходах»).</div>';
+            else g += '<button class="main" id="incGx" style="margin-top:8px;background:linear-gradient(150deg,#b07bff,#6a2fc9)">📥 Приход · склад Gynomedix Перечисление</button>';
+          }
           var sfh = '';   // у Gynomedix и Терминала счёт-фактуры нет — ничего не писать (need === false)
           try { if (q) sfh = q.ok ? sfHtml(q) : q.need === false ? '' : '<div class="note">📑 ' + esc(q.text) +
             (bl.some(function (b) { return b.length; }) ? ' Партии в составе — по плану сборки окна склада.' : '') + '</div>'; } catch (e) { sfh = ''; }
@@ -3658,6 +3668,28 @@
             };
           });
           if ($('vzyal') && d.p) $('vzyal').onclick = function () { vzyal(x, d.p, $('vzyal'), vzLabel(d.p, st), st); };
+          if ($('incGx')) $('incGx').onclick = function () {   // 27.11.2026: приход Gynomedix — черновик в «➕ Создать приход»
+            var b = this, lbl = b.textContent;
+            b.disabled = true; b.textContent = '⏳ Готовлю приход из ERP…';
+            try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+            call('/api/inc_from_ship', { id: x.id, to: 'gx' }, 60000).then(function (r) {
+              b.disabled = false; b.textContent = lbl;
+              if (!r.ok) return say(r.text || 'Не получилось');
+              if (!r.items.length) return say('В отгрузке нет товаров, которые можно принять на склад Gynomedix.');
+              var open = function () {
+                var sel = {}, hint = {};
+                r.items.forEach(function (it) { sel[it.pid] = { q: it.q, p: it.p }; hint[it.pid] = it.hint; });
+                incN = { store: r.store, meta: null, sup: r.sup, client: null, gr: r.items[0].gr || 0, find: '', wfind: '',
+                         sel: sel, doc: r.doc, from: { ship: r.ship, who: x.who, hint: hint, miss: r.miss || [],
+                         note: 'Товар, количество и цена — как в продаже (1:1); поставщик — MCHJ «PERFECTFOODLAB». Потом «✅ Входной контроль», склад Gynomedix ставит на место.' } };
+                go(function () { showIncNew('tg'); });
+              };
+              if (r.dup) {
+                var q2 = 'Из этой отгрузки уже есть приход Gynomedix №' + r.dup.id + '.\nСоздать ещё один?';
+                try { tg.showConfirm(q2, function (y) { if (y) open(); }); } catch (e) { if (confirm(q2)) open(); }
+              } else open();
+            }).catch(function (e) { b.disabled = false; b.textContent = lbl; fail(e); });
+          };
           if ($('incShip')) $('incShip').onclick = function () {
             var b = this, q = d.sf || {}, dd = String(q.date || '');
             var doc = 'С/ф 1С №' + (q.doc || '') + (dd ? ' от ' + dd.slice(8, 10) + '.' + dd.slice(5, 7) + '.' + dd.slice(0, 4) : '');
