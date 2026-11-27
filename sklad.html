@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '833d3e2a', newBuild = '';
+  var BUILD = '9f3f2321', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795779100' || 0;
+  var BUILD_AT = +'1795779900' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3865,7 +3865,7 @@
             '<input data-eb="' + k + '" inputmode="numeric" placeholder="партия, напр. 552" value="' + esc(p.batch) + '" style="flex:2;min-width:0;font-size:17px;padding:8px;border-radius:8px;border:2px solid #c0392b">' +
             '<input data-eq="' + k + '" inputmode="decimal" value="' + esc(String(p.qty)) + '"' + (k === 0 && rows.length > 1 ? ' readonly title="считается само"' : '') +
             ' style="flex:1;min-width:0;font-size:17px;padding:8px;border-radius:8px;border:2px solid ' + (k === 0 && rows.length > 1 ? '#bbb;background:#f3f3f3' : '#c0392b') + '">' +
-            '<span style="font-size:13px">шт</span>' + (k > 0 ? '<button data-ex="' + k + '" style="width:auto;padding:6px 10px">✖</button>' : '') + '</div>';
+            '<span style="font-size:13px">шт</span>' + (k > 0 ? '<button data-erm="' + k + '" style="width:auto;padding:6px 10px">✖</button>' : '') + '</div>';
         });
         var bad = Math.abs(sum - tot) > 0.001 || rows.some(function (p) { return !(+p.qty > 0); });
         h += (bad ? '<div class="msg bad" style="margin:4px 0">Сумма партий ' + n(sum) + ' ≠ ' + n(tot) + ' шт</div>' : '') +
@@ -3879,8 +3879,8 @@
         Array.prototype.forEach.call(box.querySelectorAll('[data-eq]'), function (el) {
           el.onchange = function () { edBusy = true; rows[+el.getAttribute('data-eq')].qty = +String(el.value).replace(',', '.') || 0; first(); edDraw(j); };
         });
-        Array.prototype.forEach.call(box.querySelectorAll('[data-ex]'), function (el) {
-          el.onclick = function () { rows.splice(+el.getAttribute('data-ex'), 1); first(); edDraw(j); };
+        Array.prototype.forEach.call(box.querySelectorAll('[data-erm]'), function (el) {   // не data-ex: это «выйти из мини-аппа»
+          el.onclick = function () { rows.splice(+el.getAttribute('data-erm'), 1); first(); edDraw(j); };
         });
         box.querySelector('[data-eadd]').onclick = function () {
           edBusy = true;
