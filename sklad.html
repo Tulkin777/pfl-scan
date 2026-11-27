@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '7eb0b486', newBuild = '';
+  var BUILD = 'f22f0a9d', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795744886' || 0;
+  var BUILD_AT = +'1795744977' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5849,7 +5849,8 @@
         ev.stopPropagation();
         var k = b.getAttribute('data-awk'), v = b.getAttribute('data-awv'), lb = b.getAttribute('data-awl') || '';
         var pp = k.split('|'), p = P[pp[0]] || {}, wy = Z.querySelector('[data-aww="' + k + '"]'), why = wy ? wy.value.trim() : '';
-        if (v === 'work' && why.length < 3) { haptic('warning'); if (wy) wy.focus(); return say('Напишите коротко, куда (по работе).'); }
+        // 27.11.2026 (руководитель): поле пустое — причина пишется сама по кнопке; своё написанное сохраняется
+        if (!why && (v === 'work' || v === 'personal')) { why = v === 'work' ? 'по работе' : 'по личному'; if (wy) wy.value = why; }
         var NM = { work: '✅ по работе — минуты засчитать', personal: '➖ по личному — вычесть из «в смену»', reset: '↩ снова «не отмечено»' };
         send({ act: 'away', key: pp[0], day: pp[1], id: pp[2], v: v, why: why, lbl: lb, who: p.who || '' }, (p.who || '') + ' · ' + dl(pp[1]) + ' отлучка ' + lb + ': ' + NM[v] + (why ? ' · ' + why : '') + '?');
       };
