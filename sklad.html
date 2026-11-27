@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '8595001e', newBuild = '';
+  var BUILD = '7de91710', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795781129' || 0;
+  var BUILD_AT = +'1795783023' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3318,17 +3318,19 @@
   }
   // ---------- 📥 Приходы · ↩️ Возврат — как перемещения (руководитель 22.11): откуда → куда, шаги, отбор, полный экран ----------
   var DSTEPS = { inc: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на полке']],
-                 ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён']],
+                 ret: [['new', '🟡', 'создан'], ['ok', '🟢', 'проведён'], ['shelf', '📍', 'на месте']],   // 27.11.2026: + кладовщик поставил
                  ship: [['new', '🟡', 'создано'], ['ok', '🚚', 'отгружено']] };   // 22.11.2026 (руководитель): без «готово»
   // 22.11.2026 (руководитель): в Отгрузке всегда выбран шаг, по умолчанию «создано»
   // 22.11.2026 (руководитель): главное — «отгружено» (ждёт подтверждения склада): открывается первым, его считают плитки
-  var docFlt = { inc: '', ret: '', ship: 'ok' }, docPl = { inc: '', ship: '' }, docWho = { inc: '', ship: '' };
+  var docFlt = { inc: '', ret: '', ship: 'ok' }, docPl = { inc: '', ship: '', ret: '' }, docWho = { inc: '', ship: '', ret: '' };
   var docPick = { step: false, pl: false };   // 24.11.2026: отгрузка — шаг / склад выбран вручную (тогда не переключаем сами)
   // руководитель 22.11 («Да, загружай»): приходы — «куда пришло» + поставщик; 🛒 отгрузка — «откуда» + клиент, как перемещения
   var DPLACE = { inc: [['zr', 'Завод · Сырьё', 'd4', [1, 2]], ['zg', 'Завод · ГП', 'd5', [5, 6]], ['tg', 'Ташкент · ГП', 'd1', [3, 4, 7, 8]]],
                  ship: [['t4', 'Ташкент · Перечисление', 'd1', [4], 'Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['t3', 'Ташкент · Терминал', 'd7', [3, 8], 'Ташкент', 'ТЕРМИНАЛ'],
                         // 23.11.2026 (руководитель): «Завод» — общий: все продажи прямо с завода (Перечисление, Терминал, и Gynomedix)
                         ['g7', 'Gynomedix Ташкент', 'd2', [7], 'Gynomedix Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['zv', 'Завод', 'd6', [1, 2, 5, 6], 'Завод · все продажи', 'ПЕР · ТЕР · GX']] };
+  // 27.11.2026 (руководитель): ↩️ возврат — «куда вернули»: Перечисление / Терминал / Gynomedix / Завод (как плитки отгрузки)
+  DPLACE.ret = DPLACE.ship;
   // 22.11.2026 (руководитель): плитка «Откуда» отгрузки — город крупно, ниже Перечисление/Терминал, справа бренды со счётом документов
   function shipTile(q, c, rows, on) {
     var B = {};
@@ -3348,6 +3350,7 @@
   }
   function docStep(kind, x) {
     if (kind === 'ship') return x.step === 'new' ? 'new' : 'ok';   // 22.11.2026: по первому признаку ERP / Smartup / 1С
+    if (kind === 'ret' && x.step) return x.step === 'late' ? 'ok' : x.step;   // 27.11.2026: создан → проведён → на месте
     if (x.status !== 2) return 'new';
     return kind === 'inc' && x.placed === true ? 'shelf' : 'ok';
   }
@@ -3364,6 +3367,11 @@
                                  // 23.11.2026 (руководитель): отгружено больше 3 дней (4-й день), склад не подтвердил — для контроля
                                  ['late', '⏰ просрочено', 'd4', function (x) { return x.step === 'late'; }],
                                  ['arch', '🗄 архив · 3 дня', 'd3', function (x) { return x.step === 'arch'; }]];   // 23.11: старше 3 дней не показываем
+    // 27.11.2026 (руководитель): возврат — создан в ERP · проведён (ждёт места) · ⏰ просрочено (> 3 дн. без места) · 📍 на месте
+    if (kind === 'ret') return [['new', '🟡 создано', 'd4', function (x) { return x.step === 'new'; }],
+                                ['ok', '🟢 проведено', 'd5', function (x) { return x.step === 'ok'; }],
+                                ['late', '⏰ просрочено', 'd4', function (x) { return x.step === 'late'; }],
+                                ['shelf', '📍 на месте', 'd3', function (x) { return x.step === 'shelf'; }]];
     return kind === 'inc'
       ? [['wait', '🟡 ждут', 'd4', function (x) { return x.status === 1; }],
          ['noshelf', '📍 не на полке', 'd7', function (x) { return x.status === 2 && x.placed === false; }],
@@ -3397,11 +3405,11 @@
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
         if (kind === 'ship') h += '<div class="c1ship"><span>📗 1С · счёт-фактуры Перечисления: <b class="c1sat">…</b></span><button class="c1btn" data-c1s="1">🔄 1С</button></div>';
-        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
+        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : kind === 'ret' ? 'КУДА ВЕРНУЛИ' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' || kind === 'ret' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
           // 24.11.2026: в отгрузке плитка «Откуда» считает отгружено + просрочено (как число на вкладке) — сумма плиток = вкладке
           var act = kind === 'ship' && (docFlt.ship === 'ok' || docFlt.ship === 'late');
           var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (act ? (x.step === 'ok' || x.step === 'late') : (!f || f[3](x))) && live(x); }), c = rq.length;
-          if (kind === 'ship') return shipTile(q, c, rq, docPl[kind] === q[0]);
+          if (kind === 'ship' || kind === 'ret') return shipTile(q, c, rq, docPl[kind] === q[0]);
           return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
         }).join('') + '</div>';
         // 25.11.2026 (руководитель): «➕ Создать приход» — склад (выбранный «куда пришло»), от кого, товары; пока только руководителю
@@ -3410,7 +3418,7 @@
         all.forEach(function (x) { if (inPl(x) && (!f || f[3](x))) WC[x.who] = (WC[x.who] || 0) + 1; });
         var WL = Object.keys(WC).sort(function (a, b) { return WC[b] - WC[a]; });
         if (docWho[kind] && !WC[docWho[kind]]) WL.unshift(docWho[kind]);
-        if (kind === 'ship' || kind === 'inc') WL = [];   // 22.11.2026 (руководитель): строки поставщиков/клиентов нет — длинно
+        if (kind === 'ship' || kind === 'inc' || kind === 'ret') WL = [];   // 22.11.2026 (руководитель): строки поставщиков/клиентов нет — длинно
         if (false && kind === 'inc') {   // 24.11.2026 (руководитель): убрано — «Из производства» есть отдельной вкладкой на главном экране
           var pc = cget(ck('/api/flow' + JSON.stringify({ kind: 'prod' }))) || cget('/api/flow' + JSON.stringify({ kind: 'prod' }));
           var pw = pc ? (pc.rows || []).filter(function (x) { return x.status === 1; }).length : null;
@@ -3447,6 +3455,9 @@
           // 26.11.2026: ↩️ возврат на склад Ташкента — поставлен ли с партией на место
           (kind === 'ret' && x.ret_wh && x.status === 2 ? '<div class="tdrv"' + (x.put_all ? '' : ' style="color:#c0392b"') + '>' +
             (x.put_all ? '📍 на месте с партией' : '📍 ждёт места и партии' + (x.put_n ? ' · ' + x.put_n + ' из ' + x.lines.length : '')) + '</div>' : '') +
+          // 27.11.2026 (руководитель): проведён в ERP, а на место не поставлен больше 3 дней — просрочено
+          (kind === 'ret' && x.step === 'late' ? '<div class="latebad">⏰ ПРОСРОЧЕНО · ' + (x.late_days || 4) + '-й день от проведения' +
+            (x.done ? ' ' + esc(x.done.slice(8, 10) + '.' + x.done.slice(5, 7)) : '') + ' · не поставлен на место</div>' : '') +
           (kind === 'ship' && x.done ? '<div class="tdrv">' + (x.step === 'arch' ? '🗄 ' : '🚚 ') + 'отгружено ' + dtf2(x.done) + '</div>' : '') +
           (kind === 'ship' && x.step === 'late' ? '<div class="latebad">⏰ ПРОСРОЧЕНО · ' + (x.late_days || 4) + '-й день от ' + esc(x.late_by || 'отгрузки') +
             (x.late_from ? ' ' + esc(x.late_from.slice(8, 10) + '.' + x.late_from.slice(5, 7)) : '') + ' · склад не подтвердил</div>' : '') +
@@ -8039,7 +8050,7 @@
       send(which).then(function (r) { haptic(r.ok ? 'success' : 'error'); say(r.text); }).catch(fail);
     }
     if (tg && tg.showPopup) {
-      tg.showPopup({ title: '🖨 Наклейки QR', message: 'PDF наклеек придёт в тему склада группы KO‘CHIRISH (на ПК у принтера: открыть → Печать).',
+      tg.showPopup({ title: '🖨 Наклейки QR', message: 'PDF наклеек придёт в тему склада группы JARAYON (на ПК у принтера: открыть → Печать).',
         buttons: [{ id: 'all', type: 'default', text: 'Все коробки' }, { id: 'part', type: 'default', text: 'Только неполная' },
                   { id: '', type: 'cancel' }] }, function (id) { if (id) run(id); });
     } else run('all');
