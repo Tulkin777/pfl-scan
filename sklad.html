@@ -912,6 +912,10 @@
   .zonr { display: grid; grid-template-columns: minmax(0, 2.3fr) .9fr .9fr 1.2fr; gap: 6px; align-items: center; padding: 8px 10px; border-top: 1px solid rgba(0,0,0,.06); font-size: 13px; text-align: right; cursor: pointer; }
   .zonr > span:first-child { text-align: left; } .zonr small { display: block; font-size: 11.5px; color: var(--hint); line-height: 1.3; margin-top: 2px; }
   .zonr i.neg, .zonhd .neg { color: #c62828; font-style: normal; font-weight: 700; }
+  /* 27.11.2026 (руководитель): номер и кружок у имени — зелёный: сегодня пришёл, красный: нет */
+  .zonr .zno { display: inline-block; min-width: 22px; font-weight: 800; color: var(--hint); }
+  .zonr .zdot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: 0; box-shadow: inset 0 -1px 2px rgba(0,0,0,.25); }
+  .zonr .zdot.on { background: #2e9e48; } .zonr .zdot.off { background: #d32f2f; } .zonr .zdot.na { background: #b0b7c0; }
   .zonr.zonth { cursor: default; border-top: 0; font-size: 11px; font-weight: 800; color: var(--hint); background: var(--tg-theme-secondary-bg-color, #eef1f5); }
   .zond { padding: 4px 8px 10px; background: #f7f9fc; overflow-x: auto; }
   .zondt { width: 100%; border-collapse: collapse; font-size: 12px; } .zondt th, .zondt td { padding: 4px 5px; border-bottom: 1px solid rgba(0,0,0,.06); text-align: left; white-space: nowrap; }
@@ -1440,9 +1444,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '35b28a8a', newBuild = '';
+  var BUILD = '5f8e0e82', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795764367' || 0;
+  var BUILD_AT = +'1795771945' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5984,7 +5988,9 @@
         else if (p.nofid) st = '<i class="neg">нет в Face ID</i>';
         else st = wd[TD] ? '<i class="neg">ещё не пришёл</i>' : 'сегодня выходной';
         if (y && y.st === 'noout') st += '<br><i class="neg">вчера без выхода · не засчитан, вручную</i>';
-        return '<div class="zonr" data-zon="' + i + '"><span><b>' + esc(p.who) + '</b><small>' + st + '</small></span><span>' + fmtq(+p.shift || 0) + '</span><span>' + fmtq(+p.net || 0) + '</span><span><b>' + fmtq(zpg(p)) + '</b></span></div>' +
+        // 27.11.2026 (руководитель): порядковый номер и кружок — зелёный пришёл сегодня, красный нет, серый не рабочий день
+        var dot = t ? 'on' : (wd[TD] ? 'off' : 'na');
+        return '<div class="zonr" data-zon="' + i + '"><span><span class="zno">' + (i + 1) + '.</span><span class="zdot ' + dot + '"></span><b>' + esc(p.who) + '</b><small>' + st + '</small></span><span>' + fmtq(+p.shift || 0) + '</span><span>' + fmtq(+p.net || 0) + '</span><span><b>' + fmtq(zpg(p)) + '</b></span></div>' +
           '<div class="zond" id="zond' + i + '" hidden></div>';
       }).join('') + '</div>';
     h += '<div class="ivbar"><button class="btn2" id="zonxl">📥 Excel месяца — в личку</button></div>';
