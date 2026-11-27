@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'e8df4bd9', newBuild = '';
+  var BUILD = '6f5fa18b', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795763560' || 0;
+  var BUILD_AT = +'1795764289' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3748,7 +3748,7 @@
           return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · ' + n(y.qty) + ' шт</span>' +
             (y.boxes ? '<br><small style="color:var(--hint)">' + esc(y.boxes) + '</small>' : '') +
             y.places.map(function (p) {
-              return '<br>' + (p.code ? '<span class="pl">' + (p.placed ? '✅ ' : '📍 ') + esc(p.code) + '</span> ' : '<span class="pl">📍 место — в окне склада</span> ') +
+              return '<br>' + (p.code ? '<span class="pl">' + (p.placed ? '✅ ' : '📍 ') + esc(p.code) + '</span> ' : '<span class="pl" style="background:#c0392b">📍 нет свободного места</span> ') +
                 (p.batch ? '<b>п.' + esc(p.batch) + '</b> · ' : '') + n(p.qty) + ' шт';
             }).join('') + '</div>';
         }
@@ -3771,7 +3771,7 @@
       // 27.11.2026 (руководитель, снимок со стрелкой): «📥 Принял» — между «Ход» и «➡ Склад «куда»»; «Склад «куда»» — на своём месте
       if (kind === 'inc' && x.gx_put) {
         var gxA = x.lines.map(function (y) { return y.put && y.put.addr; }).filter(function (a, i, s) { return a && s.indexOf(a) === i; });
-        h += '<button class="main act-acc" id="incPut" style="margin-bottom:8px">📥 Принял на склад Gynomedix Ташкент' +
+        h += '<button class="main act-acc" id="incPut" style="margin-bottom:8px">📥 Принял на склад ' + esc(x.gx_title || 'Ташкента') +
           (gxA.length ? ' · ' + esc(gxA.join(', ')) : '') + '<br><small>поставить на место и провести в ERP</small></button>';
       }
       if (x.to_wh) h += '<button class="main" data-go="' + x.to_wh + '">➡ Склад «куда»' + (kind === 'inc' && (x.placed === false || x.gx_wait) ? ' · поставить на полку' : '') + '</button>';
