@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '1c3efaba', newBuild = '';
+  var BUILD = 'cb4dde11', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795787446' || 0;
+  var BUILD_AT = +'1795787837' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2203,7 +2203,8 @@
     call('/api/c1sync_state', {}).then(put).catch(function () {});
     el.querySelector('button').onclick = function () {
       if (el._s && el._s.work === false) return say('🌙 Нерабочее время — синхронизацию 1С сейчас начать нельзя.\nРабочее время: ' + (el._s.work_text || '') + '.');
-      var b = this, q = 'Синхронизировать 1С сейчас? Продажи, остатки, приходы, отчёты производства, данные Нодира — несколько минут. В 1С ничего не пишется.';
+      var b = this, q = 'Синхронизировать 1С сейчас? Всё, что мини-апп берёт из 1С: продажи, остатки, приходы, отчёты производства, данные Нодира, ' +
+        'подсчёт инвентаризации, основные средства, расхождение 1С ↔ ERP — несколько минут. В 1С ничего не пишется.';
       var go_ = function (yes) {
         if (!yes) return; b.disabled = true; b.textContent = '⏳ Запускаю…';
         call('/api/c1sync', { mode: 'full' }, 30000).then(function (s) { haptic('success'); if (s.text) say(s.text); put(s); }).catch(function (e) { b.disabled = false; ivErr(e); });
@@ -2247,7 +2248,8 @@
         esc(String(D.fresh || D.at).slice(8, 10) + '.' + String(D.fresh || D.at).slice(5, 7) + ' ' + String(D.fresh || D.at).slice(11)) +
         (D.n_changed ? ' · правки сохраняются сами' : '') +
         '<br>' + (D.has_c1 ? '📗 ' + esc(D.c1_src) : /связи с 1С нет/.test(D.c1_src || '') || !D.c1_src ? '📕 1С: связи нет — только Перечисление (без Gynomedix)' : '📕 ' + esc(D.c1_src)) +
-        (/связи с 1С нет/.test(D.c1_src || '') || !D.c1_src ? '' : ' <button class="c1btn" id="c1inv">🔄 1С</button>') + '</div>' +
+        // 27.11.2026 (руководитель «одна синхронизация 1С»): «🔄 1С» здесь убрана — остатки 1С обновляет «🔄 Синхронизация 1С»
+        '</div>' +
         '<div class="ivsum"><div class="ch"><b>' + D.n_changed + '</b>изменено</div><div class="eq"><b>' + (D.has_c1 ? D.n_eq : '—') + '</b>= 1С</div>' +
         '<div class="ne"><b>' + (D.has_c1 ? D.n_ne : '—') + '</b>≠ 1С</div><div><b>' + D.n + '</b>всего</div></div>' +
         chkBanner(D) +
@@ -3484,7 +3486,8 @@
       var rows = all.filter(function (x) { return (!f || f[3](x)) && inPl(x) && inWho(x) && live(x); });
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
-        if (kind === 'ship') h += '<div class="c1ship"><span>📗 1С · счёт-фактуры Перечисления: <b class="c1sat">…</b></span><button class="c1btn" data-c1s="1">🔄 1С</button></div>';
+        // 27.11.2026 (руководитель «почему две синхронизации»): «🔄 1С» справа убрана — продажи 1С обновляет «🔄 Синхронизация 1С»
+        if (kind === 'ship') h += '<div class="c1ship"><span>📗 1С · счёт-фактуры Перечисления: <b class="c1sat">…</b></span></div>';
         h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : kind === 'ret' ? 'КУДА ВЕРНУЛИ' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' || kind === 'ret' || kind === 'inc' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
           // 24.11.2026: в отгрузке плитка «Откуда» считает отгружено + просрочено (как число на вкладке) — сумма плиток = вкладке
           var act = kind === 'ship' && (docFlt.ship === 'ok' || docFlt.ship === 'late');
@@ -3576,11 +3579,8 @@
         load2('/api/ship_places_all', {}, function () { if (!hadPl && document.body.contains(box)) { hadPl = true; showDocs(kind, box); } });
       }
       // 23.11.2026 (руководитель): «✅ Взял» прямо на карточке списка — места и партии видны, заходить в документ не нужно
-      if (box.querySelector('[data-c1s]')) {   // 24.11.2026: 1С вручную — время продаж 1С и кнопка «🔄 1С»
+      if (box.querySelector('.c1sat')) {   // 24.11.2026: 1С вручную — время продаж 1С (27.11: кнопки здесь нет — общая синхронизация)
         load2('/api/c1sync_state', {}, function (s) { var e = box.querySelector('.c1sat'); if (e && s) e.textContent = s.sales_at ? s.sales_at.slice(8, 10) + '.' + s.sales_at.slice(5, 7) + ' ' + s.sales_at.slice(11, 16) : 'не синхронизировано'; });
-        box.querySelector('[data-c1s]').onclick = function () {
-          c1Here(this, { mode: 'sales' }, function () { setTimeout(function () { if (box.isConnected) { delete mem[ck('/api/c1sync_state' + JSON.stringify({}))]; showDocs(kind, box); } }, 45000); });
-        };
       }
       Array.prototype.forEach.call(box.querySelectorAll('[data-tt]'), function (b) {
         b.onclick = function (ev) {
@@ -4527,7 +4527,7 @@
       ALL.sort(function (a, b) { return a.r.name.localeCompare(b.r.name, 'ru'); });
       var CNT = {}; ALL.forEach(function (x) { CNT[x.t] = (CNT[x.t] || 0) + 1; });
       var note = '<div class="note">Справочник «Основные средства» из 1С (только чтение)' + (D.at ? ', прочитан ' + esc(D.at) : '') +
-        '. Тип определён по названию.' + (D.refresh ? ' <button id="osref" style="margin-top:6px">🔄 Перечитать из 1С</button>' : '') + '</div>';
+        '. Тип определён по названию. Обновляется общей «🔄 Синхронизацией 1С».</div>';   // 27.11.2026: своя кнопка 1С убрана
       function bindRef() {
         if ($('osref')) $('osref').onclick = function () {
           this.disabled = true;
@@ -7965,7 +7965,9 @@
         '<label class="c1chk"><input type="checkbox" id="c1as"' + (c.auto_start ? ' checked' : '') + '> 🌅 В начале рабочего дня — полная синхронизация</label>' +
         '<label class="c1chk"><input type="checkbox" id="c1ae"' + (c.auto_end ? ' checked' : '') + '> 🌇 В конце рабочего дня — полная синхронизация</label>' +
         '<button class="main" id="c1save">💾 Сохранить</button>' +
-        '<div class="note">Вне рабочего времени кнопки «🔄 Синхронизация 1С» и «🔄 1С» не запускают 1С — покажут «нерабочее время». В 1С ничего не пишется.</div></div>';
+        '<div class="note">Одна синхронизация на всё: продажи (отгрузки), остатки, приходы, отчёты производства, данные агентов, ' +
+        'остатки 1С для подсчёта инвентаризации, основные средства, лист расхождения 1С ↔ ERP. Вне рабочего времени кнопка ' +
+        '«🔄 Синхронизация 1С» не запускает 1С — покажет «нерабочее время». В 1С ничего не пишется.</div></div>';
       view.innerHTML = h;
       Array.prototype.forEach.call(view.querySelectorAll('[data-gap]'), function (el) {
         el.onclick = function () { Array.prototype.forEach.call(view.querySelectorAll('[data-gap]'), function (x) { x.classList.toggle('on', x === el); }); };
