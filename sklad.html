@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '6f5fa18b', newBuild = '';
+  var BUILD = '35b28a8a', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795764289' || 0;
+  var BUILD_AT = +'1795764367' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2930,11 +2930,16 @@
         var q = 'Создать перемещение в ERP?\n' + MV_ALL[S.from] + ' → ' + MV_ALL[S.to] + '\n\n' +
           p.map(function (x, k) { return (k + 1) + '. ' + x.it.name + ' — ' + fq(x.s) + ' ' + x.it.unit; }).join('\n') + '\n\nДокумент будет «Новый»: остатки не меняются до приёма.';
         var ask = function (cb) { try { tg.showConfirm(q, cb); } catch (e) { cb(confirm(q)); } };
-        ask(function (yes) {
-          if (!yes) return;
+        var send = function (dup) {
           b.disabled = true; b.textContent = '⏳ Создаю в ERP…';
           try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-          call('/api/mv_create', { from: S.from, to: S.to, items: items }, 125000).then(function (r) {
+          call('/api/mv_create', { from: S.from, to: S.to, items: items, dup: dup ? 1 : 0 }, 125000).then(function (r) {
+            if (!r.ok && r.dup && !dup) {   // 27.11.2026: такое же уже открыто — спросить, не двойное ли нажатие
+              b.disabled = false; b.textContent = '✅ Создать перемещение'; haptic('warning');
+              var q2 = '⚠️ ' + r.text + '\n\nВсё равно создать ВТОРОЕ перемещение?';
+              try { tg.showConfirm(q2, function (y) { if (y) send(true); }); } catch (e) { if (confirm(q2)) send(true); }
+              return;
+            }
             haptic(r.ok ? 'success' : 'warning'); say(r.text || (r.ok ? 'Создано' : 'Не создано'));
             if (!r.ok) { b.disabled = false; b.textContent = '✅ Создать перемещение'; return; }
             mvN = null;   // выбор очищен; к созданному документу
@@ -2943,7 +2948,8 @@
             mvStep = 'new';   // назад — в это направление, «создано»: новый документ — в списке созданных
             goBack();
           }).catch(function (e) { b.disabled = false; b.textContent = '✅ Создать перемещение'; fail(e); });
-        });
+        };
+        ask(function (yes) { if (yes) send(false); });
       };
     }
     draw();
