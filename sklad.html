@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5714376f', newBuild = '';
+  var BUILD = '833d3e2a', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795775801' || 0;
+  var BUILD_AT = +'1795779100' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3614,10 +3614,11 @@
     });
   }
   function showDoc(kind, id) {
-    var me = cur, NM = kind === 'inc' ? 'Приходы' : kind === 'ship' ? 'Отгрузка' : 'Возврат', lastSig = null;
+    var me = cur, NM = kind === 'inc' ? 'Приходы' : kind === 'ship' ? 'Отгрузка' : 'Возврат', lastSig = null, edBusy = false;
     view.innerHTML = '<div class="spin">Загрузка…</div>';
     load('/api/flow', { kind: kind }, function (r) {
       if (cur !== me) return;
+      if (edBusy && lastSig !== null) return;   // 27.11.2026: кладовщик вводит партии — свежий список карточку не перерисовывает
       var x = (r.rows || []).filter(function (y) { return String(y.id) === String(id); })[0];
       // 23.11.2026 (руководитель «не переключать»): свежий список с тем же документом — карточку не перерисовывать
       var sg = JSON.stringify(x || null);
@@ -3762,8 +3763,32 @@
         docBar(kind, st);
       // 27.11.2026 (руководитель): приход склада Gynomedix — «📥 Принял» сразу здесь: бот ставит строки на места, ERP «Принял»
       var gxL = kind === 'inc' && x.gx_wait !== undefined, gxDone = gxL && !x.gx_wait;
-      // 27.11.2026 (руководитель): строки прихода Gynomedix — как в перемещении: номер, значок, короткое название, коробки,
-      // место плашкой 📍 (полный код) · партия жирным · штуки
+      // 27.11.2026 (руководитель): ↩️ возврат — у строки поле партии; «＋ ещё партия» делит штуки (первая уменьшается сама);
+      // сохранили — строка показывается партиями: свой номер, товар, партия, штуки, 📍 место (как в перемещении)
+      var rno = 0, canRp = !!r.ret_put;
+      function retLine(y, j, pt, fq) {
+        var nm = (fq ? fq[2] + ' ' : '') + esc(y.name), ps = y.parts || [];
+        var row = function (b, q, pl, extra) {
+          rno += 1;
+          return '<div class="ln"><span class="no">' + rno + '</span><span class="it">' + nm + ' · <b>' + n(q) + '</b> шт</span><br>' + pl +
+            ' <b>п.' + esc(b || '?') + '</b> · ' + n(q) + ' шт' + (extra || '') + '</div>';
+        };
+        var pill = function (code, done) { return code ? '<span class="pl"' + (done ? '' : ' style="background:#6c7a89"') + '>' + (done ? '✅ ' : '📍 ') + esc(code) + '</span>' : '<span class="pl" style="background:#c0392b">📍 нет места</span>'; };
+        if (pt && !pt.split) return row(pt.batch, y.qty, pill(pt.code + '-' + pt.addr, true));
+        if (ps.length) {
+          var any = ps.some(function (p) { return p.put; });
+          return ps.map(function (p, k) {
+            var code = p.put ? p.put.code + '-' + p.put.addr : (p.sug ? (x.ret_code ? x.ret_code + '-' : '') + p.sug : '');
+            var b = !p.put && canRp && x.status === 2 ? '<br><button class="main rput" data-rput="' + j + ':' + k + '" style="margin-top:6px;padding:8px;background:linear-gradient(150deg,#ff8a7a,#c0392b)">📥 Поставить п.' + esc(p.batch || '?') + ' · ' + n(p.qty) + ' шт</button>'
+              : !p.put && x.status !== 2 ? ' <span class="btag">⏳ поставить после проведения в ERP</span>' : '';
+            return row(p.batch, p.qty, pill(code, !!p.put), b);
+          }).join('') + (canRp && !any ? '<div style="text-align:right;margin:-4px 0 6px"><button class="rsed" data-red="' + j + '" style="width:auto;padding:4px 12px;font-size:13px">✏️ Изменить партии · ' + esc(y.name.split(' ')[0]) + '</button></div>' : '');
+        }
+        if (!canRp) return row('', y.qty, pill('', false), x.status !== 2 ? ' <span class="btag">⏳ партию введёт кладовщик</span>' : '');
+        rno += 1;
+        return '<div class="ln"><span class="no">' + rno + '</span><span class="it">' + nm + ' · <b>' + n(y.qty) + '</b> шт</span>' +
+          '<div class="red" data-ed="' + j + '"></div></div>';
+      }
       h += '<div class="box' + (gxL ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (gxL ? (gxDone ? ' · ✅ поставлено на место' : ' · 📥 куда ставить') : '') + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name), pt = kind === 'ret' ? y.put : null;
         if (kind === 'inc' && y.places) {
@@ -3774,6 +3799,7 @@
                 (p.batch ? '<b>п.' + esc(p.batch) + '</b> · ' : '') + n(p.qty) + ' шт';
             }).join('') + '</div>';
         }
+        if (kind === 'ret' && x.ret_wh) return retLine(y, j, pt, fq);   // 27.11.2026: партии строки, место, «＋ партия»
         // 26.11.2026 (руководитель): ↩️ возврат — партия и место на схеме; «📥 Поставить» — по «👥 Доступ»
         var rp = kind !== 'ret' ? '' : pt ? '<br><span class="btag c1">📍 ' + esc(pt.code + '-' + pt.addr) + ' · партия <b>' + esc(pt.batch || '—') + '</b> · ' + esc(String(pt.by || '').slice(0, 16)) + '</span>'
           : r.ret_put && x.ret_wh && x.status === 2 ? '<br><button class="main rput" data-rput="' + j + '" style="margin-top:6px;padding:9px;background:linear-gradient(150deg,#ff8a7a,#c0392b)">📥 Поставить · партия и место</button>'
@@ -3820,10 +3846,76 @@
       };
       Array.prototype.forEach.call(view.querySelectorAll('[data-rput]'), function (b) {
         b.onclick = function () {
-          var j = +b.getAttribute('data-rput');
+          var jk = String(b.getAttribute('data-rput')).split(':'), j = +jk[0], k = jk.length > 1 ? +jk[1] : null;
           try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
           lastSig = null;   // вернёмся — карточка перерисуется со свежим «куда поставлено»
-          go(function () { showRetPut(x, j); });
+          go(function () { showRetPut(x, j, k); });
+        };
+      });
+      // 27.11.2026 (руководитель): редактор партий строки возврата — партия + штуки; «＋ ещё партия» — первая уменьшается сама
+      var ED = {};
+      function edDraw(j) {
+        var box = view.querySelector('[data-ed="' + j + '"]'), y = x.lines[j];
+        if (!box) return;
+        var rows = ED[j], tot = +y.qty, sum = rows.reduce(function (s, p) { return s + (+p.qty || 0); }, 0);
+        var h = '<div style="margin-top:6px;padding:8px;border-radius:10px;background:rgba(192,57,43,.07)">' +
+          '<div style="font-size:12px;opacity:.8;margin-bottom:4px">Партия' + (x.need_batch ? ' (обязательно)' : '') + ' · штуки</div>';
+        rows.forEach(function (p, k) {
+          h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><span style="min-width:18px;font-weight:700">' + (k + 1) + '.</span>' +
+            '<input data-eb="' + k + '" inputmode="numeric" placeholder="партия, напр. 552" value="' + esc(p.batch) + '" style="flex:2;min-width:0;font-size:17px;padding:8px;border-radius:8px;border:2px solid #c0392b">' +
+            '<input data-eq="' + k + '" inputmode="decimal" value="' + esc(String(p.qty)) + '"' + (k === 0 && rows.length > 1 ? ' readonly title="считается само"' : '') +
+            ' style="flex:1;min-width:0;font-size:17px;padding:8px;border-radius:8px;border:2px solid ' + (k === 0 && rows.length > 1 ? '#bbb;background:#f3f3f3' : '#c0392b') + '">' +
+            '<span style="font-size:13px">шт</span>' + (k > 0 ? '<button data-ex="' + k + '" style="width:auto;padding:6px 10px">✖</button>' : '') + '</div>';
+        });
+        var bad = Math.abs(sum - tot) > 0.001 || rows.some(function (p) { return !(+p.qty > 0); });
+        h += (bad ? '<div class="msg bad" style="margin:4px 0">Сумма партий ' + n(sum) + ' ≠ ' + n(tot) + ' шт</div>' : '') +
+          '<div style="display:flex;gap:6px"><button data-eadd="1" style="flex:1">＋ ещё партия</button>' +
+          '<button data-esave="1" class="main" style="flex:1;margin:0;background:linear-gradient(150deg,#4fc36a,#23873b)">💾 Сохранить</button></div></div>';
+        box.innerHTML = h;
+        var first = function () { if (rows.length > 1) { var o = rows.slice(1).reduce(function (s, p) { return s + (+p.qty || 0); }, 0); rows[0].qty = Math.max(0, Math.round((tot - o) * 1000) / 1000); } };
+        Array.prototype.forEach.call(box.querySelectorAll('[data-eb]'), function (el) {
+          el.oninput = function () { edBusy = true; var v = el.value.replace(/[^\d\/]/g, '').slice(0, 12); if (v !== el.value) el.value = v; rows[+el.getAttribute('data-eb')].batch = v; };
+        });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-eq]'), function (el) {
+          el.onchange = function () { edBusy = true; rows[+el.getAttribute('data-eq')].qty = +String(el.value).replace(',', '.') || 0; first(); edDraw(j); };
+        });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-ex]'), function (el) {
+          el.onclick = function () { rows.splice(+el.getAttribute('data-ex'), 1); first(); edDraw(j); };
+        });
+        box.querySelector('[data-eadd]').onclick = function () {
+          edBusy = true;
+          if (rows.length >= 12) return say('Не больше 12 партий в строке.');
+          if (!(rows[0].qty > 1)) return say('Делить больше нечего: у первой партии ' + n(rows[0].qty) + ' шт.');
+          rows.push({ batch: '', qty: 1 }); first(); edDraw(j);
+          var ins = box.querySelectorAll('[data-eb]'); if (ins.length) ins[ins.length - 1].focus();
+        };
+        box.querySelector('[data-esave]').onclick = function () {
+          var b = this;
+          if (bad) return say('Сумма партий должна быть ' + n(tot) + ' шт.');
+          if (rows.some(function (p) { return p.batch && !/^\d{1,6}(\/20\d\d)?$/.test(p.batch); })) return say('Номер партии — только цифры (например 552 или 552/2025).');
+          if (x.need_batch && rows.some(function (p) { return !p.batch; })) return say('Для Перечисления номер партии обязателен у каждой партии.');
+          b.disabled = true; b.textContent = '⏳ Сохраняю…';
+          call('/api/ret_split', { id: x.id, line: j, parts: rows.map(function (p) { return { batch: p.batch, qty: p.qty }; }) }, 30000).then(function (z) {
+            haptic(z.ok ? 'success' : 'warning'); say(z.text || (z.ok ? 'Сохранено' : 'Не сохранено'));
+            if (!z.ok) { b.disabled = false; b.textContent = '💾 Сохранить'; return; }
+            edBusy = false; delete mem[ck('/api/flow' + JSON.stringify({ kind: 'ret' }))];
+            try { localStorage.removeItem('pfl:' + ck('/api/flow' + JSON.stringify({ kind: 'ret' }))); } catch (e) {}
+            showDoc('ret', x.id);
+          }).catch(function (e) { b.disabled = false; b.textContent = '💾 Сохранить'; fail(e); });
+        };
+      }
+      Array.prototype.forEach.call(view.querySelectorAll('[data-ed]'), function (el) {
+        var j = +el.getAttribute('data-ed'), y = x.lines[j];
+        ED[j] = (y.parts && y.parts.length) ? y.parts.map(function (p) { return { batch: p.batch, qty: +p.qty }; }) : [{ batch: '', qty: +y.qty }];
+        edDraw(j);
+      });
+      Array.prototype.forEach.call(view.querySelectorAll('[data-red]'), function (b) {   // ✏️ изменить сохранённые партии
+        b.onclick = function () {
+          var j = +b.getAttribute('data-red'), y = x.lines[j], ln = b.parentNode;
+          ln.insertAdjacentHTML('afterend', '<div data-ed="' + j + '"></div>');
+          ED[j] = y.parts.map(function (p) { return { batch: p.batch, qty: +p.qty }; });
+          b.parentNode.removeChild(b);
+          edBusy = true; edDraw(j);
         };
       });
       Array.prototype.forEach.call(view.querySelectorAll('[data-go]'), function (b) {
@@ -3836,11 +3928,13 @@
   }
   // 26.11.2026 (руководитель «Да, делай»): ↩️ Возврат клиента → номер партии (в ERP и Smartup его нет) → место на схеме.
   // Ставит бот склада (одно место — одна партия); ERP только читается: возврат должен быть проведён.
-  function showRetPut(x, j) {
-    var me = cur, y = x.lines[j] || {}, sel = { addr: '', batch: '' };
+  function showRetPut(x, j, k) {
+    // 27.11.2026: k — партия строки (сохранённые партии): штуки и партия — из неё, вводить не надо
+    var me = cur, y0 = x.lines[j] || {}, pk = k == null ? null : (y0.parts || [])[k], sel = { addr: '', batch: pk ? String(pk.batch || '') : '' };
+    var y = pk ? { name: y0.name, qty: pk.qty } : y0;
     view.innerHTML = subTop('ret', 'Возврат · №' + x.id + ' · поставить') + '<div id="rpbox"><div class="spin">Загрузка мест…</div></div>';
     bindTabs();
-    call('/api/ret_places', { id: x.id, line: j }, 30000).then(function (r) {
+    call('/api/ret_places', pk ? { id: x.id, line: j, part: k } : { id: x.id, line: j }, 30000).then(function (r) {
       var box = $('rpbox');
       if (cur !== me || !box) return;
       if (!r.ok) { box.innerHTML = '<div class="msg bad">' + esc(r.text || 'Не получилось') + '</div>'; return; }
@@ -3853,10 +3947,10 @@
       var draw = function () {
         var h = '<div class="box"><h3>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + '</h3><div class="ln"><b>' + n(y.qty) + ' шт</b> · 🛒 ' + esc(x.who) +
           '<br>📥 ' + esc(r.title) + ' · ' + esc(r.code) + '</div></div>';
-        h += '<div class="msec">НОМЕР ПАРТИИ' + (r.need_batch ? ' · обязательно' : ' · если известен') + '</div>' +
-          '<input id="rpb" inputmode="numeric" autocomplete="off" placeholder="например 552" value="' + esc(sel.batch) + '" ' +
+        h += '<div class="msec">НОМЕР ПАРТИИ' + (pk ? ' · из сохранённых партий строки' : r.need_batch ? ' · обязательно' : ' · если известен') + '</div>' +
+          '<input id="rpb" inputmode="numeric" autocomplete="off" placeholder="например 552" value="' + esc(sel.batch) + '"' + (pk ? ' readonly' : '') + ' ' +
           'style="width:100%;box-sizing:border-box;font-size:20px;padding:10px;border-radius:10px;border:2px solid #c0392b;margin-bottom:6px">';
-        if (r.known.length) h += '<div class="note" style="margin:0 0 4px">Партии этого товара на складе — нажмите, если та же:</div><div class="who">' +
+        if (r.known.length && !pk) h += '<div class="note" style="margin:0 0 4px">Партии этого товара на складе — нажмите, если та же:</div><div class="who">' +
           r.known.map(function (b) { return '<span data-rb="' + esc(b) + '"' + (sel.batch === b ? ' class="on"' : '') + '>п. ' + esc(b) + '</span>'; }).join('') + '</div>';
         h += '<div class="msec">МЕСТО · одно место — одна партия</div>';
         if (!r.free.length) h += '<div class="msg bad">Свободных мест нет — сначала освободите место (🔀 Переставить).</div>';
@@ -3878,7 +3972,7 @@
           var q = 'Поставить возврат №' + x.id + '?\n' + y.name + ' — ' + n(y.qty) + ' шт\nпартия ' + (sel.batch || '—') + ' → ' + r.code + '-' + sel.addr;
           var doIt = function () {
             b.disabled = true; b.textContent = '⏳ Бот склада ставит…';
-            call('/api/ret_put', { id: x.id, line: j, batch: sel.batch, addr: sel.addr }, 120000).then(function (z) {
+            call('/api/ret_put', pk ? { id: x.id, line: j, part: k, batch: sel.batch, addr: sel.addr } : { id: x.id, line: j, batch: sel.batch, addr: sel.addr }, 120000).then(function (z) {
               if (cur !== me) return;
               delete mem[ck('/api/flow' + JSON.stringify({ kind: 'ret' }))];
               delete mem['sch' + r.wh];
