@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '9f3f2321', newBuild = '';
+  var BUILD = 'dfd46a6d', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795779900' || 0;
+  var BUILD_AT = +'1795780601' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3520,7 +3520,7 @@
   function numRow(x, big) {   // руководитель 22.11: в ОДИН ряд, один размер: «ERP: 221426 · SU: 483 · 1С: —»
     var s = x.sig || {};
     var p = function (t, v) { return '<span class="nm' + (v ? ' y' : '') + '">' + t + ': <b>' + (v ? esc(v) : '—') + '</b></span>'; };
-    return '<div class="nums' + (big ? ' big' : '') + '">' + p('ERP', x.id) + (x.sys === 'SMARTUP' ? p('SM', s.su) : '') + (s.c1need ? p('1С', s.c1) : '') + '</div>';
+    return '<div class="nums' + (big ? ' big' : '') + '">' + p('ERP', x.id) + (x.sys === 'SMARTUP' ? p('SM', s.su) : '') + (s.c1need || s.c1 ? p('1С', s.c1) : '') + '</div>';   // 27.11: с/ф 1С найдена — видна всегда
   }
   // 22.11.2026 (руководитель): признаки отгрузки — ERP проведена · Smartup номер спецификации · 1С счёт-фактура
   function sigRow(x) {
@@ -7200,8 +7200,12 @@
     return '<h3>Состав · ' + p.lines.length + ' · 📍 откуда брать</h3>' + p.lines.map(function (y, j) {
       var fq = formOf(y.item);
       return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.item) + (y.batch ? ' · п.' + esc(y.batch) : '') +
-        ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ нет на местах бота') + '</span></div>';
-    }).join('') + (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
+        ' · ' + n(y.qty) + ' шт</span><br><span class="pl' + (y.place ? '' : ' no') + '">' + (y.place ? '📍 ' + esc(y.code || y.place) : '❗ ' + (y.batch ? 'п.' + esc(y.batch) + ' ' : '') + 'нет на местах склада') + '</span>' +
+        // 27.11.2026 (руководитель, №223695): партии по 1С нет на схеме — где другие партии этого товара и что делать
+        (!y.place && y.other && y.other.length ? '<br><small style="color:var(--hint)">на местах: ' + y.other.map(esc).join('; ') + '</small>' : '') + '</div>';
+    }).join('') + (p.lines.some(function (y) { return !y.place; }) ? '<div class="note" style="margin:6px 0 0;background:#fff4e0">❗ Партии по 1С нет на местах склада: найдите её на складе и отметьте место в окне склада' +
+      ' или обновите места после инвентаризации. Взяли другую партию — укажите её в окне склада.</div>' : '') +
+      (p.src ? '<div class="note" style="margin:6px 0 0">партия ' + esc(p.src) + '</div>' : '');
   }
   // 23.11.2026 (руководитель): строки отгрузки в списке — товар · шт · место · партия; «✅ Взял» — у отгруженных и просроченных
   function shipLines(x, st) {
@@ -7216,7 +7220,7 @@
           (y.batch ? ' · <b class="mvbt">п.' + esc(y.batch) + '</b>' : '') +
           (y.place ? '<br><span class="slpl">📍 ' + esc(y.place) + '</span>'
             // 24.11.2026 (руководитель «почему нет «Взял»»): строку не нашли на местах склада — показать, а не молчать
-            : plcOk(p) && p.mode === 'noted' ? '<br><span class="slpl nopl">❗ нет на местах склада</span>' : '') + '</span></div>';
+            : plcOk(p) && (p.mode === 'noted' || p.mode === 'pick') ? '<br><span class="slpl nopl">❗ ' + (y.batch ? 'п.' + esc(y.batch) + ' ' : '') + 'нет на местах склада</span>' : '') + '</span></div>';
       }).join('') + '</div>';
     // 24.11.2026 (руководитель): Терминал Ташкент — «✅ Взял» без списания → «отгружено»; «🚚 Отгружено» — бот списывает с мест → архив.
     // Продажу в ERP бот не проводит (команды нет) — проводят в ERP как раньше.
