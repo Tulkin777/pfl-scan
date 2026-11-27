@@ -1456,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '4e3199ec', newBuild = '';
+  var BUILD = '52e101e7', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795785617' || 0;
+  var BUILD_AT = +'1795786565' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -2737,6 +2737,57 @@
           };
         });
       };
+      // 27.11.2026 (руководитель «все вкладки Движения одинаково»): как Отгрузка/Возврат — сверху плитки направлений (число,
+      // ПЕР/ТЕР), ниже статусы 🟡 создано · 🚛 в пути · ⏰ просрочено (в пути > 2 дн.) · 🟢 принято (3 дня); подробные шаги — в карточке
+      {
+        var ageD = function (t) { var v = Date.parse(String(t || '').replace(' ', 'T')); return isNaN(v) ? 0 : (Date.now() - v) / 864e5; };
+        var mst = function (x) {
+          if (x.step === 'new') return 'new';
+          if (x.step === 'ok') return ageD((x.drv && x.drv.done) || x.date) <= 3 ? 'ok' : '';
+          return ageD((x.ready && x.ready.at) || (x.drv && (x.drv.taken || x.drv.sent)) || x.date) > 2 ? 'late' : 'road';
+        };
+        var ST2 = [['new', '🟡 создано'], ['road', '🚛 в пути'], ['late', '⏰ просрочено'], ['ok', '🟢 принято · 3 дня']];
+        var inD = function (x) { return !flowDir || x.dir === flowDir; };
+        var cS = function (s, useDir) { return all0.filter(function (x) { return mst(x) === s && (!useDir || inD(x)); }).length; };
+        if (!mvStep || !ST2.some(function (s) { return s[0] === mvStep; }))
+          mvStep = ['late', 'road', 'new', 'ok'].filter(function (s) { return cS(s, true); })[0] || 'new';
+        var SHD = { 'Завод→Ташкент': ['Завод → Ташкент', 'd1'], 'Ташкент→Завод': ['Ташкент → Завод', 'd2'],
+                    'Завод→Завод': ['Внутри завода', 'd6'], 'Ташкент→Ташкент': ['Внутри Ташкента', 'd7'] };
+        var h2 = '<div class="msec">НАПРАВЛЕНИЕ · ОТКУДА → КУДА</div><div class="dir shp4">' + MDIR.map(function (d) {
+          var rs = all0.filter(function (x) { return x.dir === d[0] && mst(x) === mvStep; }), c = rs.length;
+          var pe = rs.filter(function (x) { return mvIn(x, 'per'); }).length, te = rs.filter(function (x) { return mvIn(x, 'ter'); }).length;
+          return '<div class="' + SHD[d[0]][1] + ' shp' + (c ? '' : ' z') + (flowDir === d[0] ? ' on' : '') + '" data-dir="' + d[0] + '"><span class="sc">' + c + '</span>' +
+            '<span class="cty">' + esc(SHD[d[0]][0]) + '</span><span class="brs">' +
+            (c ? (pe ? '<span class="br">ПЕР ' + pe + '</span>' : '') + (te ? '<span class="br">ТЕР ' + te + '</span>' : '') : '<span class="br0">пусто</span>') + '</span></div>';
+        }).join('') + '</div>';
+        var pm2 = r.perm || {};
+        if (r.admin || (pm2.lv === 2 && (pm2.acts || []).indexOf('create') >= 0))   // «➕ Создать» — как было: линия и направление
+          h2 += flowDir ? '<div class="row3" style="margin:6px 0">' + MLINE.map(function (l) {
+              return '<button class="main mvadd" data-mvadd="' + l[0] + '" style="margin:0">➕ Создать · ' + l[1] + '</button>'; }).join('') + '</div>'
+            : '<button class="main mvadd off" disabled>➕ Создать перемещение — сначала выберите направление</button>';
+        h2 += '<div class="stp s3" style="grid-template-columns:repeat(4,1fr)">' + ST2.map(function (s) {
+          var c = cS(s[0], true);
+          return '<div class="sp' + (mvStep === s[0] ? ' on' : '') + (c ? '' : ' z') + '" data-st2="' + s[0] + '"><b>' + c + '</b>' + s[1] + '</div>';
+        }).join('') + '</div>';
+        var rows2 = all0.filter(function (x) { return mst(x) === mvStep && inD(x); });
+        h2 += '<div class="note" style="margin:-4px 0 8px">Показано ' + rows2.length + (flowDir ? ' · ещё раз на направление — все' : '') + '</div>';
+        h2 += rows2.length ? rows2.map(function (x) {
+          return mvStep === 'late' ? card(x).replace('</div><div class="rt2">', '</div><div class="latebad">⏰ ПРОСРОЧЕНО · в пути ' +
+            Math.floor(ageD((x.ready && x.ready.at) || (x.drv && (x.drv.taken || x.drv.sent)) || x.date)) + ' дн. · склад не принял</div><div class="rt2">') : card(x);
+        }).join('') : '<div class="empty">Ничего нет</div>';
+        box.innerHTML = h2;
+        Array.prototype.forEach.call(box.querySelectorAll('[data-dir]'), function (el) {
+          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} var d = el.getAttribute('data-dir'); flowDir = flowDir === d ? '' : d; showMoves(box); };
+        });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-st2]'), function (el) {
+          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} mvStep = el.getAttribute('data-st2'); showMoves(box); };
+        });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-mvadd]'), function (el) {
+          el.onclick = function () { try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {} var ln = el.getAttribute('data-mvadd'), dr = flowDir; go(function () { showMvNew(ln, dr); }); };
+        });
+        openCards();
+        return;
+      }
       if (!mvLine) {   // шаг 1: Перечисление · Терминал — на плитке сколько СОЗДАНО (ещё не отправлено); ниже — общий список созданных
         var made = all0.filter(function (x) { return x.step === 'new'; });
         var h1 = '<div class="dir dir2">' + MLINE.map(function (l) {
@@ -3347,6 +3398,9 @@
                         ['g7', 'Gynomedix Ташкент', 'd2', [7], 'Gynomedix Ташкент', 'ПЕРЕЧИСЛЕНИЕ'], ['zv', 'Завод', 'd6', [1, 2, 5, 6], 'Завод · все продажи', 'ПЕР · ТЕР · GX']] };
   // 27.11.2026 (руководитель): ↩️ возврат — «куда вернули»: Перечисление / Терминал / Gynomedix / Завод (как плитки отгрузки)
   DPLACE.ret = DPLACE.ship;
+  // 27.11.2026 (руководитель «все вкладки Движения одинаково»): 📥 приход — «куда пришло» теми же плитками (было: Завод·Сырьё / Завод·ГП / Ташкент·ГП)
+  DPLACE.inc = DPLACE.ship;
+  var INC_NEW_PL = { t4: 'tg', t3: 'tg', g7: 'tg', zv: '' };   // плитка → склады для «➕ Создать приход» (showIncNew)
   // 22.11.2026 (руководитель): плитка «Откуда» отгрузки — город крупно, ниже Перечисление/Терминал, справа бренды со счётом документов
   function shipTile(q, c, rows, on) {
     var B = {};
@@ -3421,11 +3475,11 @@
       var h = '';
       if (PL) {   // «куда пришло» / «откуда» — пустое бледное, но видно
         if (kind === 'ship') h += '<div class="c1ship"><span>📗 1С · счёт-фактуры Перечисления: <b class="c1sat">…</b></span><button class="c1btn" data-c1s="1">🔄 1С</button></div>';
-        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : kind === 'ret' ? 'КУДА ВЕРНУЛИ' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' || kind === 'ret' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
+        h += '<div class="msec">' + (kind === 'inc' ? 'КУДА ПРИШЛО' : kind === 'ret' ? 'КУДА ВЕРНУЛИ' : 'ОТКУДА') + '</div><div class="dir' + (kind === 'ship' || kind === 'ret' || kind === 'inc' ? ' shp4' : PL.length === 4 ? ' dir4' : '') + '">' + PL.map(function (q) {
           // 24.11.2026: в отгрузке плитка «Откуда» считает отгружено + просрочено (как число на вкладке) — сумма плиток = вкладке
           var act = kind === 'ship' && (docFlt.ship === 'ok' || docFlt.ship === 'late');
           var rq = all.filter(function (x) { return q[3].indexOf(+x.st) >= 0 && inWho(x) && (act ? (x.step === 'ok' || x.step === 'late') : (!f || f[3](x))) && live(x); }), c = rq.length;
-          if (kind === 'ship' || kind === 'ret') return shipTile(q, c, rq, docPl[kind] === q[0]);
+          if (kind === 'ship' || kind === 'ret' || kind === 'inc') return shipTile(q, c, rq, docPl[kind] === q[0]);
           return '<div class="' + q[2] + (c ? '' : ' z') + (docPl[kind] === q[0] ? ' on' : '') + '" data-dp="' + q[0] + '"><b>' + c + '</b>' + q[1] + '</div>';
         }).join('') + '</div>';
         // 25.11.2026 (руководитель): «➕ Создать приход» — склад (выбранный «куда пришло»), от кого, товары; пока только руководителю
@@ -3482,7 +3536,7 @@
       box.innerHTML = h;
       if ($('incAdd')) $('incAdd').onclick = function () {
         try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-        var p0 = docPl.inc || ''; go(function () { showIncNew(p0); });
+        var p0 = INC_NEW_PL[docPl.inc || ''] != null ? INC_NEW_PL[docPl.inc] : (docPl.inc || ''); go(function () { showIncNew(p0); });
       };
       Array.prototype.forEach.call(box.querySelectorAll('[data-df]'), function (el) {
         el.onclick = function () {
