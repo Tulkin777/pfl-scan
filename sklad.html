@@ -346,6 +346,18 @@
   .plbl { background: linear-gradient(150deg, #ffbf55, #e8820c) !important; color: #fff !important; }
   .pscan { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
   .plbl2 { margin-top: 8px; font-size: 14px; }
+  /* 27.11.2026 (руководитель): «не согласен с местом» — места кнопками: пустые (зелёные), можно поставить (синие), ⭐ — предложено */
+  .pk-h { margin: 12px 0 6px; font-weight: 700; font-size: 14px; }
+  .pk-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+  .pkb { text-align: left; padding: 8px 10px; border-radius: 12px; border: 0; cursor: pointer; color: #fff; font-size: 13px; line-height: 1.25;
+         box-shadow: 0 4px 0 rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.35); }
+  .pkb:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.28); }
+  .pkb b { display: block; font-size: 15px; }
+  .pkb.free { background: linear-gradient(150deg, #4fc36a, #23873b); }
+  .pkb.held { background: linear-gradient(150deg, #9aa6b2, #5d6975); }
+  .pkb.fit { background: linear-gradient(150deg, #5aa3ff, #2459c9); }
+  .pkb.sug { outline: 3px solid #ffc83d; outline-offset: 1px; }
+  .pkb:disabled { opacity: .5; }
   .pnoscan { margin-top: 8px; font-size: 16px !important; background: linear-gradient(150deg, #8b7bff, #4b39c9) !important; color: #fff !important; }   /* 23.11: без скана */
   .latebad { margin-top: 4px; padding: 4px 9px; border-radius: 9px; background: #ffe3dc; color: #b3261e; font-weight: 900; font-size: 12.5px; }   /* 23.11: просрочено */
   .inv-ok { background: linear-gradient(150deg, #4fd68a, #17964a) !important; color: #fff !important; }
@@ -1444,9 +1456,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '5f8e0e82', newBuild = '';
+  var BUILD = '5714376f', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795771945' || 0;
+  var BUILD_AT = +'1795775801' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -6908,7 +6920,8 @@
         fmin = Math.min(fmin, f);
       });
       Array.prototype.forEach.call($('cols').querySelectorAll('.tb.one1'), function (el) { el.style.fontSize = fmin + 'px'; });   // всем один размер
-      if (st.sel && ids.indexOf(st.sel) < 0) {   // задачу закрыли (здесь или в группе) — убрать карточку
+      // 27.11.2026 (руководитель «окно Переставить само закрывается»): 'mv' — это не задача, автообновление его не закрывает
+      if (st.sel && st.sel !== 'mv' && ids.indexOf(st.sel) < 0) {   // задачу закрыли (здесь или в группе) — убрать карточку
         st = { sel: null, box: '', place: '' };
         $('panel').className = 'panel hint';
         $('panel').innerHTML = '✅ Задача выполнена или снята. ' + HINT;
@@ -6952,8 +6965,11 @@
         me.sig = sig;
         cols(r);
         if (changed && !st.sel) { delete mem['sch' + part]; drawScheme(part, null); }   // схема — только если что-то изменилось
+        me.fails = 0;
       }).catch(function (e) {
-        if ($('occ')) $('occ').innerHTML = '<span class="bad">🔌 нет связи с компьютером PFL — повторю через ' + AUTO_SEC + ' с</span>';
+        // 27.11.2026: один пропущенный фоновый опрос (интернет мигнул) — не пугать; «нет связи» — со второго подряд или по нажатию
+        me.fails = (me.fails || 0) + 1;
+        if ($('occ') && (user || me.fails >= 2)) $('occ').innerHTML = '<span class="bad">🔌 нет связи с компьютером PFL — повторю через ' + AUTO_SEC + ' с</span>';
       });
     }
     function stop() { if (whTimer) { clearInterval(whTimer); whTimer = null; } }
@@ -7228,10 +7244,24 @@
     var P = $('panel');
     P.className = 'panel';
     P.innerHTML = '<div class="spin" style="padding:10px 0">Загрузка мест…</div>';
+    var at1 = true, sig0 = null;   // 27.11.2026: свежие места с сервера не сбрасывают уже выбранное (шаг 2–3)
     load2('/api/places', { wh: part }, function (r) {
       if (st.sel !== 'mv' || !$('panel')) return;
+      var sig = JSON.stringify([r.rows, r.free, r.recs]);
+      if (sig0 !== null && (!at1 || sig === sig0)) return;
+      sig0 = sig;
       var rows = r.rows || [], free = r.free || [];
+      // 27.11.2026 (руководитель): склады Ташкента — на месте несколько партий: переставить именно ЭТУ партию (бот: mvb)
+      var LOTWH = ['per_tas', 'ter_tas', 'per_gx'].indexOf(part) >= 0;
+      // руководитель 27.11: и одна партия на месте — «куда» тоже пустые + к своему товару до 1,5 партии (бот mvb)
+      var lotMode = function (p) { return LOTWH && p.i != null; };
+      function bt(p) {
+        var b = String(p.batch || ''), raw = String(p.raw || '');
+        if (b && b.charAt(0) !== '?') return 'п.' + b;
+        return 'п.?' + (raw.length > 1 && raw.charAt(0) === '?' ? ' (из №' + raw.slice(1) + ')' : '');
+      }
       function step1() {
+        at1 = true;
         var h = '<div class="lbl">🔀 Переставить внутри склада</div>', recs = r.recs || [];
         if (recs.length) {   // ⭐ рекомендации «старая партия ближе к выходу» — одним нажатием
           h += '<div class="name" style="font-size:16px">⭐ Рекомендую — старая партия ближе к выходу</div><div class="chips">';
@@ -7241,9 +7271,10 @@
           h += '</div>';
         }
         h += '<div class="name">' + (recs.length ? 'Или выбрать самому: ' : '') + '1. Что переставить?</div><div class="chips">';
-        rows.forEach(function (p, i) {
-          h += '<div class="chip" data-i="' + i + '"><b>' + esc(p.addr) + '</b> ' + esc(p.short) + (p.batch ? ' п.' + esc(p.batch) : '') +
-            ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div>';
+        rows.forEach(function (p, i) {   // 27.11.2026 (руководитель): партия всегда, сколько партий на месте, откуда и когда
+          h += '<div class="chip" data-i="' + i + '"><b>' + esc(p.addr) + '</b> ' + esc(p.short) + ' <b>' + esc(bt(p)) + '</b>' +
+            ' · ' + n(p.qty) + ' ' + esc(p.unit) + (p.many > 1 ? ' · <i>' + p.many + ' парт. на месте</i>' : '') +
+            (p.src || p.at ? '<br><span style="font-size:11px;opacity:.75">' + (p.src ? (/^P?\d+$/.test(p.src) ? 'из №' + esc(p.src) : esc(p.src)) : '') + (p.at ? (p.src ? ' · ' : '') + 'поставлено ' + esc(p.at.slice(8, 10) + '.' + p.at.slice(5, 7) + ' ' + p.at.slice(11, 16)) : '') + '</span>' : '') + '</div>';
         });
         h += (rows.length ? '' : '<div class="empty">Склад пустой</div>') + '</div><button id="mvx">✖️ Отмена</button>';
         P.innerHTML = h;
@@ -7260,33 +7291,91 @@
         });
       }
       function step2(p) {
+        at1 = false;
         drawScheme(part, null, (function () { var o = {}; o[p.addr] = 'from'; return o; })());
-        var h = '<div class="lbl">🔀 Переставить · 🟧 ' + esc(p.addr) + '</div><div class="name">' + esc(p.short) +
-          (p.batch ? ' п.' + esc(p.batch) : '') + ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div><div class="name" style="font-size:16px">2. Куда? (свободные места)</div><div class="chips">';
-        free.forEach(function (a) { h += '<div class="chip free" data-a="' + esc(a) + '"><b>' + esc(a) + '</b></div>'; });
-        h += (free.length ? '' : '<div class="empty">Свободных мест нет</div>') + '</div><div class="row3"><button id="mvb">⬅️ Другое</button><button id="mvx">✖️ Отмена</button></div>';
-        P.innerHTML = h;
-        $('mvb').onclick = function () { drawScheme(part, null); step1(); };
-        $('mvx').onclick = cancel;
-        Array.prototype.forEach.call(P.querySelectorAll('.chip.free'), function (el) {
-          el.onclick = function () { step3(p, el.getAttribute('data-a')); };
-        });
+        var lm = lotMode(p);
+        var head = '<div class="lbl">🔀 Переставить · 🟧 ' + esc(p.addr) + '</div><div class="name">' + esc(p.short) +
+          ' ' + esc(bt(p)) + ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div>' +
+          (lm && p.many > 1 ? '<div class="note">На месте ' + p.many + ' партии — переставится только эта партия, остальные останутся на ' + esc(p.addr) + '.</div>' : '') +
+          '<div class="name" style="font-size:16px">2. Куда? Сначала пустые' + (lm ? ', потом 🟦 к своему товару (вместе не больше 1,5 партии)' : '') + '</div>';
+        var tail = '<div class="row3"><button id="mvb">⬅️ Другое</button><button id="mvx">✖️ Отмена</button></div>';
+        var fitL = [], fitT = {};
+        function put(list, wait) {
+          if (st.sel !== 'mv' || !$('panel')) return;
+          var h = head + '<div class="chips">';
+          list.forEach(function (a) { h += '<div class="chip free" data-a="' + esc(a) + '"><b>' + esc(a) + '</b></div>'; });
+          fitL.forEach(function (a) {
+            h += '<div class="chip free" data-a="' + esc(a) + '" style="border-color:#2459c9;background:#e3eeff"><b>🟦 ' + esc(a) + '</b> к своему' +
+              (fitT[a] ? ' · ' + esc(fitT[a]) : '') + '</div>';
+          });
+          h += (wait ? '' : (list.length || fitL.length) ? '' : '<div class="empty">Свободных мест для этого товара нет</div>') + '</div>' +
+            (wait ? '<div class="spin" style="padding:6px 0">Проверяю у бота склада, куда можно…</div>' : '') + tail;
+          P.innerHTML = h;
+          $('mvb').onclick = function () { drawScheme(part, null); step1(); };
+          $('mvx').onclick = cancel;
+          Array.prototype.forEach.call(P.querySelectorAll('.chip.free'), function (el) {
+            el.onclick = function () { step3(p, el.getAttribute('data-a')); };
+          });
+        }
+        // 27.11.2026: «куда» — только места, что даст бот склада (не придержанные под приход, подходящие товару)
+        put([], true);
+        call('/api/swap_to', lm ? { wh: part, from: p.addr, lot: p.i } : { wh: part, from: p.addr })
+          .then(function (t) { fitL = t.fit || []; fitT = t.tot || {}; put(t.free || [], false); })
+          .catch(function () { put(free, false); });
       }
       function step3(p, to) {
+        at1 = false;
         var hot = {}; hot[p.addr] = 'from'; hot[to] = 'to';
         drawScheme(part, null, hot);
-        P.innerHTML = '<div class="lbl">🔀 Переставить внутри склада</div><div class="name">' + esc(p.short) + (p.batch ? ' п.' + esc(p.batch) : '') +
-          ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div><div class="rt"><span class="from">' + esc(p.addr) + '</span> → <span class="to">' + esc(to) + '</span></div>' +
-          '<div class="row3"><button id="bbox">📷 Коробка</button><button id="bplace">📷 Место</button><button id="mvb">⬅️ Другое</button></div>' +
-          '<div class="st" id="sbox"></div><div class="st" id="splace"></div>' +
-          '<button class="main" id="go">🔀 Переставить — в окне склада</button><div id="res"></div><button id="mvx" style="margin-top:6px">✖️ Отмена</button>';
+        var lm = lotMode(p);   // одна партия: занятое «куда» — к своему товару, не «поменять местами»
+        var swap = !lm && rows.some(function (x) { return x.addr === to; });   // «куда» занято — поменять местами
+        P.innerHTML = '<div class="lbl">🔀 Переставить внутри склада' + (lm ? ' · только эта партия' : '') + '</div><div class="name">' + esc(p.short) + ' ' + esc(bt(p)) +
+          ' · ' + n(p.qty) + ' ' + esc(p.unit) + '</div><div class="rt"><span class="from">' + esc(p.addr) + '</span> ' + (swap ? '⇄' : '→') + ' <span class="to">' + esc(to) + '</span></div>' +
+          (swap ? '<div class="note">Место ' + esc(to) + ' занято — товары поменяются местами.</div>' : '') +
+          '<button class="main" id="go">' + (swap ? '⇄ Поменять местами' : '🔀 Переставить') + '</button><div id="res"></div>' +
+          '<div class="row3" style="margin-top:6px"><button id="mvb">⬅️ Другое</button><button id="mvx">✖️ Отмена</button></div>';
         $('mvb').onclick = function () { step2(p); };
         $('mvx').onclick = cancel;
-        $('bbox').onclick = function () { scanQr('QR наклейки коробки', function (c) { st.box = c; $('sbox').textContent = 'Коробка: ' + c; }); };
-        $('bplace').onclick = function () { scanQr('QR таблички места ' + to, function (c) { st.place = c; $('splace').textContent = 'Место: ' + c; }); };
-        $('go').onclick = function () {   // 22.11.2026: переставляет бот склада (его «🔀 Переставить» в окне склада)
-          var ik = Object.keys(ITEM).filter(function (k2) { return partsOf(k2).indexOf(part) >= 0; })[0] || part;
-          go(function () { showBotWin(ik, part, 'mv:0'); });
+        // 27.11.2026 (руководитель «Переставить не работает»): выбранное здесь выполняет бот склада сразу — его кнопками,
+        // как кладовщик в группе (раньше открывалось окно бота, и выбирать надо было заново)
+        $('go').onclick = function () {
+          var b = $('go'), q = (swap ? 'Поменять местами ' : 'Переставить ') + p.short + ' ' + bt(p) + ' · ' + n(p.qty) + ' ' + p.unit + ':\n' + p.addr + (swap ? ' ⇄ ' : ' → ') + to + '?' +
+            (lm ? '\n\nТолько эта партия — остальные останутся на ' + p.addr + '.' : '');
+          var run = function (yes) {
+            if (!yes) return;
+            b.disabled = true; b.textContent = '⏳ Выполняет бот склада…';
+            $('mvb').disabled = $('mvx').disabled = true;
+            try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+            call('/api/swap', lm ? { wh: part, from: p.addr, to: to, lot: p.i, raw: p.raw || '' } : { wh: part, from: p.addr, to: to }, 125000).then(function (r) {
+              if (!$('res')) return;
+              if (r.ok) {
+                haptic('success');
+                Object.keys(mem).forEach(function (k2) { if (k2.indexOf('sch' + part) === 0 || k2.indexOf('hsch' + part) === 0) delete mem[k2]; });
+                st.sel = null;
+                P.className = 'panel hint';
+                P.innerHTML = '✅ ' + esc(r.text || ('Переставлено: ' + p.addr + ' → ' + to)) + '<br>' + HINT;
+                drawScheme(part, null);
+                $('ref') && $('ref').click();
+                return;
+              }
+              haptic('warning');
+              b.disabled = false; b.textContent = swap ? '⇄ Поменять местами' : '🔀 Переставить';
+              $('mvb').disabled = $('mvx').disabled = false;
+              $('res').innerHTML = '<div class="msg bad" style="margin-top:8px">' + esc(r.text || 'Не получилось') + '</div>' +
+                '<button id="bwin2" style="margin-top:6px">🤖 Окно склада · сделать там</button>';
+              $('bwin2').onclick = function () {
+                var ik = Object.keys(ITEM).filter(function (k2) { return partsOf(k2).indexOf(part) >= 0; })[0] || part;
+                go(function () { showBotWin(ik, part); });
+              };
+            }).catch(function (e) {
+              if (!$('res')) return;
+              b.disabled = false; b.textContent = swap ? '⇄ Поменять местами' : '🔀 Переставить';
+              $('mvb').disabled = $('mvx').disabled = false;
+              $('res').innerHTML = '<div class="msg bad" style="margin-top:8px">' + esc((e && e.text) || 'Нет связи') +
+                '<br>Перед повтором нажмите 🔄 Обновить — бот мог уже переставить.</div>';
+            });
+          };
+          try { tg.showConfirm(q, run); } catch (e) { run(confirm(q)); }
         };
       }
       function cancel() { st.sel = null; P.className = 'panel hint'; P.innerHTML = HINT; drawScheme(part, null); }
@@ -7422,9 +7511,48 @@
       try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
     };
     $('tlook').onclick = function () {   // что где лежит и свободные места этого склада
+      if (!take) return pickPlace();
       var it = Object.keys(ITEM).filter(function (k) { return partsOf(k).indexOf(t.wh) >= 0; })[0];
       if (it) go(function () { showPlaces(it, [t.wh]); });
     };
+    // 27.11.2026 (руководитель): «не согласен с местом» — места кнопками: сначала пустые, потом куда можно по правилу
+    // (одна партия; до 1,5 — тот же товар). Нажал → бот ставит партию на это место (как скан его таблички).
+    function pickPlace() {
+      var R = $('res'), lk = $('tlook');
+      if (lk) { lk.disabled = true; lk.textContent = '⏳ Ищу места…'; }
+      call('/api/task_places', { id: id }, 60000).then(function (r) {
+        if (lk) { lk.disabled = false; lk.textContent = '👀 Смотреть места — не согласен с местом'; }
+        if (!r.ok) { say(r.text); return; }
+        var btn = function (p, cls) {
+          return '<button class="pkb ' + cls + (p.sug ? ' sug' : '') + '" data-a="' + esc(p.addr) + '"><b>' + (p.sug ? '⭐ ' : '') + esc(p.addr) + '</b>' +
+            (p.what ? p.what.map(esc).join('<br>') : p.note ? esc(p.note) : 'свободно') + '</button>';
+        };
+        var h = '<div class="pk-h">🟩 Пустые места (' + r.free.length + ')</div>' +
+          (r.free.length ? '<div class="pk-g">' + r.free.map(function (p) { return btn(p, p.note ? 'held' : 'free'); }).join('') + '</div>' : '<div class="note">Пустых мест нет</div>') +
+          '<div class="pk-h">🟦 Можно поставить к партии (до 1,5 партии того же товара) (' + r.fit.length + ')</div>' +
+          (r.fit.length ? '<div class="pk-g">' + r.fit.map(function (p) { return btn(p, 'fit'); }).join('') + '</div>' : '<div class="note">Таких мест нет</div>') +
+          '<div class="note">⭐ — место, которое предлагает бот. Нажмите место — бот поставит туда партию.</div>';
+        R.innerHTML = h;
+        Array.prototype.forEach.call(R.querySelectorAll('.pkb'), function (b) {
+          b.onclick = function () {
+            var a = b.getAttribute('data-a'), code = r.code + '-' + a;
+            var q = 'Поставить на ' + code + '?\n' + r.item + (r.batch ? ' · п.' + r.batch : '') + ' · ' + n(r.qty) + ' шт';
+            var go_ = function (yes) {
+              if (!yes) return;
+              Array.prototype.forEach.call(R.querySelectorAll('.pkb'), function (x) { x.disabled = true; });
+              b.innerHTML = '<b>⏳ ' + esc(a) + '</b>бот ставит…';
+              call('/api/task_qr', { id: id, code: code }, 125000).then(function (r2) {
+                haptic(r2.ok ? 'success' : 'warning'); say(r2.text);
+                if (r2.done) { delete mem[ck('/api/flow' + JSON.stringify({ kind: 'mv' }))]; P.className = 'panel hint'; P.innerHTML = esc(r2.text); st.sel = null; }
+                else pickPlace();
+              }).catch(function (e) { fail(e); pickPlace(); });
+            };
+            try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+          };
+        });
+        try { R.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+      }).catch(function (e) { if (lk) { lk.disabled = false; lk.textContent = '👀 Смотреть места — не согласен с местом'; } fail(e); });
+    }
   }
   function taskPanel(t, st) {
     if (t.prod && t.wh === 'gp1') return prodPanel(t, st);   // 23.11.2026: выпуск производства — свой путь (наклейка → QR места)
