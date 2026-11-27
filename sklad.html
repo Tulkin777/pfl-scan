@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '54d16dfb', newBuild = '';
+  var BUILD = 'e8df4bd9', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795763387' || 0;
+  var BUILD_AT = +'1795763560' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3739,10 +3739,6 @@
         '<div class="rt2 big"><span class="fr">' + (kind === 'inc' ? '🏭 Поставщик<br>' : '🛒 Клиент<br>') + esc(x.who) + '</span><i>→</i><span class="to">📥 Склад<br>' + esc(x.store) + '</span></div>' +
         docBar(kind, st);
       // 27.11.2026 (руководитель): приход склада Gynomedix — «📥 Принял» сразу здесь: бот ставит строки на места, ERP «Принял»
-      // 27.11.2026 (руководитель): у прихода две кнопки рядом наверху — «➡ Склад» и «📥 Принял» (Принял — у склада Gynomedix)
-      if (kind === 'inc' && x.to_wh) h += '<div style="display:flex;gap:8px;margin:0 0 10px">' +
-        '<button class="main" data-go="' + x.to_wh + '" style="flex:1;margin:0">➡ Склад «куда»' + (x.placed === false || x.gx_wait ? '<br><small>поставить на полку</small>' : '') + '</button>' +
-        (x.gx_put ? '<button class="main act-acc" id="incPut" style="flex:1;margin:0">📥 Принял<br><small>на место + ERP</small></button>' : '') + '</div>';
       var gxL = kind === 'inc' && x.gx_wait !== undefined, gxDone = gxL && !x.gx_wait;
       // 27.11.2026 (руководитель): строки прихода Gynomedix — как в перемещении: номер, значок, короткое название, коробки,
       // место плашкой 📍 (полный код) · партия жирным · штуки
@@ -3772,7 +3768,13 @@
       }).join('') + '</div></div>';
       // 25.11.2026 (руководитель): приход из архива отгрузки («Новый») — «✅ Входной контроль» здесь (пока только руководителю)
       if (kind === 'inc' && x.arch && incCan('accept')) h += '<button class="main" id="incVk" style="margin-bottom:8px;background:linear-gradient(150deg,#4fc3a1,#1f8a6a)">✅ Входной контроль · принять №' + esc(x.id) + '</button>';
-      if (x.to_wh && kind !== 'inc') h += '<button class="main" data-go="' + x.to_wh + '">➡ Склад «куда»</button>';   // 27.11: у прихода — наверху
+      // 27.11.2026 (руководитель, снимок со стрелкой): «📥 Принял» — между «Ход» и «➡ Склад «куда»»; «Склад «куда»» — на своём месте
+      if (kind === 'inc' && x.gx_put) {
+        var gxA = x.lines.map(function (y) { return y.put && y.put.addr; }).filter(function (a, i, s) { return a && s.indexOf(a) === i; });
+        h += '<button class="main act-acc" id="incPut" style="margin-bottom:8px">📥 Принял на склад Gynomedix Ташкент' +
+          (gxA.length ? ' · ' + esc(gxA.join(', ')) : '') + '<br><small>поставить на место и провести в ERP</small></button>';
+      }
+      if (x.to_wh) h += '<button class="main" data-go="' + x.to_wh + '">➡ Склад «куда»' + (kind === 'inc' && (x.placed === false || x.gx_wait) ? ' · поставить на полку' : '') + '</button>';
       h += '<div class="note">Провести — в ERP; поставить на место — в окне склада (как в группе).</div>';
       view.innerHTML = h;
       bindTabs();
