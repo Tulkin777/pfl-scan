@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '4df318e8', newBuild = '';
+  var BUILD = '54d16dfb', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795763217' || 0;
+  var BUILD_AT = +'1795763387' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3741,14 +3741,20 @@
       // 27.11.2026 (руководитель): приход склада Gynomedix — «📥 Принял» сразу здесь: бот ставит строки на места, ERP «Принял»
       // 27.11.2026 (руководитель): у прихода две кнопки рядом наверху — «➡ Склад» и «📥 Принял» (Принял — у склада Gynomedix)
       if (kind === 'inc' && x.to_wh) h += '<div style="display:flex;gap:8px;margin:0 0 10px">' +
-        '<button class="main" data-go="' + x.to_wh + '" style="flex:1;margin:0">➡ Склад' + (x.placed === false || x.gx_wait ? '<br><small>поставить на полку</small>' : '') + '</button>' +
-        (x.gx_put ? '<button class="main" id="incPut" style="flex:1;margin:0;background:linear-gradient(150deg,#b388ff,#6a1b9a)">📥 Принял<br><small>на место + ERP</small></button>' : '') + '</div>';
-      h += '<div class="box"><h3>Состав · ' + x.lines.length + (kind === 'inc' && x.gx_wait !== undefined ? ' · 📍 куда ставить' : '') + '</h3>' + x.lines.map(function (y, j) {
+        '<button class="main" data-go="' + x.to_wh + '" style="flex:1;margin:0">➡ Склад «куда»' + (x.placed === false || x.gx_wait ? '<br><small>поставить на полку</small>' : '') + '</button>' +
+        (x.gx_put ? '<button class="main act-acc" id="incPut" style="flex:1;margin:0">📥 Принял<br><small>на место + ERP</small></button>' : '') + '</div>';
+      var gxL = kind === 'inc' && x.gx_wait !== undefined, gxDone = gxL && !x.gx_wait;
+      // 27.11.2026 (руководитель): строки прихода Gynomedix — как в перемещении: номер, значок, короткое название, коробки,
+      // место плашкой 📍 (полный код) · партия жирным · штуки
+      h += '<div class="box' + (gxL ? ' plc' : '') + '"><h3>Состав · ' + x.lines.length + (gxL ? (gxDone ? ' · ✅ поставлено на место' : ' · 📥 куда ставить') : '') + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name), pt = kind === 'ret' ? y.put : null;
-        if (kind === 'inc' && y.put) {   // 27.11.2026: склад и место строки прихода — крупно, без схемы
-          var ip = y.put;
-          return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
-            '<br><span class="btag c1" style="font-size:15px">' + (ip.done ? '✅ стоит: ' : '📍 ') + esc(ip.addr ? ip.code + '-' + ip.addr : 'место выберите в окне склада') + '</span></div>';
+        if (kind === 'inc' && y.places) {
+          return '<div class="ln"><span class="no">' + (j + 1) + '</span><span class="it">' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · ' + n(y.qty) + ' шт</span>' +
+            (y.boxes ? '<br><small style="color:var(--hint)">' + esc(y.boxes) + '</small>' : '') +
+            y.places.map(function (p) {
+              return '<br>' + (p.code ? '<span class="pl">' + (p.placed ? '✅ ' : '📍 ') + esc(p.code) + '</span> ' : '<span class="pl">📍 место — в окне склада</span> ') +
+                (p.batch ? '<b>п.' + esc(p.batch) + '</b> · ' : '') + n(p.qty) + ' шт';
+            }).join('') + '</div>';
         }
         // 26.11.2026 (руководитель): ↩️ возврат — партия и место на схеме; «📥 Поставить» — по «👥 Доступ»
         var rp = kind !== 'ret' ? '' : pt ? '<br><span class="btag c1">📍 ' + esc(pt.code + '-' + pt.addr) + ' · партия <b>' + esc(pt.batch || '—') + '</b> · ' + esc(String(pt.by || '').slice(0, 16)) + '</span>'
