@@ -883,6 +883,12 @@
      № и имя закреплены слева, шапка — сверху; тени у краёв показывают, что есть ещё колонки */
   /* 24.11.2026 (руководитель): месяцы — в два ряда по 6, ячейки меньше; годы — в один ряд */
   .crt-g.zym6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; } .crt-g.zym6 .cg { padding: 6px 2px; font-size: 12px; min-width: 0; } .crt-g.zym6 .cg small { font-size: 9.5px; }
+  /* 27.11.2026 (руководитель): «🆕 Из терминала — кто это?» в «Должностях» */
+  .tmw { margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: #fff8e1; border: 2px solid #f0b040; }
+  .tmw > b { display: block; font-size: 15px; } .tmw > small { display: block; opacity: .75; margin: 2px 0 6px; }
+  .tmr { padding: 8px 0; border-top: 1px solid rgba(0,0,0,.08); } .tmn small { display: block; font-size: 12px; color: var(--hint); } .tmn small.sg { color: #137a3c; }
+  .tmb { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; } .tms { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; } .tms select { min-width: 200px; }
+  .zptw { margin: 8px 0; padding: 8px 12px; border-radius: 12px; background: #fff8e1; border: 1px solid #f0b040; font-weight: 700; cursor: pointer; }
   /* 27.11.2026 (руководитель): замечания Face ID в таблице зарплаты — значки, подсветка дней, журнал */
   .fxbg { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; align-items: flex-end; }
   .fxbg i { font-style: normal; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
@@ -1434,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = '615567a7', newBuild = '';
+  var BUILD = '7eb0b486', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795744591' || 0;
+  var BUILD_AT = +'1795744886' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5195,7 +5201,9 @@
               x += '<div class="note">Правила (начало и конец работы, рабочие дни, ставка) — 🎁 Бонусы → 🏭 Завод → ⏰ Сверхурочные. Таблицу будем дополнять для расчёта зарплаты.</div>';
             }
           }
+          if (isAdmin && st.T && st.T.term_wait) x = '<div class="zptw" id="zptw">⚠️ ' + st.T.term_wait + ' имён из терминала ждут решения → 👔 Должности</div>' + x;   // 27.11.2026
           Z.innerHTML = x;
+          if ($('zptw')) $('zptw').onclick = function () { haptic('light'); showZpStaff(); };
           Array.prototype.forEach.call(Z.querySelectorAll('[data-zy]'), function (el) { el.onclick = function () { haptic('light'); st.y = el.getAttribute('data-zy'); st.step = 'm'; if (st.m.slice(0, 4) !== st.y) { st.m = ''; st.T = null; } paint(); }; });
           Array.prototype.forEach.call(Z.querySelectorAll('[data-zmo]'), function (el) { el.onclick = function () { haptic('light'); pick(el.getAttribute('data-zmo')); }; });
           var cfSend = function (body, q_, top) {   // 25.11.2026: подтверждение / снятие — только руководитель; top — строка в начало (не обрежется)
@@ -5306,6 +5314,17 @@
       var h = '<div class="zstop' + (offc.length ? ' f4' : '') + '"><div><b>' + work.length + '</b><span>производство</span></div>' + (offc.length ? '<div class="o"><b>' + offc.length + '</b><span>🏢 офис</span></div>' : '') +
         '<div class="g"><b>' + gone.length + '</b><span>уволены</span></div>' +
         '<div><b>' + D.groups.filter(function (g) { return g[0]; }).length + '</b><span>должностей</span></div></div>';
+      if (D.admin && (D.term_wait || []).length) {   // 27.11.2026 (руководитель «да»): имена из терминала без решения
+        var TW = D.term_wait, opts = work.concat(offc).map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name) + '</option>'; }).join('');
+        h += '<div class="tmw"><b>🆕 Из терминала — кто это? · ' + TW.length + '</b><small>имена из Face ID, которых нет в «Должностях»; пока не решено — их проходы нигде не считаются</small>' +
+          TW.map(function (x) {
+            var a = function (k, t, extra) { return '<button class="sm" data-tma="' + k + '" data-tmi="' + esc(x.id) + '" data-tmf="' + esc(x.fid) + '"' + (extra || '') + '>' + t + '</button>'; };
+            return '<div class="tmr"><div class="tmn"><b>' + esc(x.fid || '(пустое имя)') + '</b><small>' + x.days + ' дн. с проходами' + (x.last ? ' · последний ' + esc(dd(x.last.slice(0, 10)) + x.last.slice(10)) : '') + '</small>' +
+              (x.sug ? '<small class="sg">похоже на <b>' + esc(x.sug.name) + '</b> · ' + Math.round(x.sug.score * 100) + ' %</small>' : '') + '</div><div class="tmb">' +
+              (x.sug ? a('yes', '✅ Да', ' data-tmt="' + esc(x.sug.id) + '"') : '') + a('other', '🔗 Другой') + a('new', '➕ Новый сотрудник') + a('no', '🚫 Не сотрудник') + '</div>' +
+              '<div class="tms" data-tms="' + esc(x.id) + '" hidden><select class="txt" data-tmsel="' + esc(x.id) + '"><option value="">— сотрудник —</option>' + opts + '</select> ' + a('pick', '🔗 Прикрепить') + '</div></div>';
+          }).join('') + '</div>';
+      }
       if (D.sal_ok) {   // 24.11.2026: сумма зарплат на руку работающих за полный месяц
         var withS = work.filter(function (p) { return p.cur_sal; });
         h += '<div class="zsfund"><b>' + fmtq(withS.reduce(function (a, p) { return a + p.cur_sal; }, 0)) + ' сум</b><span>💵 зарплата на руку в месяц · вписана у ' + withS.length + ' из ' + work.length + '</span></div>';
@@ -5439,6 +5458,16 @@
       B.innerHTML = h; window.scrollTo(0, y0);
       var all = function (sel, fn) { Array.prototype.forEach.call(B.querySelectorAll(sel), fn); };
       var nm = function (id) { return (D.people.filter(function (p) { return p.id === id; })[0] || {}).name || ''; };
+      // 27.11.2026 (руководитель «да»): «🆕 Из терминала — кто это?» — ✅ Да / 🔗 Другой / ➕ Новый / 🚫 Не сотрудник
+      all('[data-tma]', function (b) { b.onclick = function () {
+        var id = b.getAttribute('data-tmi'), a = b.getAttribute('data-tma'), f = b.getAttribute('data-tmf') || '';
+        if (a === 'other') { var s = B.querySelector('[data-tms="' + id + '"]'); if (s) { s.hidden = !s.hidden; } return; }
+        if (a === 'pick') { var sel = B.querySelector('[data-tmsel="' + id + '"]'); if (!sel || !sel.value) return say('Выберите сотрудника.');
+          return send({ act: 'term_link', id: id, to: sel.value }, '«' + f + '» — это ' + nm(sel.value) + '? Все его проходы будут считаться ей/ему.', D); }
+        if (a === 'yes') return send({ act: 'term_link', id: id, to: b.getAttribute('data-tmt') }, '«' + f + '» — это ' + nm(b.getAttribute('data-tmt')) + '? Все его проходы будут считаться ей/ему.', D);
+        if (a === 'new') return send({ act: 'term_new', id: id }, '«' + f + '» — новый сотрудник? Дальше укажите должность.', D);
+        if (a === 'no') return send({ act: 'term_no', id: id }, '«' + f + '» — не сотрудник (гость, тест, руководитель)? Проходы нигде не будут считаться.', D);
+      }; });
       all('[data-zf]', function (el) { el.onclick = function () { zsF = el.getAttribute('data-zf'); draw(D); }; });
       all('[data-zsh]', function (b) { b.onclick = function () { B.querySelector('[data-zsm="' + b.getAttribute('data-zsh') + '"]').value = b.getAttribute('data-v'); }; });
       all('[data-zss]', function (b) {
