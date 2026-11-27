@@ -1440,9 +1440,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'ae7a6357', newBuild = '';
+  var BUILD = '300e5d00', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795757961' || 0;
+  var BUILD_AT = +'1795762820' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -3738,8 +3738,15 @@
       h += '<div class="dhead st-' + (st === 'new' ? 'new' : 'ok') + '"><div class="dn">№' + esc(x.id) + '</div><div class="ds">' + SN[st] + '</div></div>' +
         '<div class="rt2 big"><span class="fr">' + (kind === 'inc' ? '🏭 Поставщик<br>' : '🛒 Клиент<br>') + esc(x.who) + '</span><i>→</i><span class="to">📥 Склад<br>' + esc(x.store) + '</span></div>' +
         docBar(kind, st);
-      h += '<div class="box"><h3>Состав · ' + x.lines.length + '</h3>' + x.lines.map(function (y, j) {
+      // 27.11.2026 (руководитель): приход склада Gynomedix — «📥 Принял» сразу здесь: бот ставит строки на места, ERP «Принял»
+      if (kind === 'inc' && x.gx_put) h += '<button class="main" id="incPut" style="margin:0 0 10px;background:linear-gradient(150deg,#b388ff,#6a1b9a)">📥 Принял · поставить на место и провести в ERP</button>';
+      h += '<div class="box"><h3>Состав · ' + x.lines.length + (kind === 'inc' && x.gx_wait !== undefined ? ' · 📍 куда ставить' : '') + '</h3>' + x.lines.map(function (y, j) {
         var fq = formOf(y.name), pt = kind === 'ret' ? y.put : null;
+        if (kind === 'inc' && y.put) {   // 27.11.2026: склад и место строки прихода — крупно, без схемы
+          var ip = y.put;
+          return '<div class="ln"><span class="no">' + (j + 1) + '</span>' + (fq ? fq[2] + ' ' : '') + esc(y.name) + ' · <b>' + n(y.qty) + '</b>' +
+            '<br><span class="btag c1" style="font-size:15px">' + (ip.done ? '✅ стоит: ' : '📍 ') + esc(ip.addr ? ip.code + '-' + ip.addr : 'место выберите в окне склада') + '</span></div>';
+        }
         // 26.11.2026 (руководитель): ↩️ возврат — партия и место на схеме; «📥 Поставить» — по «👥 Доступ»
         var rp = kind !== 'ret' ? '' : pt ? '<br><span class="btag c1">📍 ' + esc(pt.code + '-' + pt.addr) + ' · партия <b>' + esc(pt.batch || '—') + '</b> · ' + esc(String(pt.by || '').slice(0, 16)) + '</span>'
           : r.ret_put && x.ret_wh && x.status === 2 ? '<br><button class="main rput" data-rput="' + j + '" style="margin-top:6px;padding:9px;background:linear-gradient(150deg,#ff8a7a,#c0392b)">📥 Поставить · партия и место</button>'
@@ -3761,6 +3768,23 @@
       view.innerHTML = h;
       bindTabs();
       if ($('incVk')) $('incVk').onclick = function () { incVk(x.id, x.st, this, function () { lastSig = null; delete mem[ck('/api/flow' + JSON.stringify({ kind: 'inc' }))]; }); };
+      if ($('incPut')) $('incPut').onclick = function () {   // 27.11.2026: «📥 Принял» прихода Gynomedix
+        var b = this, t0 = b.textContent;
+        var q = 'Принять приход №' + x.id + '?\n' + x.lines.map(function (y) { return '• ' + y.name + ' · ' + n(y.qty) + (y.put && y.put.addr ? ' → ' + y.put.addr : ''); }).join('\n') +
+          '\n\nБот поставит товар на эти места и проведёт приход в ERP («Принял»).';
+        var go_ = function (yes) {
+          if (!yes) return;
+          b.disabled = true; b.textContent = '⏳ Ставлю на место и провожу в ERP…';
+          try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+          call('/api/inc_put', { id: x.id }, 240000).then(function (r) {
+            haptic(r.ok ? 'success' : 'warning'); say(r.text || (r.ok ? 'Принято' : 'Не принято'));
+            lastSig = null; delete mem[ck('/api/flow' + JSON.stringify({ kind: 'inc' }))];
+            try { localStorage.removeItem('pfl:' + ck('/api/flow' + JSON.stringify({ kind: 'inc' }))); } catch (e) {}
+            if (r.ok) b.textContent = '✅ Принято'; else { b.disabled = false; b.textContent = t0; }
+          }).catch(function (e) { b.disabled = false; b.textContent = t0; fail(e); });
+        };
+        try { tg.showConfirm(q, go_); } catch (e) { go_(confirm(q)); }
+      };
       Array.prototype.forEach.call(view.querySelectorAll('[data-rput]'), function (b) {
         b.onclick = function () {
           var j = +b.getAttribute('data-rput');
