@@ -883,6 +883,16 @@
      № и имя закреплены слева, шапка — сверху; тени у краёв показывают, что есть ещё колонки */
   /* 24.11.2026 (руководитель): месяцы — в два ряда по 6, ячейки меньше; годы — в один ряд */
   .crt-g.zym6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; } .crt-g.zym6 .cg { padding: 6px 2px; font-size: 12px; min-width: 0; } .crt-g.zym6 .cg small { font-size: 9.5px; }
+  /* 27.11.2026 (руководитель): замечания Face ID в таблице зарплаты — значки, подсветка дней, журнал */
+  .fxbg { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; align-items: flex-end; }
+  .fxbg i { font-style: normal; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
+  .fxbg i.r { background: #fde2e2; color: #b71c1c; } .fxbg i.y { background: #fff1c2; color: #7a5200; } .fxbg i.g { background: #dff5e7; color: #137a3c; }
+  .otdt tr.fxno td { background: #fde2e2; } .otdt tr.fxni td { background: #fff1c2; }
+  s.fxold { opacity: .55; color: #b71c1c; }
+  .otdt input.fxwhy { width: 190px; max-width: 100%; }
+  .fxlog { margin: 6px 0 4px; padding: 8px 10px; border-radius: 10px; background: #f7f9fc; font-size: 12px; overflow-x: auto; }
+  .fxlog table { width: 100%; border-collapse: collapse; margin-top: 4px; } .fxlog th, .fxlog td { padding: 3px 5px; text-align: left; border-bottom: 1px solid rgba(0,0,0,.06); }
+  .fxlog th { font-size: 11px; color: var(--hint); } .fxlog td small { display: block; color: var(--hint); }
   /* 26.11.2026 (руководитель): 🛰 Месяц онлайн */
   .zonhd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; } .zonhd b { font-size: 16px; margin-right: 4px; }
   .zonpill { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--tg-theme-secondary-bg-color, #eef1f5); }
@@ -1420,9 +1430,9 @@
   // 22.11.2026 (руководитель): новая версия страницы — открытое окно перезагружается само.
   // BUILD вписывает push_page.py при загрузке; ver.json рядом — номер последней версии. На главном экране — сразу,
   // в глубине (сканы, задача) — плашка «🔄 Обновить», без потери работы; потом само при возврате на главный.
-  var BUILD = 'b86560e5', newBuild = '';
+  var BUILD = '2cdbb22e', newBuild = '';
   // 23.11.2026: время сборки — перезагружаться только на БОЛЕЕ НОВУЮ (ver.json на GitHub обновляется на ~1 мин позже страницы)
-  var BUILD_AT = +'1795743421' || 0;
+  var BUILD_AT = +'1795744082' || 0;
   function newer(j) { return !!j.build && j.build !== BUILD && (!BUILD_AT || (+j.ts || 0) > BUILD_AT); }
   // force — нажали «Обновить»: всегда. Само — не больше 2 попыток на одну версию (если Telegram упрямо отдаёт старую страницу,
   // не крутимся по кругу, а показываем плашку). t= — каждый раз новая ссылка, чтобы Telegram не взял страницу из памяти.
@@ -5689,22 +5699,37 @@
   var otFixEd = {};
   function otDaysHtml(p, D) {
     var F = function (n) { return fmtq(n || 0); }, A = zpAcc.zp_month >= 2, h = '';   // 25.11.2026: исправлять — «✋» табеля месяца (не только руководитель)
-    var ST = { noout: '<span class="neg">нет выхода · вручную</span>', ahead: '<span style="opacity:.45">впереди</span>', absent: '<span class="neg">не пришёл</span>', weekend: '📅 выходной', off: '—' };
+    var BD = !!D.byday;   // 27.11.2026 (руководитель): с ноября 2026 — правка дня только с причиной, только руководитель
+    if (BD) A = isAdmin;
+    var tm = function (cur, old) { return old != null && old !== cur ? '<s class="fxold">' + esc(old || '—') + '</s> ' + esc(cur || '—') : esc(cur || '—'); };
+    var ST = { noout: '<span class="neg">нет выхода · вручную</span>', noin: '<span class="neg">нет входа · вручную</span>', ahead: '<span style="opacity:.45">впереди</span>', absent: '<span class="neg">не пришёл</span>', weekend: '📅 выходной', off: '—' };
     h += '<div class="otdt"><table><thead><tr><th>№</th><th>Дата</th><th>Вход</th><th>Выход</th><th>В смену</th><th>Сверх.</th><th>Опозд.</th><th></th></tr></thead><tbody>' +
       (p.table || []).map(function (t) {
         var k = p.key + '|' + t.day, dl = t.day.slice(8, 10) + '.' + t.day.slice(5, 7) + ' ' + t.wd;
-        if (otFixEd[k]) return '<tr class="fx"><td>' + t.n + '</td><td>' + esc(dl) + '</td>' +
+        if (otFixEd[k]) return '<tr class="fx' + (t.st === 'noout' ? ' fxno' : t.st === 'noin' ? ' fxni' : '') + '"><td>' + t.n + '</td><td>' + esc(dl) + '</td>' +
           '<td><input class="txt" type="time" data-fxi="' + esc(k) + '" value="' + esc(t.in) + '"></td><td><input class="txt" type="time" data-fxo="' + esc(k) + '" value="' + esc(t.out) + '"></td>' +
-          '<td colspan="4"><button class="sm" data-fxs="' + esc(k) + '">💾</button> <button class="sm" data-fxc="' + esc(k) + '">✖</button>' +
+          '<td colspan="4">' + (BD ? '<input class="txt fxwhy" data-fxw="' + esc(k) + '" maxlength="200" placeholder="Причина (обязательно)" value="' + esc(t.why || '') + '"> ' : '') +
+          '<button class="sm" data-fxs="' + esc(k) + '">💾 Сохранить</button> <button class="sm" data-fxc="' + esc(k) + '">✖</button>' +
           (t.fix ? ' <button class="sm" data-fxr="' + esc(k) + '">↩ как в отчёте</button>' : '') + '<small>в отчёте: ' + esc(t.file[0] || '—') + ' – ' + esc(t.file[1] || '—') + '</small></td></tr>';
-        var mins = t.m + t.e + t.w;
-        return '<tr class="' + (t.fix ? 'fx' : '') + (t.st === 'noout' || t.st === 'absent' ? ' bad' : '') + '"><td>' + t.n + '</td><td>' + esc(dl) + (t.work ? '' : ' <small>вых.</small>') + '</td>' +
-          '<td>' + esc(t.in || '—') + '</td><td>' + esc(t.out || '—') + '</td><td>' + (t.shift ? F(t.shift) : (ST[t.st] || '0')) + '</td>' +
+        var mins = t.m + t.e + t.w, o = t.fix && BD ? (t.orig || ['', '']) : [null, null];
+        return '<tr class="' + (t.fix ? 'fx' : '') + (BD && t.st === 'noout' ? ' fxno' : BD && t.st === 'noin' ? ' fxni' : t.st === 'noout' || t.st === 'noin' || t.st === 'absent' ? ' bad' : '') + '"><td>' + t.n + '</td><td>' + esc(dl) + (t.work ? '' : ' <small>вых.</small>') + '</td>' +
+          '<td>' + tm(t.in, o[0]) + '</td><td>' + tm(t.out, o[1]) + '</td><td>' + (t.shift ? F(t.shift) : (ST[t.st] || '0')) + '</td>' +
           '<td>' + (mins ? F(mins) : '') + '</td><td>' + (t.late ? '<span class="neg">' + F(t.late) + '</span>' : '') + '</td>' +
-          '<td>' + (t.fix ? '<small class="fxm" title="' + esc((t.by || '') + ' ' + (t.at || '')) + '">✏️ в отчёте ' + esc(t.orig[0] || '—') + '–' + esc(t.orig[1] || '—') + '</small>' +
+          '<td>' + (t.fix ? '<small class="fxm" title="' + esc((t.by || '') + ' ' + (t.at || '')) + '">✏️ в отчёте ' + esc(t.orig[0] || '—') + '–' + esc(t.orig[1] || '—') + (t.why ? ' · ' + esc(t.why) : '') + '</small>' +
             (t.file_changed ? '<small class="neg">⚠️ в отчёте теперь ' + esc(t.file[0] || '—') + '–' + esc(t.file[1] || '—') + '</small>' : '') : '') +
           (A ? '<button class="sm" data-fxe="' + esc(k) + '">✏️</button>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
+    if (BD) {   // 27.11.2026 (руководитель): с ноября — журнал правок по дням, итог за месяц вручную убран
+      if (p.noout || p.noin) h += '<div class="note" style="margin:4px 0">⚠️ без отметки ухода: ' + (p.noout || 0) + ' · без отметки входа: ' + (p.noin || 0) + ' — минуты этих дней не посчитаны' + (A ? '; ✏️ — вписать время и причину' : '') + '.</div>';
+      if (!isAdmin) return h;   // новое на экране — сначала только руководителю
+      var J = (D.fix_log || []).filter(function (e) { return e.key === p.key; });
+      var WN = { 'in': 'вход', out: 'выход' };
+      h += '<div class="fxlog"><b>🗂 Журнал изменений</b>' + (J.length ? '<table><tr><th>День</th><th>Что</th><th>Было → стало</th><th>Причина</th><th>Кто, когда</th></tr>' +
+        J.map(function (e) { return (e.ch || []).map(function (c) { return '<tr><td>' + esc(String(e.day).slice(8, 10) + '.' + String(e.day).slice(5, 7)) + '</td><td>' + (WN[c[0]] || c[0]) +
+          (e.act === 'dayreset' ? ' ↩' : '') + '</td><td><s class="fxold">' + esc(c[1] || '—') + '</s> → <b>' + esc(c[2] || '—') + '</b></td><td>' + esc(e.why || '—') + '</td><td>' + esc(e.by || '') + '<small>' + esc(e.at || '') + '</small></td></tr>'; }).join(''); }).join('') + '</table>'
+        : '<small>правок пока нет</small>') + '</div>';
+      return h;
+    }
     if (p.noout) h += '<div class="note" style="margin:4px 0">⚠️ дней без отметки выхода: ' + p.noout + ' — минуты этих дней не посчитаны; ✏️ — вписать выход.</div>';
     if (A) h += '<div class="otfs"><b>Итог «в смену» за месяц</b><small>по дням: ' + F(p.shift_days) + ' мин' + (p.shift_fix ? ' · сейчас вручную ' + F(p.shift_fix.v) + ' (' + esc(p.shift_fix.by) + ' ' + esc(p.shift_fix.at) + ')' : '') + '</small>' +
       '<input class="txt" inputmode="numeric" data-fsv="' + esc(p.key) + '" placeholder="мин" value="' + (p.shift_fix ? p.shift_fix.v : '') + '" style="width:110px"> ' +
@@ -5735,7 +5760,7 @@
     return h + '</div>';
   }
   function otFixBind(Z, D, redraw) {   // кнопки правок под таблицей; redraw(новый ответ /api/zp_ot)
-    if (!(zpAcc.zp_month >= 2) || !D || !D.people) return;
+    if (!D || !D.people || !(D.byday ? isAdmin : zpAcc.zp_month >= 2)) return;   // 27.11.2026: с ноября — только руководитель
     var P = {}; D.people.forEach(function (p) { P[p.key] = p; });
     var all = function (s, f) { Array.prototype.forEach.call(Z.querySelectorAll(s), f); };
     var send = function (body, ask) {
@@ -5758,11 +5783,16 @@
       b.onclick = function () {
         var k = b.getAttribute('data-fxs'), x = pk(k), p = P[x.key] || {};
         var vi = Z.querySelector('[data-fxi="' + k + '"]').value, vo = Z.querySelector('[data-fxo="' + k + '"]').value;
-        send({ act: 'day', key: x.key, day: x.day, 'in': vi, out: vo, fid: p.fid || '', who: p.who || '' }, (p.who || '') + ' · ' + dl(x.day) + ': вход ' + (vi || '—') + ', выход ' + (vo || '—') + '. Сохранить вручную?');
+        var wy = Z.querySelector('[data-fxw="' + k + '"]'), why = wy ? wy.value.trim() : '';
+        if (D.byday && why.length < 3) { haptic('warning'); if (wy) wy.focus(); return say('Напишите причину — без неё не сохраняется.'); }   // 27.11.2026
+        send({ act: 'day', key: x.key, day: x.day, 'in': vi, out: vo, fid: p.fid || '', who: p.who || '', why: why }, (p.who || '') + ' · ' + dl(x.day) + ': вход ' + (vi || '—') + ', выход ' + (vo || '—') + (why ? ' · причина: ' + why : '') + '. Сохранить?');
       };
     });
     all('[data-fxr]', function (b) {
-      b.onclick = function () { var x = pk(b.getAttribute('data-fxr')), p = P[x.key] || {}; send({ act: 'dayreset', key: x.key, day: x.day, who: p.who || '' }, (p.who || '') + ' · ' + dl(x.day) + ': вернуть как в отчёте посещения?'); };
+      b.onclick = function () { var k = b.getAttribute('data-fxr'), x = pk(k), p = P[x.key] || {};
+        var wy = Z.querySelector('[data-fxw="' + k + '"]'), why = wy ? wy.value.trim() : '';
+        if (D.byday && why.length < 3) { haptic('warning'); if (wy) wy.focus(); return say('Напишите причину — без неё не сохраняется.'); }
+        send({ act: 'dayreset', key: x.key, day: x.day, who: p.who || '', why: why }, (p.who || '') + ' · ' + dl(x.day) + ': вернуть как в отчёте посещения?'); };
     });
     all('[data-fss]', function (b) {
       b.onclick = function () {
@@ -5832,7 +5862,7 @@
     var why = {}; (p.days || []).forEach(function (d) { why[d.day] = d; });
     var rows = (p.table || []).filter(function (t) { return t.in || t.out || t.work; }).map(function (t) {
       var w = why[t.day] || {}, ot = (+w.m || 0) + (+w.e || 0) + (+w.w || 0);
-      var st = t.st === 'absent' ? 'не пришёл' : t.st === 'noout' ? 'нет выхода' : t.st === 'weekend' ? 'выходной' : '';
+      var st = t.st === 'absent' ? 'не пришёл' : t.st === 'noout' ? 'нет выхода · вручную' : t.st === 'noin' ? 'нет входа · вручную' : t.st === 'weekend' ? 'выходной' : '';
       return '<tr><td>' + t.day.slice(8, 10) + '.' + t.day.slice(5, 7) + ' ' + esc(t.wd || '') + '</td><td>' + esc(t.in || '—') + '</td><td>' + esc(t.out || '—') + '</td><td>' + fmtq(+t.shift || 0) + '</td><td>' + (ot ? fmtq(ot) : '0') + '</td><td class="zonw">' + esc(w.why || st) + '</td></tr>';
     }).join('');
     return '<table class="zondt"><tr><th>Дата</th><th>Вход</th><th>Выход</th><th>В смену</th><th>Сверх</th><th>Обоснование</th></tr>' + (rows || '<tr><td colspan="6">Проходов ещё нет</td></tr>') + '</table>';
@@ -5912,7 +5942,10 @@
               (p.gone_m ? '<small style="color:#c62828;font-weight:700">🚪 уволен с ' + p.gone_m.slice(8, 10) + '.' + p.gone_m.slice(5, 7) + '.' + p.gone_m.slice(0, 4) + '</small>' : '') +   // 25.11.2026
               (p.nfix || p.shift_fix ? '<small class="fxm">✏️ вручную' + (p.nfix ? ': ' + p.nfix + ' дн.' : '') + (p.shift_fix ? ' · итог' : '') + '</small>' : '') + '</td>' +
               (p.nofid ? '<td colspan="7" class="nf">нет в отчёте посещения (Face ID) за этот месяц' + (zpAcc.zp_month >= 2 ? ' · нажмите — вписать вручную' : '') + '</td>' : '<td>' + p.need + ' / ' + p.came + ' / <span class="' + (p.absent ? 'neg' : '') + '">' + p.absent + '</span></td><td>' + F(p.norm) + '</td>' +
-              '<td>' + F(p.shift) + (p.shift_fix ? '<small class="fxm">✏️ вручную</small>' : '') + (p.shift_mismatch ? '<small class="neg">⚠️ по дням ' + F(p.shift_days) + '</small>' : '') + '</td>' +
+              '<td>' + F(p.shift) + (p.shift_fix ? '<small class="fxm">✏️ вручную</small>' : '') + (p.shift_mismatch ? '<small class="neg">⚠️ по дням ' + F(p.shift_days) + '</small>' : '') +
+              // 27.11.2026 (руководитель): замечания Face ID по дням — с ноября 2026, пока только руководителю
+              (D.byday && isAdmin ? '<span class="fxbg">' + (p.noout ? '<i class="r">нет выхода: ' + p.noout + '</i>' : '') + (p.noin ? '<i class="r">нет входа: ' + p.noin + '</i>' : '') +
+                (p.unfixed ? '<i class="y">не исправлено</i>' : p.nfix ? '<i class="g">исправлено: ' + p.nfix + '</i>' : '<i class="g">всё в порядке</i>') + '</span>' : '') + '</td>' +
               '<td class="' + (p.diff < 0 ? 'neg' : '') + '">' + (p.diff < 0 ? '−' + F(-p.diff) : '0') + '</td><td class="' + (p.late ? 'neg' : '') + '">' + F(p.late) + '</td>' +
               '<td>' + F(p.min) + '<small>' + F(p.m) + ' + ' + F(p.e) + ' + ' + F(p.w) + '</small></td><td class="pos"><b>' + F(p.net) + '</b></td>') + (C.hour ? '<td><b>' + fmtq(p.sum) + '</b></td>' : '') +
               // 24.11.2026 (руководитель): надбавка сверхурочно = итог сверхурочно × (зарплата ÷ норма) × (1 + %)
